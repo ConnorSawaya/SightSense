@@ -15,6 +15,7 @@ What in this project we did not make ourselves, and what existed before the even
 | NVIDIA Nemotron | Preloaded on the GX10 |
 | gpiozero | Motor and switch control on the Raspberry Pi |
 | OpenSCAD | Designing the cane coupler |
+| build123d | Designing the handle and phone mount |
 
 Update this table as tools are added or dropped.
 
@@ -24,7 +25,9 @@ Only the place lookup ("take me to Safeway"), through Apple Maps. The camera vid
 
 ## Work done before the event
 
-To be completed by the team. State plainly what existed before 12:00 PM on October 10, 2026 (ideas, designs, code, printed parts), and what was built during the event.
+- **Handle and phone mount** (`hardware/handle-phone-mount/`): the build123d script was started at about 10:55 AM on October 10, 2026, roughly an hour before hacking opened, as a plain handle and a motor mount, outside this repository. The tilted handle, pole collar and phone cradle in that folder were designed after 12:00 PM the same day. Whether the pre-noon start is allowed has not been confirmed with the organizers.
+
+The rest is to be completed by the team. State plainly what existed before 12:00 PM on October 10, 2026 (ideas, designs, code, printed parts), and what was built during the event.
 
 ## AI assistance
 

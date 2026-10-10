@@ -8,7 +8,7 @@ Printable parts, wiring and build notes for the cane.
 | [`wiring.md`](wiring.md) | Raspberry Pi, L298N motor driver, motor, switches and power | Planned wiring |
 | `motor-bracket/` | Holds the 12 V motor above the steering fork | To design |
 | `pi-plate/` | Carries the Pi and the L298N on the tube | To design |
-| `phone-clamp/` | Holds the iPhone near the handle, camera forward | To design |
+| [`handle-phone-mount/`](handle-phone-mount/) | Tilted handle, pole collar and adjustable phone cradle (camera forward) | Design in, not yet printed; cradle still on a placeholder phone size |
 
 ## Conventions
 
