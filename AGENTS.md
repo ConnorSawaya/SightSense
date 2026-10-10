@@ -65,7 +65,7 @@ These come from the hackathon and from the team. Breaking one can get the projec
 | Machine | Where | Notes |
 | --- | --- | --- |
 | ASUS Ascent GX10 | Venue, on the team's router by Ethernet | NVIDIA GB10, 128 GB shared memory, ARM64 Linux (DGX OS). Stays at the venue; closes 10 PM Saturday. |
-| Raspberry Pi 5 | On the cane, on the team's router | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. |
+| Raspberry Pi 5 | On the cane; on a phone hotspot since October 10 | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. Name `sightsense.local`, user `sightsense`, code in `~/SightSense/pi`. Details in [`pi/README.md`](pi/README.md). |
 | iPhone 16 Pro | On the cane | App built on a teammate's Mac with Xcode, free Apple ID (7-day signing). |
 | Mac | Venue | Only for building the iPhone app. |
 | Team laptops | Venue | Development, SSH to the Pi and GX10. |
@@ -79,7 +79,7 @@ Planned addresses (reserve in the router; the subnet depends on the router): GX1
 | --- | --- |
 | Transport | WebSocket. One binary message per camera frame holding picture, depth and position together. No WebRTC, no video codec. |
 | Capture | Own ARKit app. Fallback: the Record3D streaming app (no voice or maps on the fallback). |
-| Network | The team's own router, no internet needed. |
+| Network | Planned: the team's own router, no internet needed. The router was not at the venue; the Pi is on a phone hotspot and the network for the whole system is not settled. See Known traps. |
 | Depth | iPhone LiDAR (`sceneDepth`). No depth model. |
 | Vision-language model | `qwen3-vl:30b` through Ollama; `qwen3-vl:8b` as the fast fallback. Check what the preloaded Nemotron can do first. Exact Ollama tag names are unverified. |
 | Detector | Ultralytics YOLO (YOLO26s or YOLO11s) in the `ultralytics/ultralytics:latest-nvidia-arm64` container, exported to TensorRT. |
@@ -158,6 +158,9 @@ One request at a time, 6-second timeout, keep the model loaded.
 - **Empty is not clear.** No points in a corridor can mean open space or missing readings.
 - **Stale targets.** If ARKit tracking resets, stored positions are wrong. Clear them.
 - **Pi resets when the motor starts.** Keep the Pi on its own power bank and fit the capacitor.
+- **Venue Wi-Fi.** `AIHackathon@UCSC` dropped a laptop about a minute after each join, and `UCSC-Guest` has a sign-in page a headless Pi cannot pass. The fixed `192.168.8.x` addresses only exist on the team's own router.
+- **Pi will not start.** Count the green light's blinks before changing anything else. Three long and one short is a bootloader error; the fix is in [`pi/README.md`](pi/README.md).
+- **Pi under-voltage.** A weak supply or long cable makes the Pi throttle and can reset it. `vcgencmd get_throttled` should print `0x0`.
 
 ## Priorities
 
