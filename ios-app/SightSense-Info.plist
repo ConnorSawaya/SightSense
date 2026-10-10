@@ -14,7 +14,9 @@
 	<string>SightSense turns your spoken command into text on the phone.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsLocalNetworking</key>
+		<!-- ws:// to the GX10 by its Tailscale address (100.x), which iOS does not count as local.
+		     NSAllowsLocalNetworking must not be set alongside, or iOS ignores this key. -->
+		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
 </dict>

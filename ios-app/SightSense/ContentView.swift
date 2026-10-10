@@ -115,7 +115,7 @@ struct ContentView: View {
     private func row(_ label: String, _ value: String) -> some View {
         GridRow {
             Text(label).foregroundStyle(.secondary)
-            Text(value).lineLimit(2)
+            Text(value).lineLimit(4).fixedSize(horizontal: false, vertical: true)
         }
     }
 }

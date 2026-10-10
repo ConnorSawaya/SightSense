@@ -63,4 +63,4 @@ Step 4 is the one everything else depends on.
 - ARKit's picture and depth are in the sensor's landscape direction. If the phone is mounted upright, the data arrives turned 90 degrees.
 - Skip a frame if the previous send has not finished. Never queue frames.
 - Scale the camera intrinsics to the depth picture's size.
-- Info.plist needs usage descriptions for the camera, microphone, speech recognition, location and local network, plus `NSAllowsLocalNetworking`.
+- Info.plist needs usage descriptions for the camera, microphone, speech recognition, location and local network, plus `NSAllowsArbitraryLoads` for `ws://` to the GX10's Tailscale address (100.x is not "local" to iOS, and `NSAllowsLocalNetworking` alongside it would cancel it).
