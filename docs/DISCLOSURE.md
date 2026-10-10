@@ -14,6 +14,7 @@ What in this project we did not make ourselves, and what existed before the even
 | Ultralytics YOLO | Detecting common objects |
 | NVIDIA Nemotron | Preloaded on the GX10 |
 | gpiozero | Motor and switch control on the Raspberry Pi |
+| websockets (Python library) | The Raspberry Pi's link to the GX10's command port |
 | OpenSCAD | Designing the cane coupler |
 | build123d | Designing the handle and phone mount |
 
