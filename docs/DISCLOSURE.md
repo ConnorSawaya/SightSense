@@ -18,6 +18,7 @@ What in this project we did not make ourselves, and what existed before the even
 | Pillow | Making test pictures for `gx10/vlm/` |
 | Wikimedia Commons `Red_Apple.jpg`, Ultralytics sample `bus.jpg` | Source photos for the `gx10/vlm/` test pictures; not committed |
 | gpiozero | Motor and switch control on the Raspberry Pi |
+| websockets (Python library) | The Raspberry Pi's link to the GX10's command port |
 | OpenSCAD | Designing the cane coupler |
 | build123d | Designing the handle and phone mount |
 
