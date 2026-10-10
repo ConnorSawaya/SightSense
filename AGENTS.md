@@ -28,7 +28,7 @@ As of the commit that added this file, the repository holds structure and docume
 | iPhone app (`ios-app/`) | Not started |
 | GX10 software (`gx10/`) | Not started |
 | Pi motor controller (`pi/`) | Not started |
-| Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle on a placeholder phone size |
+| Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Motor bracket, Pi plate | Not designed |
 
 Update this table when you finish something.

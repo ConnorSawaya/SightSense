@@ -4,7 +4,7 @@ A handle for the top of the cane and an adjustable phone mount that clamps on th
 
 Experimental prototype. Nothing here has been printed, fitted or load tested, and it is not a replacement for a white cane or a guide dog.
 
-**The cradle is not ready to print.** It is sized for a placeholder phone (78 × 162 × 12 mm in a case). Set the `PHONE_*`, `CAM_*` and `BUTTON_KEEPOUT` values at the top of `walking_stick.py` to the iPhone 16 Pro in its case and re-export first. The handle and collar depend only on the 18 mm / 16 mm tube.
+**The cradle is oversize on purpose.** Its pocket is 78.8 mm wide and 12.8 mm deep, sized for a generic phone of 78 × 162 × 12 mm in a case, which is wider than the iPhone 16 Pro. The team decided to print it as it is and hold the phone with straps. Expect a few millimetres of side play until the strap is tight; a strip of foam on each side wall takes it up. For a closer fit, set the `PHONE_*`, `CAM_*` and `BUTTON_KEEPOUT` values at the top of `walking_stick.py` and re-export. The handle and collar depend only on the 18 mm / 16 mm tube.
 
 ## Files
 
@@ -15,7 +15,7 @@ Experimental prototype. Nothing here has been printed, fitted or load tested, an
 | `viewer.py`, `viewer.html` | Builds, and is, a self-contained 3D viewer. Open `viewer.html` in a browser. |
 | `export/stick_handle.stl` | Handle |
 | `export/camera_collar.stl` | Collar that clamps on the pole and carries the tilt joint |
-| `export/phone_cradle.stl` | Phone cradle (placeholder phone size) |
+| `export/phone_cradle.stl` | Phone cradle (generic phone size; the phone is strapped in) |
 | `export/handle_fit_test.stl` | Short slice of the handle socket, to check the tube fit |
 | `export/cradle_fit_test.stl` | Bottom slice of the cradle, to check the phone and joint fit |
 | `export/*.step`, `export/assembly.step` | The same parts for CAD, and the three parts in place |
@@ -86,7 +86,7 @@ The STLs in `export/` are already turned this way.
 | `cradle_fit_test` | back plate down | under the lips only |
 | `handle_fit_test` | closed end down | none |
 
-Print `handle_fit_test` first, and `cradle_fit_test` once the phone is measured.
+Print `handle_fit_test` first, then `cradle_fit_test` to see how the phone and the joint fit.
 
 ## Assembly
 
@@ -105,7 +105,7 @@ Print `handle_fit_test` first, and `cradle_fit_test` once the phone is measured.
 
 ## What has and has not been checked
 
-Checked by `walking_stick.py`, geometrically, on the placeholder phone:
+Checked by `walking_stick.py`, geometrically, on the generic phone size:
 
 - every part is a single valid solid
 - at each of the six tilt steps: no collision between cradle or phone and the
