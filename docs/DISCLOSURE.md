@@ -12,7 +12,10 @@ What in this project we did not make ourselves, and what existed before the even
 | Ollama | Running the vision-language model on the GX10 |
 | Qwen3-VL (Alibaba) | Describing scenes, reading signs, finding named objects |
 | Ultralytics YOLO | Detecting common objects |
-| NVIDIA Nemotron | Preloaded on the GX10 |
+| NVIDIA Nemotron | Preloaded on the GX10 (`nemotron3:33b`, Nemotron 3 Nano Omni); tested as a vision-language model |
+| Qwen3.6 (Alibaba) | Preloaded on the GX10 (`qwen3.6:35b`); tested as a vision-language model |
+| Pillow | Making test pictures for `gx10/vlm/` |
+| Wikimedia Commons `Red_Apple.jpg`, Ultralytics sample `bus.jpg` | Source photos for the `gx10/vlm/` test pictures; not committed |
 | gpiozero | Motor and switch control on the Raspberry Pi |
 | OpenSCAD | Designing the cane coupler |
 | build123d | Designing the handle and phone mount |
