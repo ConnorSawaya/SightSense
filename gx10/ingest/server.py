@@ -6,7 +6,7 @@
 Phone (contracts/MESSAGES.md): binary frame messages in; {"text": ...} voice and
 route messages in; guidance and {"lookup": ...} out, on the same connection.
 Pi: connects to the Pi port; gets {"seq", "cmd", "ttl_ms"} for every processed
-frame. No frame for 0.4 s means nothing is sent and the Pi switches the motor off.
+frame. Dashboard: http://<GX10>:8000 (gx10/dashboard/). No frame for 0.4 s means nothing is sent and the Pi switches the motor off.
 
 Only the newest frame is processed; older ones waiting are dropped, never queued.
 Clear or blocked comes from depth only (planner/obstacle.py). The navigator and the
@@ -74,6 +74,7 @@ class Pipeline:
         self.last_state = None
         self.last_frame = -1e9
         self.status = {}
+        self.view = None  # newest frame's picture and depth, for the dashboard
 
     def process(self, raw: bytes, t_recv: float):
         f = decode(raw)
@@ -128,8 +129,9 @@ class Pipeline:
             out.append(json.dumps({"lookup": g.lookup}))
         pi = json.dumps({"seq": f.seq, "cmd": cmd, "ttl_ms": TTL_MS})
         done = time.monotonic()
+        self.view = {"jpeg": f.jpeg, "turn": turn, "dets": dets, "depth": depth, "conf": conf}
         self.status = {
-            "seq": f.seq, "cmd": cmd, "state": state, "turn": turn * 90,
+            "seq": f.seq, "cmd": cmd, "state": state, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
             "floor_seen": c.floor_seen, "nav": f"{g.mode}/{g.state}",
             "desired": None if g.desired_bearing is None else round(g.desired_bearing, 1),
@@ -152,6 +154,7 @@ class Server:
         self.proc_ms = deque(maxlen=60)
         self.dropped = 0
         self.received = 0
+        self.phone_ws = None
         self.rec = None
         if record_dir:
             self.rec = Path(record_dir) / time.strftime("%Y%m%d-%H%M%S")
@@ -160,6 +163,7 @@ class Server:
 
     async def phone(self, ws):
         print("phone connected:", ws.remote_address[0], flush=True)
+        self.phone_ws = ws
         try:
             async for msg in ws:
                 t = time.monotonic()
@@ -177,6 +181,27 @@ class Server:
         except ConnectionClosed:
             pass
         print("phone disconnected:", ws.remote_address[0], flush=True)
+        if self.phone_ws is ws:
+            self.phone_ws = None
+
+    def text_command(self, text: str):
+        """The dashboard's text box: the same as a voice command from the phone."""
+        self._text(json.dumps({"text": text}))
+
+    def status(self) -> dict:
+        now = time.monotonic()
+        ws = self.phone_ws
+        rtt = getattr(ws, "latency", 0) if ws else 0
+        return {
+            "phone": ws.remote_address[0] if ws else None,
+            "pis": len(self.pis),
+            "fps": sum(1 for t in self.rx if now - t <= 1.0),
+            "proc_ms": statistics.median(self.proc_ms) if self.proc_ms else None,
+            "rtt_ms": rtt * 1000 if rtt else None,
+            "dropped": self.dropped,
+            "model": vlm.active_model(),
+            "frame": self.pipe.status if now - self.pipe.last_frame < 2 else {},
+        }
 
     def _text(self, msg):
         try:
@@ -254,13 +279,22 @@ async def main():
     ap.add_argument("--host", default=os.environ.get("SIGHTSENSE_HOST", "0.0.0.0"))
     ap.add_argument("--phone-port", type=int, default=int(os.environ.get("SIGHTSENSE_PHONE_PORT", "8765")))
     ap.add_argument("--pi-port", type=int, default=int(os.environ.get("SIGHTSENSE_PI_PORT", "8766")))
+    ap.add_argument("--dashboard-port", type=int, default=int(os.environ.get("SIGHTSENSE_DASHBOARD_PORT", "8000")),
+                    help="0 turns the dashboard off")
     ap.add_argument("--no-yolo", action="store_true")
     ap.add_argument("--record", help="save every frame and text message under this folder")
     a = ap.parse_args()
 
     server = Server(Pipeline(not a.no_yolo), a.record)
-    async with serve(server.phone, a.host, a.phone_port, max_size=8 << 20), serve(server.pi, a.host, a.pi_port):
-        print(f"listening: phone on {a.host}:{a.phone_port}, pi on {a.host}:{a.pi_port}", flush=True)
+    if a.dashboard_port:
+        from dashboard.dashboard import start
+
+        start(server, a.dashboard_port)
+    # ping the phone every 2 s: keeps the round trip time for the dashboard, and drops a dead link
+    async with serve(server.phone, a.host, a.phone_port, max_size=8 << 20, ping_interval=2, ping_timeout=6), \
+            serve(server.pi, a.host, a.pi_port):
+        print(f"listening: phone on {a.host}:{a.phone_port}, pi on {a.host}:{a.pi_port}"
+              + (f", dashboard on http://{a.host}:{a.dashboard_port}" if a.dashboard_port else ""), flush=True)
         await asyncio.gather(server.run_frames(), server.report())
 
 

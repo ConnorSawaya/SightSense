@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SightSense GX10</title>
+<style>
+  :root { --bg: #111418; --panel: #1b2027; --text: #e8eaed; --dim: #9aa3ad; --clear: #34c46a; --caution: #f2b233; --stop: #ef4b4b; --unknown: #6b7480; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid #2a313a; flex-wrap: wrap; }
+  h1 { font-size: 18px; margin: 0; }
+  .pill { padding: 2px 10px; border-radius: 999px; background: var(--panel); color: var(--dim); font-size: 13px; }
+  .pill.on { color: var(--clear); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .pics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pics img { width: 100%; background: #000; border-radius: 8px; display: block; min-height: 120px; }
+  .panel { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .decision { font-size: 44px; font-weight: 700; letter-spacing: 1px; }
+  .state { font-size: 16px; color: var(--dim); }
+  .STOP { color: var(--stop); } .CAUTION { color: var(--caution); } .CLEAR { color: var(--clear); } .UNCERTAIN, .NO_DATA { color: var(--unknown); }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 8px; }
+  .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+  .bar div { width: 100%; border-radius: 4px 4px 0 0; }
+  .bar span { font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .bar.chosen span { color: var(--text); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 3px 0; } td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .dim { color: var(--dim); font-size: 13px; }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid #39424d; background: #0d1014; color: var(--text); font-size: 15px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 0; background: #3a7bd5; color: white; font-size: 15px; cursor: pointer; }
+  .said { margin-top: 8px; min-height: 1.4em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SightSense GX10</h1>
+  <span class="pill" id="phone">phone</span>
+  <span class="pill" id="pi">Pi</span>
+  <span class="dim" id="time"></span>
+</header>
+<main>
+  <section>
+    <div class="pics">
+      <img id="frame" alt="Live picture with YOLO boxes">
+      <img id="depth" alt="LiDAR depth, red near, blue far, grey no reading">
+    </div>
+    <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading.</p>
+  </section>
+  <section>
+    <div class="panel">
+      <div class="decision" id="cmd">-</div>
+      <div class="state" id="state">waiting for frames</div>
+      <div class="bars" id="bars"></div>
+      <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 2.5 m.</div>
+    </div>
+    <div class="panel">
+      <form id="say"><input id="text" placeholder="guide me to the apple" autocomplete="off"><button>Send</button></form>
+      <div class="said" id="speech"></div>
+      <div class="dim" id="nav"></div>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><td>Frames in</td><td id="fps">-</td></tr>
+        <tr><td>GX10 processing (median)</td><td id="ms">-</td></tr>
+        <tr><td>Network round trip (ping)</td><td id="rtt">-</td></tr>
+        <tr><td>Stop smoothing (2 frames)</td><td id="smooth">-</td></tr>
+        <tr><td>Frames dropped (stale)</td><td id="dropped">-</td></tr>
+        <tr><td>GPU use / power / temp</td><td id="gpu">-</td></tr>
+        <tr><td>Vision model</td><td id="model">-</td></tr>
+        <tr><td>Tracking / phone heat</td><td id="track">-</td></tr>
+      </table>
+      <div class="dim">Phone capture-to-send time is not included; it is not measured yet.</div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let lastSpeech = "";
+function color(v) { return v === null ? "var(--unknown)" : v >= 2.5 ? "var(--clear)" : v >= 1.2 ? "var(--caution)" : "var(--stop)"; }
+async function tick() {
+  try {
+    const s = await (await fetch("/status")).json();
+    $("phone").textContent = s.phone ? "phone " + s.phone : "phone not connected"; $("phone").className = "pill" + (s.phone ? " on" : "");
+    $("pi").textContent = s.pis ? "Pi connected" : "Pi not connected"; $("pi").className = "pill" + (s.pis ? " on" : "");
+    $("time").textContent = new Date().toLocaleTimeString();
+    const f = s.frame || {};
+    $("cmd").textContent = f.cmd || "-"; $("cmd").className = "decision " + (f.state || "");
+    $("state").textContent = f.state ? f.state + (f.desired !== null && f.desired !== undefined ? " · wants " + f.desired + "°" : "") : "waiting for frames";
+    const bars = $("bars"); bars.innerHTML = "";
+    for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
+      const b = document.createElement("div"); b.className = "bar" + (String(f.best) === h ? " chosen" : "");
+      const fill = document.createElement("div"); fill.style.height = (v === null ? 100 : Math.max(4, v / 4.5 * 100)) + "%"; fill.style.background = color(v);
+      const lab = document.createElement("span"); lab.textContent = (h > 0 ? "+" : "") + h + "° " + (v === null ? "?" : v.toFixed(1));
+      b.append(fill, lab); bars.append(b);
+    }
+    if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
+    $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "");
+    $("fps").textContent = s.fps + " / s";
+    $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";
+    $("rtt").textContent = s.rtt_ms !== null ? s.rtt_ms.toFixed(0) + " ms" : "-";
+    $("smooth").textContent = s.fps ? "about " + Math.round(2000 / Math.max(s.fps, 1)) + " ms" : "-";
+    $("dropped").textContent = s.dropped;
+    $("gpu").textContent = s.gpu && s.gpu.util_pct !== undefined ? s.gpu.util_pct + "% · " + s.gpu.power_w.toFixed(0) + " W · " + s.gpu.temp_c + " °C" : "-";
+    $("model").textContent = s.model || "-";
+    $("track").textContent = (f.tracking || "-") + " / " + (f.thermal || "-");
+    if (s.fps) { $("frame").src = "/frame.jpg?" + Date.now(); $("depth").src = "/depth.png?" + Date.now(); }
+  } catch (e) { $("state").textContent = "dashboard lost the GX10"; }
+}
+setInterval(tick, 300); tick();
+$("say").addEventListener("submit", async (e) => {
+  e.preventDefault(); const text = $("text").value.trim(); if (!text) return;
+  await fetch("/say", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+  $("text").value = "";
+});
+</script>
+</body>
+</html>
