@@ -5,9 +5,11 @@ depth picture: the wall at 4 m and the apple's true box at 2.5 m. Runs the
 Navigator at 15 frames per second of real time and prints what it would say.
 
     cd gx10 && python3 -m navigator.check_live
+    cd gx10 && ../../venv-yolo/bin/python -m navigator.check_live --yolo   # with YOLO every frame
 """
 
 import json
+import sys
 import time
 from array import array
 from pathlib import Path
@@ -35,12 +37,17 @@ def frame_from_picture(name, seq, box_depth_m=2.5):
     return f
 
 
+DETECTOR = None  # set by --yolo
+
+
 def drive(nav, picture, seconds, seq, stop_when=None):
     t_end = time.monotonic() + seconds
     t0 = time.monotonic()
     while time.monotonic() < t_end:
         seq += 1
-        g = nav.on_frame(frame_from_picture(picture, seq))
+        f = frame_from_picture(picture, seq)
+        dets = DETECTOR.detect(f.jpeg) if DETECTOR else None
+        g = nav.on_frame(f, dets)
         if g.speech or g.lookup:
             extra = f"  bearing {g.desired_bearing:+.1f}" if g.desired_bearing is not None else ""
             print(f"  {time.monotonic() - t0:5.2f}s  [{g.state}] says: {g.speech!r}" + (f"  lookup {g.lookup!r}" if g.lookup else "") + extra)
@@ -51,7 +58,13 @@ def drive(nav, picture, seconds, seq, stop_when=None):
 
 
 def main():
+    global DETECTOR
     print("model:", vlm.warm())
+    if "--yolo" in sys.argv:  # needs the project virtual environment (see detector/README.md)
+        from detector.detector import Detector
+
+        DETECTOR = Detector()
+        print("yolo:", DETECTOR.using)
     nav = Navigator(vlm)
     seq = 0
 

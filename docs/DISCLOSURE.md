@@ -11,7 +11,8 @@ What in this project we did not make ourselves, and what existed before the even
 | Apple Speech framework | On-device speech recognition |
 | Ollama | Running the vision-language model on the GX10 |
 | Qwen3-VL (Alibaba) | Describing scenes, reading signs, finding named objects (`qwen3-vl:8b-instruct` tested; `qwen3-vl:30b-a3b-instruct` downloading) |
-| Ultralytics YOLO | Detecting common objects |
+| Ultralytics YOLO (YOLO26s, COCO-trained weights) | Detecting common objects |
+| PyTorch, OpenCV | Running YOLO on the GX10 (`gx10/detector/`) |
 | NVIDIA Nemotron | Preloaded on the GX10 (`nemotron3:33b`, Nemotron 3 Nano Omni); tested as a vision-language model |
 | Qwen3.6 (Alibaba) | Preloaded on the GX10 (`qwen3.6:35b`); tested as a vision-language model |
 | Pillow | Making test pictures for `gx10/vlm/` |
