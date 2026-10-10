@@ -29,6 +29,7 @@ As of the commit that added this file, the repository holds structure and docume
 | GX10 software (`gx10/`) | Not started |
 | Pi motor controller (`pi/`) | Not started |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
+| Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
 | Motor bracket, Pi plate | Not designed |
 
 Update this table when you finish something.
