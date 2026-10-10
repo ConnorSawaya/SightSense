@@ -6,7 +6,7 @@ Wiring is in [`../hardware/wiring.md`](../hardware/wiring.md). The command forma
 
 ## Status
 
-Written and tested on a simulated wheel on a laptop. Not yet run on the Pi, and not yet run with a real motor or switches.
+Runs on the Pi: the tests pass there, the simulated wheel follows typed commands, and the real GPIO pins open with the switches reading "none pressed". Not yet run with a real motor or switches wired up.
 
 ## Behaviour
 

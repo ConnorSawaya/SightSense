@@ -27,7 +27,7 @@ As of the commit that added this file, the repository holds structure and docume
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Not started |
 | GX10 software (`gx10/`) | Not started |
-| Pi motor controller (`pi/`) | Written; tested on a simulated wheel on a laptop; not yet run on the Pi or with a real motor |
+| Pi motor controller (`pi/`) | Written; tests pass on the Pi and its GPIO pins open; not yet run with a real motor or switches |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Motor bracket, Pi plate | Not designed |
 
