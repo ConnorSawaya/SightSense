@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Recordings and model files (large; keep them off GitHub)
+recordings/
+*.npz
+*.gguf
+*.safetensors
+*.engine
+*.onnx
+*.pt
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.ipa
+
+# 3D printing
+*.gcode
+*.3mf.bak
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

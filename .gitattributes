@@ -1,0 +1,6 @@
+* text=auto
+
+# 3D models: don't show line-by-line diffs or count them as code
+*.stl -diff linguist-generated
+*.3mf binary
+*.step binary
