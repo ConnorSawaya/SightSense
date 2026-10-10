@@ -25,8 +25,8 @@ As of the commit that added this file, the repository holds structure and docume
 | --- | --- |
 | Repo layout, message formats, wiring plan | Written |
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
-| iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location). Builds for device; link and message tested on a Mac against `tools/fake_gx10.py`; Simulator checked. Not yet run on an iPhone with LiDAR |
-| GX10 software (`gx10/`) | Not started |
+| iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location); screen shows LiDAR depth only. Tested on a Mac against `tools/fake_gx10.py`, in the Simulator, and run on an iPhone 15 Pro (LiDAR view works). Mac test frames reached a frame checker on the GX10 over Tailscale; real phone frames not yet confirmed there |
+| GX10 software (`gx10/`) | `vlm/` (describe, read, find), `navigator/` (voice commands, guide to an object, route follower) and `detector/` (YOLO26s, 5.9 ms a frame, no TensorRT yet) written and run on test pictures and fake frames, not yet on real phone frames; `ingest/`, `planner/`, `dashboard/` not started |
 | Pi motor controller (`pi/`) | Not started |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
