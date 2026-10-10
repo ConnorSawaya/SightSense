@@ -6,6 +6,7 @@ Printable parts, wiring and build notes for the cane.
 | --- | --- | --- |
 | [`cane-coupler/`](cane-coupler/) | Keyed two-piece insert that joins 18 mm carbon-fibre tube sections | Design in, not yet printed |
 | [`wiring.md`](wiring.md) | Raspberry Pi, L298N motor driver, motor, switches and power | Planned wiring |
+| [`wheel-adapter/`](wheel-adapter/) | Hub that puts the omni wheel's hex onto the gearmotor's 6 mm D-shaft | Design in, not printed; hex and shaft sizes are estimates |
 | `motor-bracket/` | Holds the 12 V motor above the steering fork | To design |
 | `pi-plate/` | Carries the Pi and the L298N on the tube | To design |
 | [`handle-phone-mount/`](handle-phone-mount/) | Tilted handle, pole collar and adjustable phone cradle (camera forward) | Design in, not yet printed; cradle is oversize and the phone is strapped in |

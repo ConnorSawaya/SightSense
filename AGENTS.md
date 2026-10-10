@@ -29,6 +29,7 @@ As of the commit that added this file, the repository holds structure and docume
 | GX10 software (`gx10/`) | `vlm/` (describe, read, find), `navigator/` (voice commands, guide to an object, route follower) and `detector/` (YOLO26s, 5.9 ms a frame, no TensorRT yet) written and run on test pictures and fake frames, not yet on real phone frames; `ingest/`, `planner/`, `dashboard/` not started |
 | Pi motor controller (`pi/`) | Not started |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
+| Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
 | Motor bracket, Pi plate | Not designed |
 
 Update this table when you finish something.
