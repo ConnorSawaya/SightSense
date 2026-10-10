@@ -25,7 +25,7 @@ As of the commit that added this file, the repository holds structure and docume
 | --- | --- |
 | Repo layout, message formats, wiring plan | Written |
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
-| iPhone app (`ios-app/`) | Not started |
+| iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location). Builds for device; link and message tested on a Mac against `tools/fake_gx10.py`; Simulator checked. Not yet run on an iPhone with LiDAR |
 | GX10 software (`gx10/`) | Not started |
 | Pi motor controller (`pi/`) | Not started |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
