@@ -9,6 +9,8 @@ final class Capture: ObservableObject {
 
     @Published private(set) var isRunning = false
     @Published private(set) var link = GX10Link.State.idle.rawValue
+    @Published private(set) var linkState = GX10Link.State.idle
+    @Published private(set) var linkDetail: String?
     @Published private(set) var stats = FrameSender.Stats()
     @Published private(set) var sendRate = 0.0
     @Published private(set) var lastMessage: String?
@@ -22,6 +24,7 @@ final class Capture: ObservableObject {
     private var wasOpen = false
     private let delegateQueue = DispatchQueue(label: "arkit.frames", qos: .userInitiated)
     private var timer: Timer?
+    private var demoTimer: Timer?  // Simulator only
     private var lastTick = (sent: 0, time: CACurrentMediaTime())
 
     static let framePort = 8765
@@ -31,8 +34,7 @@ final class Capture: ObservableObject {
         session.delegate = sender
         session.delegateQueue = delegateQueue
         gx10.onState = { [weak self] state, why in
-            let text = why.map { "\(state.rawValue): \($0)" } ?? state.rawValue
-            Task { @MainActor in self?.linkChanged(state, text) }
+            Task { @MainActor in self?.linkChanged(state, why) }
         }
         gx10.onText = { [weak self] text in
             Task { @MainActor in self?.received(text) }
@@ -48,8 +50,10 @@ final class Capture: ObservableObject {
         gx10.sendText(json)
     }
 
-    private func linkChanged(_ state: GX10Link.State, _ text: String) {
-        link = text
+    private func linkChanged(_ state: GX10Link.State, _ why: String?) {
+        link = why.map { "\(state.rawValue): \($0)" } ?? state.rawValue
+        linkState = state
+        linkDetail = why
         guard isRunning else { return }
         if state == .open, !wasOpen {
             wasOpen = true
@@ -93,7 +97,12 @@ final class Capture: ObservableObject {
             return
         }
         if simulated {
-            problem = "Simulator: no camera, so no frames are sent"
+            #if targetEnvironment(simulator)
+            let start = CACurrentMediaTime()
+            demoTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [depthPreview] _ in
+                depthPreview.showSynthetic(time: CACurrentMediaTime() - start)
+            }
+            #endif
         } else {
             let config = ARWorldTrackingConfiguration()
             config.frameSemantics = .sceneDepth
@@ -102,7 +111,9 @@ final class Capture: ObservableObject {
         sender.reset()
         lastTick = (0, CACurrentMediaTime())
         gx10.connect(to: url)
-        location.start()
+        #if !targetEnvironment(simulator)
+        location.start()  // the Simulator has no GPS; skipping it also keeps its prompt out of screenshots
+        #endif
         wasOpen = false
         UIApplication.shared.isIdleTimerDisabled = true
         isRunning = true
@@ -114,6 +125,8 @@ final class Capture: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
+        demoTimer?.invalidate()
+        demoTimer = nil
         gx10.disconnect()
         location.stop()
         session.pause()

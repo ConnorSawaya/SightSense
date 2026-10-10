@@ -36,6 +36,35 @@ final class DepthPreview: ObservableObject {
         }
     }
 
+    #if targetEnvironment(simulator)
+    /// Simulator only: a made-up room (floor, a wall, a box drifting side to side) so the screen can be designed.
+    func showSynthetic(time t: Double) {
+        let w = 256, h = 192
+        var buf: CVPixelBuffer?
+        CVPixelBufferCreate(nil, w, h, kCVPixelFormatType_DepthFloat32, nil, &buf)
+        guard let buf else { return }
+        CVPixelBufferLockBaseAddress(buf, [])
+        let row = CVPixelBufferGetBytesPerRow(buf)
+        let boxX = 0.5 + 0.25 * sin(t * 0.7)  // across the picture's width (up/down once turned upright)
+        for y in 0..<h {
+            let d = CVPixelBufferGetBaseAddress(buf)!.advanced(by: y * row).assumingMemoryBound(to: Float32.self)
+            for x in 0..<w {
+                let u = Double(x) / Double(w), v = Double(y) / Double(h)
+                var z = 0.6 + 4.2 * u  // floor running away from the camera
+                if abs(u - boxX) < 0.12 && abs(v - 0.5) < 0.18 { z = 1.1 + 0.2 * sin(t) }  // box
+                if u > 0.92 { z = .nan }  // missing readings at the far edge
+                d[x] = Float32(z)
+            }
+        }
+        CVPixelBufferUnlockBaseAddress(buf, [])
+        let result = Self.render(buf, nil)
+        Task { @MainActor in
+            self.image = result?.image
+            self.centreMetres = result?.centre
+        }
+    }
+    #endif
+
     @MainActor func clear() {
         image = nil
         centreMetres = nil

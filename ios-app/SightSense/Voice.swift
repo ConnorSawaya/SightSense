@@ -24,9 +24,14 @@ final class Voice: ObservableObject {
         guard !isListening else { return }
         problem = nil
         heard = ""
-        guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
+        switch SFSpeechRecognizer.authorizationStatus() {
+        case .authorized:
+            break
+        case .notDetermined:
+            requestPermission()  // first use: iOS asks; the next press works
+            return
+        default:
             problem = "Allow speech recognition in Settings"
-            requestPermission()
             return
         }
         guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {

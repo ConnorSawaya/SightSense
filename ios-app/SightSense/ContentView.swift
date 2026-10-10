@@ -1,185 +1,203 @@
-import ARKit
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var capture = Capture()
     @StateObject private var voice = Voice()
-    @AppStorage("gx10Host") private var host = "192.168.8.10"
-    @State private var typed = ""
+    @AppStorage("gx10Host") private var host = Hosts.presets[0].address
+    @AppStorage("recentHosts") private var recentRaw = ""
+    @State private var showSettings = false
     @Environment(\.scenePhase) private var scenePhase
 
+    private var isStop: Bool { capture.guidance?.state == "STOP" }
+    private var linkOpen: Bool { capture.isRunning && capture.linkState == .open }
+
     var body: some View {
-        ScrollView {
+        ZStack {
+            DepthBackdrop(depth: capture.depthPreview)
+
             VStack(spacing: 12) {
-                connectRow
+                topBar
+                GuidancePill(message: capture.guidance, running: capture.isRunning, linkState: capture.linkState)
                 if let problem = capture.problem ?? voice.problem {
-                    Text(problem)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Label(problem, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .glassEffect(.regular.tint(.red.opacity(0.3)), in: .capsule)
                 }
-                GuidanceBanner(message: capture.guidance, running: capture.isRunning)
-                LiDARView(depth: capture.depthPreview, running: capture.isRunning)
-                status
-                commandRow
-                talkButton
+                DepthStage(depth: capture.depthPreview, running: capture.isRunning,
+                           linkState: capture.linkState, host: host) { idleCard }
+                if capture.isRunning { stats }
+                transcript
+                dock
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
+            if isStop { StopGlow() }
         }
-        .scrollDismissesKeyboard(.interactively)
+        .preferredColorScheme(.dark)
+        .tint(Theme.accent)
+        .sensoryFeedback(trigger: capture.guidance?.state) { _, new in
+            new == "STOP" ? .warning : nil
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet(capture: capture, host: $host, recentRaw: $recentRaw, connect: connect)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .onAppear {
-            voice.requestPermission()
             // For testing: launch with `-autoconnect host[:port]` to connect straight away.
             let args = ProcessInfo.processInfo.arguments
             if let i = args.firstIndex(of: "-autoconnect"), i + 1 < args.count, !capture.isRunning {
-                host = args[i + 1]
-                capture.start(host: host)
+                connect(args[i + 1])
             }
+            if args.contains("-settings") { showSettings = true }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background, capture.isRunning { capture.stop() }
         }
     }
 
-    private var connectRow: some View {
+    // MARK: - Pieces
+
+    private var topBar: some View {
         HStack {
-            TextField("GX10 address", text: $host)
-                .textFieldStyle(.roundedBorder)
-                .keyboardType(.numbersAndPunctuation)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .disabled(capture.isRunning)
-            Button(capture.isRunning ? "Disconnect" : "Connect") {
-                if capture.isRunning { capture.stop() } else { capture.start(host: host) }
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 44, height: 44)
             }
-            .buttonStyle(.borderedProminent)
-        }
-    }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .accessibilityLabel("Connection settings")
 
-    private var status: some View {
-        Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
-            row("Link", capture.link)
-            row("Tracking", capture.isRunning ? capture.stats.tracking : "—")
-            row("Depth", capture.stats.depthSize ?? "—")
-            row("Sending", capture.isRunning ? String(format: "%.1f frames/s", capture.sendRate) : "—")
-            row("Sent / skipped", "\(capture.stats.sent) / \(capture.stats.skipped)")
-            row("Encode / send", String(format: "%.0f ms / %.0f ms", capture.stats.lastEncodeMs, capture.stats.lastSendMs))
-            if capture.stats.failed > 0 {
-                row("Failed", "\(capture.stats.failed) (\(capture.stats.lastError ?? ""))")
+            Spacer()
+
+            VStack(spacing: 0) {
+                Text("SIGHTSENSE")
+                    .font(.system(size: 13, weight: .heavy))
+                    .fontWidth(.expanded)
+                    .kerning(3)
+                Text("LiDAR").font(.caption2).foregroundStyle(.secondary)
             }
-            row("From GX10", capture.lastMessage ?? "—")
-        }
-        .font(.callout.monospacedDigit())
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+            .accessibilityHidden(true)
 
-    private var commandRow: some View {
-        HStack {
-            TextField("Type a command", text: $typed)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.send)
-                .onSubmit(sendTyped)
-            Button("Send", action: sendTyped)
-                .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty || !capture.isRunning)
+            Spacer()
+
+            Button { showSettings = true } label: {
+                LinkCapsule(state: capture.linkState, rate: capture.sendRate, running: capture.isRunning)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens connection settings")
         }
     }
 
-    private var talkButton: some View {
-        Text(voice.isListening ? (voice.heard.isEmpty ? "Listening…" : voice.heard) : "Hold to talk")
-            .font(.title3.weight(.semibold))
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, minHeight: 88)
-            .padding(.horizontal)
-            .background(voice.isListening ? Color.red : Color.accentColor, in: RoundedRectangle(cornerRadius: 16))
-            .foregroundStyle(.white)
-            .opacity(capture.isRunning ? 1 : 0.4)
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        guard capture.isRunning, !voice.isListening else { return }
-                        voice.start { capture.send(command: $0) }
-                    }
-                    .onEnded { _ in voice.stop() }
-            )
-            .accessibilityLabel("Talk")
-            .accessibilityHint("Hold and say a command, then let go")
-            .accessibilityAddTraits(.isButton)
-    }
-
-    private func sendTyped() {
-        let text = typed.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, capture.isRunning else { return }
-        capture.send(command: text)
-        typed = ""
-    }
-
-    private func row(_ label: String, _ value: String) -> some View {
-        GridRow {
-            Text(label).foregroundStyle(.secondary)
-            Text(value).lineLimit(4).fixedSize(horizontal: false, vertical: true)
+    private var idleCard: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 40, weight: .light))
+                .foregroundStyle(Theme.accent)
+                .symbolEffect(.pulse)
+            VStack(spacing: 6) {
+                Text("Not connected").font(.title3.weight(.semibold)).fontWidth(.expanded)
+                Text(Hosts.name(for: host) ?? "GX10")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text(host).font(.footnote.monospaced()).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 12) {
+                Button { connect(host) } label: {
+                    Label("Connect", systemImage: "bolt.fill").frame(minWidth: 110)
+                }
+                .buttonStyle(.glassProminent)
+                Button { showSettings = true } label: {
+                    Label("Change", systemImage: "slider.horizontal.3")
+                }
+                .buttonStyle(.glass)
+            }
+            .controlSize(.large)
         }
+        .padding(28)
+        .glassEffect(.regular, in: .rect(cornerRadius: 32))
+    }
+
+    private var stats: some View {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                StatChip(label: "Tracking", value: shortTracking,
+                         tint: capture.stats.tracking == "Normal" ? nil : Theme.color(forState: "CAUTION"))
+                StatChip(label: "Depth", value: capture.stats.depthSize?.replacingOccurrences(of: " ", with: "") ?? "—")
+                StatChip(label: "Send", value: linkOpen ? String(format: "%.0f ms", capture.stats.lastSendMs) : "—")
+            }
+        }
+    }
+
+    private var shortTracking: String {
+        let t = capture.stats.tracking
+        return t.hasPrefix("Limited") ? "Limited" : t
+    }
+
+    @ViewBuilder private var transcript: some View {
+        if voice.isListening || !voice.heard.isEmpty {
+            Text(voice.isListening && voice.heard.isEmpty ? "Listening…" : "“\(voice.heard)”")
+                .font(.callout.weight(.medium))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .glassEffect(.regular, in: .capsule)
+                .transition(.blurReplace)
+        }
+    }
+
+    private var dock: some View {
+        GlassEffectContainer(spacing: 24) {
+            HStack(spacing: 24) {
+                QuickAction(title: "Describe", symbol: "text.viewfinder", enabled: linkOpen) {
+                    capture.send(command: "what's in front of me")
+                }
+                TalkButton(voice: voice, enabled: linkOpen) { capture.send(command: $0) }
+                QuickAction(title: "Read", symbol: "doc.text.viewfinder", enabled: linkOpen) {
+                    capture.send(command: "read the sign")
+                }
+            }
+        }
+        .animation(.snappy, value: voice.isListening)
+    }
+
+    private func connect(_ address: String) {
+        let a = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        if capture.isRunning { capture.stop() }
+        host = a
+        recentRaw = Hosts.remember(a, in: recentRaw)
+        capture.start(host: a)
     }
 }
 
-/// The latest guidance state from the GX10, large enough for a sighted observer to read at a glance.
-struct GuidanceBanner: View {
-    let message: GX10Message?
-    let running: Bool
-
-    var body: some View {
-        let state = message?.state ?? (running ? "NO_DATA" : "OFF")
-        VStack(spacing: 4) {
-            Text(state.replacingOccurrences(of: "_", with: " "))
-                .font(.largeTitle.weight(.bold))
-            if let speech = message?.speech {
-                Text(speech).font(.headline)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: 80)
-        .padding(.vertical, 8)
-        .background(Self.color(state), in: RoundedRectangle(cornerRadius: 16))
-        .foregroundStyle(.white)
-        .accessibilityElement(children: .combine)
+/// Saved GX10 addresses.
+enum Hosts {
+    struct Preset: Identifiable {
+        let name: String
+        let detail: String
+        let address: String
+        let symbol: String
+        var id: String { address }
     }
 
-    static func color(_ state: String) -> Color {
-        switch state {
-        case "CLEAR": return .green
-        case "CAUTION": return .orange
-        case "STOP": return .red
-        case "UNCERTAIN": return .purple
-        default: return .gray
-        }
+    static let presets = [
+        Preset(name: "GX10 over Tailscale", detail: "Works from any network", address: "100.108.5.67", symbol: "network"),
+        Preset(name: "GX10 on team router", detail: "Fastest, for the demo", address: "192.168.8.10", symbol: "wifi.router"),
+    ]
+
+    static func name(for address: String) -> String? {
+        presets.first { $0.address == address }?.name
     }
-}
 
-/// LiDAR depth in colour (near red, far blue, no reading black) with the distance at the centre.
-/// The camera picture is still sent to the GX10 for the vision-language model; it is just not shown.
-struct LiDARView: View {
-    @ObservedObject var depth: DepthPreview
-    let running: Bool
+    static func recent(_ raw: String) -> [String] {
+        raw.split(separator: "\n").map(String.init).filter { a in !presets.contains { $0.address == a } }
+    }
 
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Color.black
-            if let image = depth.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            }
-            Rectangle()  // the patch the centre distance is measured over
-                .stroke(.white, lineWidth: 2)
-                .frame(width: 24, height: 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            Text(depth.centreMetres.map { String(format: "Centre %.2f m", $0) } ?? (running ? "No depth yet" : "Connect to start"))
-                .font(.headline.monospacedDigit())
-                .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(.black.opacity(0.6), in: Capsule())
-                .foregroundStyle(.white)
-                .padding(8)
-        }
-        .aspectRatio(3 / 4, contentMode: .fit)
-        .frame(maxHeight: 400)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .accessibilityHidden(true)
+    /// Newest first, at most 5, no duplicates.
+    static func remember(_ address: String, in raw: String) -> String {
+        guard !address.isEmpty else { return raw }
+        let list = [address] + raw.split(separator: "\n").map(String.init).filter { $0 != address }
+        return list.prefix(5).joined(separator: "\n")
     }
 }
