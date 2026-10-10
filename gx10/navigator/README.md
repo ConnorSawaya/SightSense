@@ -29,6 +29,13 @@ g.mode, g.state, g.distance_m   # for the dashboard
 
 `on_frame` never waits for the model. `find`, `describe` and `read` run on a background thread on one frame, and their answers are used when they arrive.
 
+## For the obstacle check
+
+- Use `g.desired_bearing` as the desired bearing in the cost `|heading − desired| + 0.5 · |heading − last choice|`. `None` means 0 (straight ahead).
+- `g.hold_center`: send `CENTER` while the user turns on the spot (the route says they face the wrong way). Depth still wins: blocked is still `STOP`.
+- `g.stop`: the object is within reach; send `STOP`. This only ever adds a stop; it never clears one.
+- Put `g.speech` in the guidance message's `speech` field. It is set on one frame only, so it is said once.
+
 ## Voice commands
 
 | Said | Does |

@@ -69,5 +69,23 @@ python3 -m vlm.bench MODEL [MODEL ...]      # time a describe answer, check it i
 | --- | --- | --- | --- | --- | --- |
 | `qwen3.6:35b` (preloaded) | 0.74 s median of 5 | 62 tokens/s | 100% | 11/11 | 1.8 s / 0.5 s |
 | `nemotron3:33b` (preloaded, Nemotron 3 Nano Omni) | 0.62 s median of 5 | 78 tokens/s | 100% | 11/11 | 1.2 s / 0.5 s |
+| `qwen3-vl:8b-instruct` (8.1 GB loaded) | 0.55 s median of 5 | 45 tokens/s | 100% | 11/11 | 1.3 s / 0.2 s |
+| `qwen3-vl:8b` (thinking; do not use) | 4.07 s median of 5 | 44 tokens/s | 100% | 10/11 | 5.2 s / 1.2 s |
 
-Box overlap with the true apple box (IoU) was 0.84–0.88 for every model above. These are synthetic pictures with one object on a plain floor; real rooms will be harder.
+`qwen3-vl:8b` is the same file as `qwen3-vl:8b-thinking`: it ignores `think: false`, so every answer waits for its reasoning, and one find reply came back in the wrong shape. `qwen3-vl:30b` is also the thinking model; use `qwen3-vl:30b-a3b-instruct`.
+
+`qwen3.6:35b` uses 26 GB with the 8192-token context. Describe answers came out at 11–13 words.
+
+Box overlap with the true apple box (IoU) was 0.82–0.88 for every model above. These are synthetic pictures with one object on a plain floor; real rooms will be harder.
+
+A harder one-off set (script not committed), `find("apple")` only:
+
+| Picture | `qwen3.6:35b` | `qwen3-vl:8b-instruct` |
+| --- | --- | --- |
+| Apple pasted into the street scene | found, IoU 0.88 | found, IoU 0.78 |
+| Street scene, no apple | "no" | "no" |
+| Small far apple (23 px wide) | found, IoU 0.91 | found, IoU 0.66 |
+| Red ball and red box, no apple | "no" | "no" |
+| Apple next to the red ball and box | found, IoU 0.88 | found, IoU 0.83 |
+
+Not yet tried on real phone pictures.
