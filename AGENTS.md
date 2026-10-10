@@ -26,7 +26,7 @@ As of the commit that added this file, the repository holds structure and docume
 | Repo layout, message formats, wiring plan | Written |
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Not started |
-| GX10 software (`gx10/`) | `vlm/` (describe, read, find) written and run on saved test pictures; the rest not started |
+| GX10 software (`gx10/`) | `vlm/` (describe, read, find) and `navigator/` (voice commands, guide to an object, route follower) written and run on test pictures and fake frames, not yet on real phone frames; the rest not started |
 | Pi motor controller (`pi/`) | Not started |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Motor bracket, Pi plate | Not designed |

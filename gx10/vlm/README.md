@@ -36,7 +36,7 @@ Environment variables; nothing is hard-coded.
 | Variable | Default | |
 | --- | --- | --- |
 | `SIGHTSENSE_OLLAMA_URL` | `http://127.0.0.1:11434` | |
-| `SIGHTSENSE_VLM_MODEL` | `qwen3-vl:30b` | |
+| `SIGHTSENSE_VLM_MODEL` | `qwen3.6:35b` | Preloaded on the GX10. Set `qwen3-vl:30b` once it is downloaded and measured |
 | `SIGHTSENSE_VLM_FALLBACK` | `qwen3-vl:8b` | Used if the main model is not installed |
 | `SIGHTSENSE_VLM_TIMEOUT` | `6` | Seconds per call (`find` shares it across its two questions) |
 | `SIGHTSENSE_VLM_BOX_SCALE` | by model | `1000` or `pixels` |

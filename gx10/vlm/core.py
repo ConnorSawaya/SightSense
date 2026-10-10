@@ -6,7 +6,7 @@ the LiDAR depth inside it.
 
 Settings (environment variables):
     SIGHTSENSE_OLLAMA_URL      default http://127.0.0.1:11434
-    SIGHTSENSE_VLM_MODEL       default qwen3-vl:30b
+    SIGHTSENSE_VLM_MODEL       default qwen3.6:35b (preloaded; Qwen3-VL is still downloading)
     SIGHTSENSE_VLM_FALLBACK    default qwen3-vl:8b (used if the main model is not installed)
     SIGHTSENSE_VLM_TIMEOUT     seconds per request, default 6
     SIGHTSENSE_VLM_BOX_SCALE   "1000" (boxes on a 0-1000 scale) or "pixels"; default picks by model
@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 OLLAMA_URL = os.environ.get("SIGHTSENSE_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-MODEL = os.environ.get("SIGHTSENSE_VLM_MODEL", "qwen3-vl:30b")
+MODEL = os.environ.get("SIGHTSENSE_VLM_MODEL", "qwen3.6:35b")
 FALLBACK = os.environ.get("SIGHTSENSE_VLM_FALLBACK", "qwen3-vl:8b")
 TIMEOUT_S = float(os.environ.get("SIGHTSENSE_VLM_TIMEOUT", "6"))
 BOX_SCALE = os.environ.get("SIGHTSENSE_VLM_BOX_SCALE", "")

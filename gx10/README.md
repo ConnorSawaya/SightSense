@@ -11,7 +11,7 @@ Everything that runs on the ASUS Ascent GX10. All AI and all guidance decisions 
 | `dashboard/` | Web page on port 8000: live picture, depth, chosen direction, delay, GPU use | Obstacle check |
 | `vlm/` | Describe, read and find, using the vision-language model through Ollama | GX10 + models |
 | `detector/` | YOLO on every frame | GX10 + models |
-| `navigator/` | Follows a walking route; guides to a found object | GX10 + models |
+| `navigator/` | Voice commands; guides to a found object; follows a walking route | GX10 + models |
 
 Message formats are in [`../contracts/MESSAGES.md`](../contracts/MESSAGES.md).
 
