@@ -172,6 +172,25 @@ class GuideToObject(unittest.TestCase):
         self.assertEqual(steps[-1].state, CONFIRMING)
 
 
+class WithDetector(unittest.TestCase):
+    def test_yolo_box_used_at_once(self):
+        clock = Clock()
+        finder = fake.FakeFinder(None)  # the model never sees it
+        guide = ObjectGuide(finder, clock)
+        guide.start("red apple")
+        p = fake.pose()
+        f = fake.frame(p, APPLE)
+        box = fake.FakeFinder(APPLE)(f.jpeg, "apple").box
+        det = [fake.FakeAnswer(True, "", box)]
+        det[0].label, det[0].conf = "apple", 0.9
+        other = fake.FakeAnswer(True, "", [0, 0, 10, 10])
+        other.label, other.conf = "chair", 0.95
+        clock.t += 0.1
+        s = guide.update(f, [other] + det)
+        self.assertEqual(s.state, CONFIRMING)
+        self.assertEqual(s.speech, "Red apple, 2.5 metres, slightly left. Say yes to go.")
+
+
 class Commands(unittest.TestCase):
     def test_table(self):
         cases = {

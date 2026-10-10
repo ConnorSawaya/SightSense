@@ -37,9 +37,10 @@ Environment variables; nothing is hard-coded.
 | --- | --- | --- |
 | `SIGHTSENSE_OLLAMA_URL` | `http://127.0.0.1:11434` | |
 | `SIGHTSENSE_VLM_MODEL` | `qwen3.6:35b` | Preloaded on the GX10. Set `qwen3-vl:30b` once it is downloaded and measured |
-| `SIGHTSENSE_VLM_FALLBACK` | `qwen3-vl:8b` | Used if the main model is not installed |
+| `SIGHTSENSE_VLM_FALLBACK` | `qwen3-vl:8b-instruct` | Used if the main model is not installed |
 | `SIGHTSENSE_VLM_TIMEOUT` | `6` | Seconds per call (`find` shares it across its two questions) |
 | `SIGHTSENSE_VLM_BOX_SCALE` | by model | `1000` or `pixels` |
+| `SIGHTSENSE_VLM_CTX` | `8192` | Context length. Ollama's default (262144) made `qwen3-vl:8b` take 48 GB |
 
 ## How it behaves
 

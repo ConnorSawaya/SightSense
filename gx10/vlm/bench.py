@@ -29,7 +29,8 @@ def gpu_share(model):
 
 def bench(model):
     img = base64.b64encode(PIC.read_bytes()).decode()
-    body = {"model": model, "stream": False, "think": False, "keep_alive": -1, "options": {"temperature": 0},
+    body = {"model": model, "stream": False, "think": False, "keep_alive": -1,
+            "options": {"temperature": 0, "num_ctx": core.CTX},
             "messages": [{"role": "user", "content": core.PROMPTS["describe"], "images": [img]}]}
     core._post("/api/chat", body, 600)  # load and warm up, not timed
     walls, rates, words = [], [], []

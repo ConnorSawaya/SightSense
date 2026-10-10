@@ -122,7 +122,8 @@ class Navigator:
 
     # ------------------------------------------------------------ every frame
 
-    def on_frame(self, f: Frame) -> Guidance:
+    def on_frame(self, f: Frame, detections=None) -> Guidance:
+        """detections: this frame's YOLO results from gx10/detector, if it is running."""
         with self._lock:
             if self._ask and not self._asking and f.jpeg:
                 kind, self._ask, self._asking = self._ask, None, True
@@ -130,7 +131,7 @@ class Navigator:
 
             g = Guidance(self.mode, IDLE)
             if self.mode == "object":
-                step = self.objects.update(f)
+                step = self.objects.update(f, detections)
                 g.state, g.desired_bearing, g.stop, g.distance_m = step.state, step.desired_bearing, step.stop, step.distance_m
                 if step.speech:
                     self._say(step.speech)

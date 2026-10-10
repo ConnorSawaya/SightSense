@@ -39,6 +39,12 @@ class Step:
     distance_m: Optional[float] = None  # to the stored target, floor distance
 
 
+def _same_thing(label: str, name: str) -> bool:
+    """YOLO label vs what the user asked for: "apple" matches "apple" and "red apple"."""
+    label, name = label.lower(), name.lower()
+    return name == label or name.endswith(" " + label)
+
+
 def direction_words(bearing: float) -> str:
     side = "right" if bearing > 0 else "left"
     b = abs(bearing)
@@ -94,13 +100,22 @@ class ObjectGuide:
 
     # ------------------------------------------------------------ every frame
 
-    def update(self, f: Frame) -> Step:
+    def update(self, f: Frame, detections=None) -> Step:
+        """detections: this frame's YOLO results (objects with .label, .conf, .box), if any.
+
+        A detection whose label matches the target is used at once, like a find()
+        answer, so objects YOLO knows are refreshed every frame.
+        """
         with self._lock:
             now = self._clock()
             if self.state == IDLE:
                 return Step(IDLE)
             self._check_tracking(f, now)
             speech = self._take_result(now)
+            if detections and self.state in (SEARCHING, GUIDING):
+                match = [d for d in detections if _same_thing(d.label, self.name)]
+                if match:
+                    speech = self._use_box(f, max(match, key=lambda d: d.conf).box, now) or speech
             if self.state in (SEARCHING, GUIDING):
                 self._maybe_find(f, now)
 
@@ -191,7 +206,10 @@ class ObjectGuide:
         self._pending = None
         if answer is None or not answer.ok or not answer.box:
             return None  # busy, timed out, unparseable or not seen: try again next time
-        dist, u, v = box_distance(f, answer.box)
+        return self._use_box(f, answer.box, now)
+
+    def _use_box(self, f, box, now) -> Optional[str]:
+        dist, u, v = box_distance(f, box)
         if dist is None:
             return f"I see the {self.name} but can't tell how far it is." if self.state == SEARCHING else None
         # Stored in the world using the pose of the frame the model looked at

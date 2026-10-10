@@ -7,8 +7,9 @@ the LiDAR depth inside it.
 Settings (environment variables):
     SIGHTSENSE_OLLAMA_URL      default http://127.0.0.1:11434
     SIGHTSENSE_VLM_MODEL       default qwen3.6:35b (preloaded; Qwen3-VL is still downloading)
-    SIGHTSENSE_VLM_FALLBACK    default qwen3-vl:8b (used if the main model is not installed)
+    SIGHTSENSE_VLM_FALLBACK    default qwen3-vl:8b-instruct (used if the main model is not installed)
     SIGHTSENSE_VLM_TIMEOUT     seconds per request, default 6
+    SIGHTSENSE_VLM_CTX         context length in tokens, default 8192 (one picture and a prompt)
     SIGHTSENSE_VLM_BOX_SCALE   "1000" (boxes on a 0-1000 scale) or "pixels"; default picks by model
 """
 
@@ -26,8 +27,11 @@ from typing import Optional
 
 OLLAMA_URL = os.environ.get("SIGHTSENSE_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 MODEL = os.environ.get("SIGHTSENSE_VLM_MODEL", "qwen3.6:35b")
-FALLBACK = os.environ.get("SIGHTSENSE_VLM_FALLBACK", "qwen3-vl:8b")
+FALLBACK = os.environ.get("SIGHTSENSE_VLM_FALLBACK", "qwen3-vl:8b-instruct")
 TIMEOUT_S = float(os.environ.get("SIGHTSENSE_VLM_TIMEOUT", "6"))
+# Ollama's default context for these models is 262144 tokens, which made qwen3-vl:8b
+# take 48 GB. Every request must send the same value or Ollama reloads the model.
+CTX = int(os.environ.get("SIGHTSENSE_VLM_CTX", "8192"))
 BOX_SCALE = os.environ.get("SIGHTSENSE_VLM_BOX_SCALE", "")
 
 COULDNT_TELL = "I couldn't tell"
@@ -138,7 +142,7 @@ def warm(timeout_s: float = 300) -> str:
     model = MODEL if MODEL in installed else FALLBACK if FALLBACK in installed else None
     if model is None:
         raise RuntimeError(f"Neither {MODEL} nor {FALLBACK} is installed in Ollama ({OLLAMA_URL})")
-    _post("/api/generate", {"model": model, "keep_alive": -1}, timeout_s)
+    _post("/api/generate", {"model": model, "keep_alive": -1, "options": {"num_ctx": CTX}}, timeout_s)
     _active_model = model
     return model
 
@@ -269,7 +273,7 @@ def _ask(jpeg: bytes, prompt: str, deadline: float) -> Answer:
                 "stream": False,
                 "think": False,  # reasoning adds seconds
                 "keep_alive": -1,
-                "options": {"temperature": 0, "num_predict": 200},
+                "options": {"temperature": 0, "num_predict": 200, "num_ctx": CTX},
                 "messages": [{"role": "user", "content": prompt, "images": [base64.b64encode(jpeg).decode()]}],
             },
             deadline - t0,
