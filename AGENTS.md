@@ -26,7 +26,7 @@ As of the commit that added this file, the repository holds structure and docume
 | Repo layout, message formats, wiring plan | Written |
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Not started |
-| GX10 software (`gx10/`) | `vlm/` (describe, read, find), `navigator/` (voice commands, guide to an object, route follower) and `detector/` (YOLO26s, 5.9 ms a frame, no TensorRT yet) written and run on test pictures and fake frames, not yet on real phone frames; `ingest/`, `planner/`, `dashboard/` not started |
+| GX10 software (`gx10/`) | First versions of `ingest/` (frame service), `planner/` (7-heading obstacle check), `vlm/`, `navigator/` and `detector/` (YOLO26s) written and run end to end on fake frames (15 fps, 10 ms on the GX10) and one real phone frame; not yet on a live walk. `dashboard/` not started |
 | Pi motor controller (`pi/`) | Not started |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
