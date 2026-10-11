@@ -36,7 +36,12 @@ USABLE_M = 1.5
 STOP_AHEAD_M = 0.8
 LEAVE_STOP_M = 1.0
 CAMERA_HEIGHT_M = 0.9  # used only when the floor cannot be seen (estimate for a cane handle)
-CHANGE_FRAMES, STOP_FRAMES = 3, 2
+# Stops stay quick (2 frames); everything else is deliberate, so the wheel does not jitter left and right.
+# Was 3 frames for any change. On recordings (62 min) that gave 18 straight LEFT<->RIGHT flips and 18 turns
+# reversed within 2 s; the user found the wheel jittering. Starting or ending a turn now needs 6 frames
+# (about 0.4 s), reversing a turn 15 (1 s), and a turn is held at least MIN_TURN_S unless something stops it.
+CHANGE_FRAMES, STOP_FRAMES, REVERSE_FRAMES = 6, 2, 15
+MIN_TURN_S = 1.5
 # The cane's own lower end (motor, wheel, Pi clamp) can show at the bottom of the picture once the
 # phone is on the cane, and it then reads as an obstacle about 0.4 m ahead for ever. Set this to the
 # distance along the floor from the phone to the cane's tip (about 0.65) to ignore a strip that long
@@ -201,13 +206,15 @@ def _nothing(raw_cmd):
 
 @dataclass
 class Smoother:
-    """A change needs 3 agreeing frames; STOP needs 2. STOP for 5 s asks the user to scan."""
+    """STOP needs 2 agreeing frames; starting or ending a turn 6; reversing a turn 15, and not within MIN_TURN_S
+    of starting it. STOP for 5 s asks the user to scan."""
 
     cmd: str = "STOP"  # start stopped until the depth says otherwise
     _cand: str = ""
     _count: int = 0
     _stop_since: Optional[float] = None
     _stuck_said: bool = False
+    _turn_since: float = -1e9
     last_heading: float = 0.0
 
     def update(self, raw: str, heading: Optional[float], now: float):
@@ -218,9 +225,14 @@ class Smoother:
         else:
             self._count = self._count + 1 if raw == self._cand else 1
             self._cand = raw
-            if self._count >= (STOP_FRAMES if raw == "STOP" else CHANGE_FRAMES):
+            reverse = {raw, self.cmd} == {"LEFT", "RIGHT"}
+            need = STOP_FRAMES if raw == "STOP" else REVERSE_FRAMES if reverse else CHANGE_FRAMES
+            held = not reverse or now - self._turn_since >= MIN_TURN_S  # only a reversal waits; straightening never does
+            if self._count >= need and held:
                 if raw == "STOP":
                     speech = "Obstacle ahead. Stop."
+                if raw in ("LEFT", "RIGHT"):
+                    self._turn_since = now
                 self.cmd, self._cand, self._count = raw, "", 0
         if self.cmd == "STOP":
             self._stop_since = self._stop_since if self._stop_since is not None else now

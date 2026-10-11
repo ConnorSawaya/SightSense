@@ -178,13 +178,28 @@ class Maps(unittest.TestCase):
 
 
 class Smoothing(unittest.TestCase):
-    def test_change_needs_three_frames_and_stop_two(self):
+    def test_turns_need_six_frames_and_stop_two(self):
         s = Smoother(cmd="CENTER")
-        self.assertEqual(s.update("LEFT", -20, 0)[0], "CENTER")
-        self.assertEqual(s.update("LEFT", -20, 0.1)[0], "CENTER")
-        self.assertEqual(s.update("LEFT", -20, 0.2)[0], "LEFT")
-        self.assertEqual(s.update("STOP", None, 0.3), ("LEFT", None))
-        self.assertEqual(s.update("STOP", None, 0.4), ("STOP", "Obstacle ahead. Stop."))
+        said = [s.update("LEFT", -20, i / 15)[0] for i in range(6)]
+        self.assertEqual(said, ["CENTER"] * 5 + ["LEFT"])  # about 0.4 s
+        self.assertEqual(s.update("STOP", None, 0.5), ("LEFT", None))
+        self.assertEqual(s.update("STOP", None, 0.55), ("STOP", "Obstacle ahead. Stop."))  # stops stay quick
+
+    def test_a_reversal_waits(self):
+        s = Smoother(cmd="CENTER")
+        for i in range(6):
+            s.update("LEFT", -20, i / 15)
+        cmds = [s.update("RIGHT", 20, 0.4 + i / 15)[0] for i in range(30)]  # RIGHT straight after turning LEFT
+        first_right = cmds.index("RIGHT")
+        self.assertGreaterEqual(0.4 + first_right / 15 - 5 / 15, 1.5)  # not within 1.5 s of starting the left turn
+        self.assertGreaterEqual(first_right + 1, 15)  # and 15 agreeing frames
+
+    def test_straightening_out_does_not_wait(self):
+        s = Smoother(cmd="CENTER")
+        for i in range(6):
+            s.update("LEFT", -20, i / 15)
+        cmds = [s.update("CENTER", 0, 0.4 + i / 15)[0] for i in range(6)]
+        self.assertEqual(cmds[-1], "CENTER")
 
     def test_flicker_does_not_change(self):
         s = Smoother(cmd="CENTER")

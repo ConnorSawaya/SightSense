@@ -35,6 +35,8 @@ class Speed(unittest.TestCase):
         self.s = srv.Server(FakePipe())
         self.pi = FakePi()
         self.s.pis.add(self.pi)
+        self.default = self.s.speed
+        self.s.speed = None  # most tests start from "never set"
 
     def test_levels_are_clamped_and_rounded(self):
         self.assertTrue(self.s.set_speed(0.62))
@@ -47,7 +49,10 @@ class Speed(unittest.TestCase):
         self.assertFalse(self.s.set_speed(float("nan")))
         self.assertEqual(self.s.speed, 0.0)
 
-    def test_nothing_is_sent_until_the_slider_is_used(self):
+    def test_starts_at_70_percent(self):
+        self.assertEqual(self.default, 0.7)
+
+    def test_nothing_is_sent_when_no_level_is_set(self):
         run(self.s, 0.6)
         self.assertEqual(self.pi.got, [])
 

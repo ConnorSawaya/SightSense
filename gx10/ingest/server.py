@@ -292,7 +292,9 @@ class Server:
         self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
         self.manual_sent = None  # what went to the Pi
         self.manual_seq = 0
-        self.speed = None  # the dashboard's speed level, 0-1 of the Pi's own start-up duty; None = never set
+        # the dashboard's speed level, 0-1 of the Pi's own start-up duty (now 100%). Starts at 70% (user's choice,
+        # October 11); SIGHTSENSE_SPEED changes the start, the slider changes it live
+        self.speed = max(0.0, min(1.0, float(os.environ.get("SIGHTSENSE_SPEED", "0.7"))))
         self._speed_sent = (None, -1e9)
         self.pi_health = None  # (report, time received, address): temperature, input volts, settings
         self.talk_down = None  # when the cane's talk button went down, while it is held
