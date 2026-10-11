@@ -19,6 +19,7 @@ Runs on the Pi: the tests pass there, the simulated wheel follows typed commands
 - No command for 0.4 seconds: motor driver off. A longer `ttl_ms` in a message is cut to 0.4 seconds.
 - On start, and after the driver has been off: home to centre.
 - The motor is only powered while moving. Once in position the driver is off.
+- The motor has a worm gear, so with the driver off the steering stays where it was. It does not swing back to centre.
 
 Homing with no switch pressed: short pulses left, right, right, left until a switch trips. If the wheel has not reached where it should be after six motor runs, the driver goes off for 3 seconds before it tries again. Two switches pressed at once is treated the same way.
 
@@ -55,6 +56,7 @@ Set up on October 10, 2026.
 | Login | SSH key from the team lead's laptop; the password also works |
 | Network | A phone hotspot. The Wi-Fi name and password are on the SD card only. |
 | Installed | `python3-gpiozero`, `python3-lgpio`, `python3-websockets`, `git` |
+| Motor driver | IBT-2 (BTS7960), wired as in `../hardware/wiring.md` |
 | Code | `~/SightSense/pi`, copied from this folder |
 
 The name `sightsense.local` does not always resolve. If it fails, use the Pi's address from the hotspot's list of connected devices.

@@ -1,19 +1,34 @@
 # Wiring
 
-Planned wiring for the cane. Not yet built or tested. Power everything off before changing a wire.
+Wiring for the cane, for the parts the team has. Not yet built or tested. Power everything off before changing a wire.
+
+## Parts
+
+| Part | Notes |
+| --- | --- |
+| Battery | 12 V 3 Ah Li-ion pack (3S1P), on a barrel plug lead |
+| Motor driver | IBT-2 board (BTS7960). The plan said L298N; this is what the team has. |
+| Motor | Greartisan 12 V 120 rpm worm gear motor |
+| Converter | 12 V to 5 V, 5 A, with a USB-C plug. Powers the Pi from the same battery. |
+| Barrel-to-screw adapter | The green one. This is where the battery's power splits two ways. |
 
 ## Power
 
 ```
-12 V battery (+) ──► fuse (5 A) ──► kill switch ──► L298N 12 V terminal
-12 V battery (−) ──────────────────────────────────► L298N GND ──► Pi GND
-USB-C power bank ──► Raspberry Pi 5
+12 V battery ──► green screw adapter ──┬──► 12 V to 5 V converter ──► USB-C ──► Raspberry Pi 5
+                                       │
+                                       └──► fuse (5 A) ──► kill switch ──► IBT-2 B+
+battery (−), at the adapter ──► converter (−) and IBT-2 B−
+IBT-2 M+ and M− ──► motor
 ```
 
-- The Pi has its own power bank. Do not power it from the L298N's 5 V pin.
-- All grounds are joined: battery negative, L298N GND and a Pi ground pin. The L298N's GND terminal takes two wires.
-- A 1000 µF capacitor (25 V or more) goes across the L298N's 12 V and GND terminals, stripe side to GND.
+- Two wires go under each screw of the green adapter: one to the converter, one toward the IBT-2.
+- Check which screw is positive with a multimeter before connecting the IBT-2. It has no protection against a reversed battery.
+- The fuse and kill switch are in the motor's branch only, so stopping the motor does not switch the Pi off.
 - The kill switch must be within the user's reach.
+- The IBT-2 has its own capacitor. No extra one is needed.
+
+The earlier plan gave the Pi its own power bank, so the motor could not disturb it. If the Pi resets or reports under-voltage when the motor runs, go back to that.
 
 ## Signals
 
@@ -21,22 +36,25 @@ GPIO numbers are BCM numbers. The header pin is the position on the 40-pin heade
 
 | Raspberry Pi | Header pin | Connects to |
 | --- | --- | --- |
-| GPIO18 | 12 | L298N ENA (remove the ENA jumper first) |
-| GND | 14 | L298N GND |
-| GPIO23 | 16 | L298N IN1 |
-| GPIO24 | 18 | L298N IN2 |
+| GPIO18 | 12 | IBT-2 R_EN |
+| GPIO23 | 16 | IBT-2 RPWM |
+| 3.3 V | 17 | IBT-2 VCC |
+| GPIO24 | 18 | IBT-2 LPWM |
+| GND | 20 | IBT-2 GND |
+| GPIO25 | 22 | IBT-2 L_EN |
 | GPIO5 | 29 | Left limit switch |
 | GPIO6 | 31 | Right limit switch |
 | GPIO13 | 33 | Centre limit switch |
 | GND | 39 | The other leg of all three switches |
 
-Motor on L298N OUT1 and OUT2. Leave the L298N's 5 V regulator jumper on.
+- Follow the names printed beside the IBT-2's pins. Leave R_IS and L_IS empty.
+- VCC goes to the Pi's 3.3 V pin, not 5 V. On 3.3 V the board reads the Pi's 3.3 V signals reliably.
 
 ### Finding the pins
 
 - Pin 1 is at the SD card end of the board, on the row nearer the middle. Pin 2 is beside it, on the row at the board's edge.
 - Odd numbers run down the inner row, even numbers down the edge row. Pins 39 and 40 are at the USB ports end.
-- Pins 12, 14, 16 and 18 are next to each other on the edge row, so the four L298N wires go in one block.
+- Pins 12, 16, 18, 20 and 22 are close together on the edge row. Pin 17 is on the inner row, opposite pin 18.
 - Pins 25, 30 and 34 are also ground, if each switch gets its own ground wire.
 
 ### Limit switches
@@ -45,29 +63,28 @@ Use the switch's COM and NO legs: NO to the GPIO pin, COM to ground. The Pi's bu
 
 ## Wiring order
 
-1. Unplug the Pi, disconnect the battery, kill switch off.
-2. Pull the ENA jumper off the L298N. Leave the other jumpers.
-3. Pins 12, 14, 16 and 18 to ENA, GND, IN1 and IN2.
-4. The three switches.
-5. Motor to OUT1 and OUT2. Either way round; `cane.py --swap` reverses it.
-6. Capacitor across the 12 V and GND terminals.
-7. Battery through the fuse and kill switch, last, with the kill switch off.
+1. Unplug the Pi, unplug the battery, kill switch off.
+2. The six wires from the Pi's header to the IBT-2's pins.
+3. The three switches.
+4. Motor to M+ and M−. Either way round; `cane.py --swap` reverses it.
+5. Battery side: adapter to the converter, and adapter through the fuse and kill switch to B+ and B−.
+6. Check the polarity at B+ and B− with a multimeter, then plug the battery in last, with the kill switch off.
 
 Then check it from the Pi, as in [`../pi/README.md`](../pi/README.md): switches first, which moves nothing, then one short motor pulse each way with a hand on the kill switch.
 
-## What damages the Pi
+## What damages the parts
 
-- The L298N's 5 V terminal connected to the Pi.
 - A 12 V wire touching any Pi pin.
-- The ENA jumper left on, which puts 5 V on pin 12.
+- The battery connected backwards to the IBT-2.
+- 5 V from anywhere onto a Pi GPIO pin.
 
 ## Limits to respect
 
-- The L298N handles about 2 A per channel and loses about 2 V, so the motor sees roughly 10 V. It runs hot.
-- Motor power is capped at 25% in software, and each steering move is cut off after 0.4 seconds.
+- The IBT-2 passes the full 12 V and far more current than the motor needs, so the software limits are the only limits: motor power is capped at 25%, and each steering move is cut off after 0.4 seconds.
 - No command from the GX10 for 0.4 seconds: motor driver off.
+- The motor has a worm gear, so it holds its position when the power is off. With the driver off the steering stays where it was; it does not swing back to centre.
 - Use the `gpiozero` library. `RPi.GPIO` and `pigpio` do not work on a Raspberry Pi 5.
 
 ## Suggested, not yet tried
 
-When the controller exits, pins 12, 16 and 18 go back to inputs with no pull, which was seen on the Pi. A floating ENA may read as "on" at the L298N. A 10 kΩ resistor from ENA to GND would hold the driver off whenever the Pi is not driving the pin.
+When the controller exits, the Pi's motor pins go back to inputs with no pull, which was seen on the Pi. If the IBT-2 has no pull-downs of its own, floating enable pins may read as "on". A 10 kΩ resistor from each of R_EN and L_EN to GND would hold the driver off whenever the Pi is not driving them.

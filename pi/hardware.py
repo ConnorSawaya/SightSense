@@ -9,47 +9,54 @@ import time
 from steering import CENTER, LEFT, MAX_DUTY, RIGHT
 
 # BCM numbers, from ../hardware/wiring.md
-PIN_IN1 = 23
-PIN_IN2 = 24
-PIN_ENA = 18
+PIN_RPWM = 23
+PIN_LPWM = 24
+PIN_R_EN = 18
+PIN_L_EN = 25
 PIN_SWITCH = {LEFT: 5, CENTER: 13, RIGHT: 6}
 PWM_HZ = 1000
 
 
 class GpioHardware:
-    """L298N and three limit switches on a Raspberry Pi 5, through gpiozero."""
+    """IBT-2 (BTS7960) driver and three limit switches on a Raspberry Pi 5, through gpiozero.
+
+    Both enable pins high lets the driver run. Power goes on RPWM to turn one
+    way and on LPWM to turn the other. Enables low is driver off.
+    """
 
     def __init__(self, swap=False):
         from gpiozero import Button, DigitalOutputDevice, PWMOutputDevice
 
         self._swap = swap  # set if "left" turns the wheel right
-        self._in1 = DigitalOutputDevice(PIN_IN1)
-        self._in2 = DigitalOutputDevice(PIN_IN2)
-        self._ena = PWMOutputDevice(PIN_ENA, frequency=PWM_HZ)
+        self._enables = (DigitalOutputDevice(PIN_R_EN), DigitalOutputDevice(PIN_L_EN))
+        self._rpwm = PWMOutputDevice(PIN_RPWM, frequency=PWM_HZ)
+        self._lpwm = PWMOutputDevice(PIN_LPWM, frequency=PWM_HZ)
         self._switches = {
             name: Button(pin, pull_up=True) for name, pin in PIN_SWITCH.items()
         }
 
     def drive(self, direction, duty):
-        in1 = (direction < 0) != self._swap
-        self._ena.value = 0
-        self._in1.value = in1
-        self._in2.value = not in1
-        self._ena.value = max(0.0, min(duty, MAX_DUTY))
+        rpwm = (direction < 0) != self._swap
+        powered, idle = (self._rpwm, self._lpwm) if rpwm else (self._lpwm, self._rpwm)
+        idle.value = 0
+        for enable in self._enables:
+            enable.on()
+        powered.value = max(0.0, min(duty, MAX_DUTY))
 
     def off(self):
-        self._ena.value = 0
-        self._in1.off()
-        self._in2.off()
+        self._rpwm.value = 0
+        self._lpwm.value = 0
+        for enable in self._enables:
+            enable.off()
 
     def pressed(self):
         return {name for name, switch in self._switches.items() if switch.is_pressed}
 
     def close(self):
-        if self._ena.closed:
+        if self._rpwm.closed:
             return
         self.off()
-        for device in (self._ena, self._in1, self._in2, *self._switches.values()):
+        for device in (self._rpwm, self._lpwm, *self._enables, *self._switches.values()):
             device.close()
 
 

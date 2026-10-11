@@ -8,7 +8,9 @@ gpiozero's mock pins, and is skipped where gpiozero is not installed.
 
 import unittest
 
-from hardware import PIN_ENA, PIN_IN1, PIN_IN2, PIN_SWITCH, GpioHardware, SimHardware
+from hardware import (
+    PIN_L_EN, PIN_LPWM, PIN_R_EN, PIN_RPWM, PIN_SWITCH, GpioHardware, SimHardware,
+)
 from steering import (
     CENTER, FAULT_REST_S, LEFT, MAX_DUTY, MAX_RUNS, MOVE_LIMIT_S, RIGHT,
     Steering, parse_command,
@@ -300,31 +302,38 @@ class Pins(unittest.TestCase):
         self.addCleanup(self.hw.close)
 
     def state(self):
-        return tuple(self.pins.pin(n).state for n in (PIN_IN1, PIN_IN2, PIN_ENA))
+        """(R_EN, L_EN, RPWM, LPWM)"""
+        return tuple(self.pins.pin(n).state for n in (PIN_R_EN, PIN_L_EN, PIN_RPWM, PIN_LPWM))
 
     def test_starts_off(self):
-        self.assertEqual(self.state(), (0, 0, 0))
+        self.assertEqual(self.state(), (0, 0, 0, 0))
 
     def test_left_and_right(self):
         self.hw.drive(-1, 0.25)
-        self.assertEqual(self.state(), (1, 0, 0.25))
+        self.assertEqual(self.state(), (1, 1, 0.25, 0))
         self.hw.drive(1, 0.2)
-        self.assertEqual(self.state(), (0, 1, 0.2))
+        self.assertEqual(self.state(), (1, 1, 0, 0.2))
+
+    def test_never_powers_both_directions(self):
+        for direction in (-1, 1, -1, 1):
+            self.hw.drive(direction, 0.25)
+            rpwm, lpwm = self.state()[2:]
+            self.assertEqual(min(rpwm, lpwm), 0)
 
     def test_power_is_capped(self):
         self.hw.drive(1, 1.0)
-        self.assertEqual(self.pins.pin(PIN_ENA).state, MAX_DUTY)
+        self.assertEqual(self.pins.pin(PIN_LPWM).state, MAX_DUTY)
 
     def test_off(self):
         self.hw.drive(-1, 0.25)
         self.hw.off()
-        self.assertEqual(self.state(), (0, 0, 0))
+        self.assertEqual(self.state(), (0, 0, 0, 0))
 
     def test_swap_reverses_the_motor(self):
         self.hw.close()
         self.hw = GpioHardware(swap=True)
         self.hw.drive(-1, 0.25)
-        self.assertEqual(self.state(), (0, 1, 0.25))
+        self.assertEqual(self.state(), (1, 1, 0, 0.25))
 
     def test_switches_read_pressed_when_pulled_to_ground(self):
         self.assertEqual(self.hw.pressed(), set())

@@ -85,8 +85,8 @@ Planned addresses (reserve in the router; the subnet depends on the router): GX1
 | Detector | Ultralytics YOLO (YOLO26s or YOLO11s) in the `ultralytics/ultralytics:latest-nvidia-arm64` container, exported to TensorRT. |
 | Obstacle check | Seven headings from −30° to +30°, chosen every frame from depth. |
 | Wheel | One 12 V 120 rpm gear motor steers a normal free-rolling wheel to three positions with limit switches. Not a mecanum wheel. |
-| Motor driver | L298N (about 2 A, loses about 2 V). |
-| Power | 12 V 3 Ah pack → fuse → kill switch → L298N. Pi on its own USB-C power bank. Grounds joined. |
+| Motor driver | IBT-2 board (BTS7960). The plan said L298N; the IBT-2 is what the team has. It passes the full 12 V, so the software limits are the only limits. |
+| Power | 12 V 3 Ah pack → fuse → kill switch → IBT-2. Pi from the same pack through a 12 V to 5 V USB-C converter; back to its own power bank if the motor makes it reset. Grounds joined. |
 | Voice | Push-to-talk, on-device speech recognition on the iPhone. A text box on the dashboard does the same job if voice is not ready. |
 | Places | Apple MapKit walking directions, looked up on the phone. |
 | Cane | 18 mm carbon-fibre tube sections joined by the printed keyed coupler. |
@@ -189,7 +189,8 @@ Sunday: test at 9:00 AM, code freeze 11:00 AM, submit on Devpost by 12:45 PM (de
 - Organizers: earlier code or parts, own router, 3D printer, whether finalists keep the GX10 past 3:45 PM, which Nemotron is preloaded.
 - Does the iPhone keep cellular internet while on the no-internet router (needed for the place lookup)?
 - Do MapKit directions work under a free Apple ID?
-- Can the L298N and the battery pack handle the motor at stall?
+- Can the battery pack handle the motor at stall, and does the Pi stay up when it shares that pack?
+- The motor has a worm gear and holds its position with the driver off. Is "driver off" still the right response to a dropped link, or should the wheel be centred first?
 - All delays: typical estimates are 0.3–0.45 s for a stop beep and 1.5–3 s for a model answer. Replace with measurements.
 
 ## Where to find more

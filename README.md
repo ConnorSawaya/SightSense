@@ -40,7 +40,7 @@ Everything runs on a private router with no internet. The one exception is the "
 - iPhone 16 Pro (camera, LiDAR, ARKit)
 - ASUS Ascent GX10 (borrowed from ASUS for the event)
 - Raspberry Pi 5
-- 12 V 120 rpm DC gear motor, L298N motor driver, limit switches
+- 12 V 120 rpm DC worm gear motor, IBT-2 (BTS7960) motor driver, limit switches
 - 12 V 3 Ah battery pack, fuse, kill switch
 - 18 mm carbon-fibre tube cane with a printed keyed coupler (see [`hardware/cane-coupler/`](hardware/cane-coupler/))
 
