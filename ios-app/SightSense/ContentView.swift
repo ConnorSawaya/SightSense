@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Full-screen LiDAR feed with only a settings gear, a status dot and the talk button on top.
-/// Guidance shows as a glowing screen edge, beeps, speech and vibration. Everything else the
-/// app used to show (guidance text, distance, stats, Describe/Read) is on the GX10 dashboard.
 struct ContentView: View {
     @StateObject private var capture = Capture()
     @StateObject private var voice = Voice()
@@ -12,48 +9,38 @@ struct ContentView: View {
     @State private var resumeOnActive = false
     @Environment(\.scenePhase) private var scenePhase
 
+    private var isStop: Bool { capture.guidance?.state == "STOP" }
     private var linkOpen: Bool { capture.isRunning && capture.linkState == .open }
-    private var isHot: Bool { capture.isRunning && capture.stats.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue }
 
     var body: some View {
         ZStack {
-            LiDARFeed(depth: capture.depthPreview, running: capture.isRunning)
+            Backdrop(state: capture.guidance?.state)
 
-            if !capture.isRunning {
-                idleCard.padding(.horizontal, 24)
-            } else if capture.depthPreview.image == nil {
-                ProgressView().tint(Theme.accent).controlSize(.large)
-            }
-
-            StateEdge(state: capture.isRunning ? capture.guidance?.state : nil)
-
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 topBar
+                GuidancePill(message: capture.guidance, running: capture.isRunning, linkState: capture.linkState)
                 if let problem = capture.problem ?? voice.problem {
                     Label(problem, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote.weight(.semibold))
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .glassEffect(.regular.tint(.red.opacity(0.3)), in: .capsule)
                 }
-                if capture.isRunning && !linkOpen {
-                    Label(capture.linkState == .retrying ? "Reconnecting to the GX10" : "Connecting to the GX10",
-                          systemImage: "antenna.radiowaves.left.and.right")
-                        .font(.footnote.weight(.semibold))
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .glassEffect(.regular, in: .capsule)
-                }
-                Spacer()
-                transcript
+                DepthStage(depth: capture.depthPreview, running: capture.isRunning,
+                           linkState: capture.linkState, host: host) { idleCard }
                 if capture.isRunning {
-                    TalkButton(voice: voice, enabled: linkOpen) { capture.send(command: $0) }
+                    if capture.stats.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue { heatNotice }
+                    stats
                 }
+                transcript
+                dock
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 12)
+            .padding(.bottom, 8)
+
+            if isStop { StopGlow() }
         }
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
-        .animation(.snappy, value: voice.isListening)
         .sensoryFeedback(trigger: capture.guidance?.state) { _, new in
             new == "STOP" ? .warning : nil
         }
@@ -97,21 +84,21 @@ struct ContentView: View {
 
             Spacer()
 
+            VStack(spacing: 0) {
+                Text("SIGHTSENSE")
+                    .font(.system(size: 13, weight: .heavy))
+                    .fontWidth(.expanded)
+                    .kerning(3)
+                Text("LiDAR").font(.caption2).foregroundStyle(.secondary)
+            }
+            .accessibilityHidden(true)
+
+            Spacer()
+
             Button { showSettings = true } label: {
-                HStack(spacing: 6) {
-                    if isHot {
-                        Image(systemName: "thermometer.high")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.color(forState: "CAUTION"))
-                    }
-                    StatusDot(state: capture.linkState)
-                }
-                .frame(minWidth: 44, minHeight: 44)
-                .padding(.horizontal, isHot ? 8 : 0)
-                .glassEffect(.regular, in: .capsule)
+                LinkCapsule(state: capture.linkState, rate: capture.sendRate, running: capture.isRunning)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("GX10 \(capture.linkState.rawValue)" + (isHot ? ", phone is hot" : ""))
             .accessibilityHint("Opens connection settings")
         }
     }
@@ -144,6 +131,31 @@ struct ContentView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 32))
     }
 
+    private var stats: some View {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                StatChip(label: "Tracking", value: shortTracking,
+                         tint: capture.stats.tracking == "Normal" ? nil : Theme.color(forState: "CAUTION"))
+                StatChip(label: "Depth", value: capture.stats.depthSize?.replacingOccurrences(of: " ", with: "") ?? "—")
+                StatChip(label: "Send", value: linkOpen ? String(format: "%.0f ms", capture.stats.lastSendMs) : "—")
+            }
+        }
+    }
+
+    private var heatNotice: some View {
+        Label(String(format: "Phone is hot: sending %.0f frames a second", capture.stats.targetRate),
+              systemImage: "thermometer.high")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Theme.color(forState: "CAUTION"))
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .glassEffect(.regular.tint(Theme.color(forState: "CAUTION").opacity(0.2)), in: .capsule)
+    }
+
+    private var shortTracking: String {
+        let t = capture.stats.tracking
+        return t.hasPrefix("Limited") ? "Limited" : t
+    }
+
     @ViewBuilder private var transcript: some View {
         if voice.isListening || !voice.heard.isEmpty {
             Text(voice.isListening && voice.heard.isEmpty ? "Listening…" : "“\(voice.heard)”")
@@ -153,6 +165,21 @@ struct ContentView: View {
                 .glassEffect(.regular, in: .capsule)
                 .transition(.blurReplace)
         }
+    }
+
+    private var dock: some View {
+        GlassEffectContainer(spacing: 24) {
+            HStack(spacing: 24) {
+                QuickAction(title: "Describe", symbol: "text.viewfinder", enabled: linkOpen) {
+                    capture.send(command: "what's in front of me")
+                }
+                TalkButton(voice: voice, enabled: linkOpen) { capture.send(command: $0) }
+                QuickAction(title: "Read", symbol: "doc.text.viewfinder", enabled: linkOpen) {
+                    capture.send(command: "read the sign")
+                }
+            }
+        }
+        .animation(.snappy, value: voice.isListening)
     }
 
     private func connect(_ address: String) {
