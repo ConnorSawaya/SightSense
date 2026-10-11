@@ -14,6 +14,7 @@ None of this decides whether the way is clear. The obstacle check does that from
 depth, and it wins.
 """
 
+import re
 import threading
 import time
 from collections import deque
@@ -54,6 +55,7 @@ class Navigator:
         self._lookup = None
         self._ask = None  # ("describe" | "read" | "ask", question), waiting for the next frame
         self._asking = False
+        self._interpreting = False  # the model is working out a sentence the rules could not place
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
         self._last_route = -1e9
@@ -62,53 +64,67 @@ class Navigator:
     # ------------------------------------------------------------ from the phone
 
     def on_voice(self, text: str) -> commands.Command:
+        """Rules first: instant and predictable. A sentence they cannot place, or a request
+        worded as a question ("could you take me to the door?"), goes to the model
+        (vlm.interpret), which only picks one of the same commands."""
         cmd = commands.parse(text)
         with self._lock:
-            if cmd.kind == "object":
-                self._stop_route()
-                self.mode = "object"
-                self._say(self.objects.start(cmd.target))
-            elif cmd.kind == "place":
-                self.objects.cancel()
-                self._stop_route()
-                self.mode = "route"
-                self._place = cmd.target
-                self._lookup = cmd.target
-                self._say(f"Looking up {cmd.target}.")
-            elif cmd.kind in ("yes", "no"):
-                yes = cmd.kind == "yes"
-                if self._route_confirm is not None:
-                    if yes:
-                        self.route, self._route_confirm = self._route_confirm, None
-                        self._say(f"Going to {self.route.dest}.")
-                    else:
-                        self._stop_route()
-                        self.mode = "idle"
-                        self._say("Cancelled.")
+            if hasattr(self._vlm, "interpret") and (cmd.kind == "unknown" or (cmd.kind == "ask" and _request(text))):
+                if self._interpreting:
+                    self._say("One moment.")
                 else:
-                    said = self.objects.confirm(yes)
-                    if said:
-                        self._say(said)
-                        if not yes:
-                            self.mode = "idle"
-            elif cmd.kind == "cancel":
-                said = self.objects.cancel()
-                had_route = self.route is not None or self._route_confirm is not None or self._place
-                self._stop_route()
-                self.mode = "idle"
-                self._say(said or ("Cancelled." if had_route else "Stopped."))
-            elif cmd.kind in ("describe", "read"):
-                self._ask = (cmd.kind, None)
-            elif cmd.kind == "ask":
-                self._ask = ("ask", cmd.target)
-            elif cmd.kind == "status":
-                self._say(self._status())
-            elif cmd.kind == "path":
-                self.path_asked = True
-            else:
-                self._say("Sorry, I didn't catch that. You can say: what's in front of me, read the sign, "
-                          "or guide me to the apple.")
+                    self._interpreting = True
+                    threading.Thread(target=self._interpret_worker, args=(text,), daemon=True).start()
+                return commands.Command("interpret", text)
+            self._apply(cmd)
         return cmd
+
+    def _apply(self, cmd: commands.Command):
+        """Carry out a command. Call with the lock held."""
+        if cmd.kind == "object":
+            self._stop_route()
+            self.mode = "object"
+            self._say(self.objects.start(cmd.target))
+        elif cmd.kind == "place":
+            self.objects.cancel()
+            self._stop_route()
+            self.mode = "route"
+            self._place = cmd.target
+            self._lookup = cmd.target
+            self._say(f"Looking up {cmd.target}.")
+        elif cmd.kind in ("yes", "no"):
+            yes = cmd.kind == "yes"
+            if self._route_confirm is not None:
+                if yes:
+                    self.route, self._route_confirm = self._route_confirm, None
+                    self._say(f"Going to {self.route.dest}.")
+                else:
+                    self._stop_route()
+                    self.mode = "idle"
+                    self._say("Cancelled.")
+            else:
+                said = self.objects.confirm(yes)
+                if said:
+                    self._say(said)
+                    if not yes:
+                        self.mode = "idle"
+        elif cmd.kind == "cancel":
+            said = self.objects.cancel()
+            had_route = self.route is not None or self._route_confirm is not None or self._place
+            self._stop_route()
+            self.mode = "idle"
+            self._say(said or ("Cancelled." if had_route else "Stopped."))
+        elif cmd.kind in ("describe", "read"):
+            self._ask = (cmd.kind, None)
+        elif cmd.kind == "ask":
+            self._ask = ("ask", cmd.target)
+        elif cmd.kind == "status":
+            self._say(self._status())
+        elif cmd.kind == "path":
+            self.path_asked = True
+        else:
+            self._say("Sorry, I didn't catch that. You can say: what's in front of me, read the sign, "
+                      "or guide me to the apple.")
 
     def on_route(self, route: dict):
         with self._lock:
@@ -171,6 +187,28 @@ class Navigator:
 
     # ------------------------------------------------------------ internals
 
+    def _interpret_worker(self, text):
+        try:
+            a = self._vlm.interpret(text)
+        except Exception as e:
+            print(f"navigator: interpret failed: {e}", flush=True)
+            a = None
+        with self._lock:
+            self._interpreting = False
+            if a is None or not a.ok:
+                error = getattr(a, "error", None) or ("exception" if a is None else "failed")
+                print(f"navigator: model could not place {text!r}: {error}", flush=True)
+                self._apply(commands.Command("unknown"))
+                return
+            cmd = commands.Command(a.label, a.text or None)
+            if cmd.kind in ("object", "place") and not cmd.target:
+                cmd = commands.Command("unknown")
+            if cmd.kind == "ask":
+                cmd.target = text  # ask with the whole sentence; the model shortens it ("colour")
+            print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} "
+                  f"({getattr(a, 'seconds', 0):.2f} s)", flush=True)
+            self._apply(cmd)
+
     def take_path_question(self) -> bool:
         """True once after "is the path clear?"; the frame service answers it from depth."""
         with self._lock:
@@ -232,3 +270,8 @@ class Navigator:
         with self._lock:
             self._say(text)
             self._asking = False
+
+
+def _request(text: str) -> bool:
+    """A command worded as a question: "could you take me to the door?", "can you find my keys"."""
+    return bool(re.match(r"\s*(?:(?:hey|ok|okay|please)[, ]+)?(?:can|could|would|will) you\b", text or "", re.IGNORECASE))

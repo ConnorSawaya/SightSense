@@ -388,3 +388,74 @@ class WholeNavigator(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ThinkingVLM(FakeVLM):
+    """FakeVLM plus vlm.interpret(): the model placing sentences the rules could not."""
+
+    MEANINGS = {
+        "bring me over toward the red cup": ("object", "red cup"),
+        "could you point me toward the exit": ("object", "exit"),
+        "could you tell me what colour the chair is": ("ask", "colour"),
+        "yeah alright let's do this": ("yes", ""),
+        "banana pancakes": ("unknown", ""),
+    }
+
+    def __init__(self, ok=True):
+        super().__init__()
+        self.ok, self.interpreted, self.asked = ok, [], None
+
+    def interpret(self, text):
+        self.interpreted.append(text)
+        if not self.ok:
+            return fake.FakeAnswer(False, "I couldn't tell")
+        label, target = self.MEANINGS.get(text, ("unknown", ""))
+        a = fake.FakeAnswer(True, target)
+        a.label, a.seconds = label, 0.3
+        return a
+
+    def ask(self, jpeg, question):
+        self.asked = question
+        return super().ask(jpeg, question)
+
+
+class ModelVoice(unittest.TestCase):
+    def setUp(self):
+        self.clock = Clock()
+        self.vlm = ThinkingVLM()
+        self.nav = Navigator(self.vlm, self.clock)
+
+    def listen(self, text, seconds=0.5, frame=None):
+        self.nav.on_voice(text)
+        return said(run(self.nav, self.clock, frame or (lambda: fake.frame(fake.pose())), seconds))
+
+    def test_rules_still_go_first(self):
+        for text in ("guide me to the apple", "am I going the right way", "is the path clear", "is there a chair here?"):
+            self.nav.on_voice(text)
+        self.assertEqual(self.vlm.interpreted, [])
+
+    def test_odd_phrasing_becomes_a_command(self):
+        self.assertEqual(self.listen("bring me over toward the red cup")[0], "Looking for the red cup.")
+        self.assertEqual(self.nav.mode, "object")
+
+    def test_request_worded_as_a_question_is_a_command_not_a_picture_question(self):
+        self.assertEqual(parse("could you point me toward the exit").kind, "ask")  # the rule alone would ask the picture
+        self.assertEqual(self.listen("could you point me toward the exit")[0], "Looking for the exit.")
+        self.assertIsNone(self.vlm.asked)
+
+    def test_question_is_asked_with_the_whole_sentence(self):
+        self.listen("could you tell me what colour the chair is", 1.0)
+        self.assertEqual(self.vlm.asked, "could you tell me what colour the chair is")
+
+    def test_yes_in_other_words(self):
+        self.nav.on_voice("guide me to the apple")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose(), APPLE), 3, until=lambda s: s.state == CONFIRMING)
+        self.assertEqual(self.listen("yeah alright let's do this", 0.3, lambda: fake.frame(fake.pose(), APPLE)),
+                         ["Going to the apple."])
+
+    def test_model_unknown_or_down_falls_back_to_didnt_catch(self):
+        self.assertTrue(self.listen("banana pancakes")[0].startswith("Sorry, I didn't catch that."))
+        nav = Navigator(ThinkingVLM(ok=False), self.clock)
+        nav.on_voice("bring me over toward the red cup")
+        out = said(run(nav, self.clock, lambda: fake.frame(fake.pose()), 0.5))
+        self.assertTrue(out[0].startswith("Sorry, I didn't catch that."))
