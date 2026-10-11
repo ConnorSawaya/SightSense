@@ -4,7 +4,7 @@
     python3 cane.py --wheel-drive --typed               type commands instead
     python3 cane.py --wheel-drive --typed --sim         same, with a simulated wheel (any computer)
     python3 cane.py --gx10 ADDRESS               earlier position steering: needs limit switches, homes at start-up
-    python3 cane.py --gx10 ADDRESS --open-loop   position steering by timing: the motor moves at start-up
+    python3 cane.py --gx10 ADDRESS --open-loop   position steering with no limit switches: by timing; centre the wheel by hand first
     python3 cane.py --bench switches        print each switch as it is pressed
     python3 cane.py --bench button          print the talk button as it is pressed
     python3 cane.py --bench motor           one short pulse each way

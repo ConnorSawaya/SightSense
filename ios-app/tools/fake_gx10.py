@@ -29,6 +29,9 @@ GUIDANCE = [
     {"state": "CLEAR"},
     {"state": "CAUTION", "earcon": "caution"},
     {"state": "STOP", "earcon": "stop", "speech": "Obstacle ahead. Stop."},
+    {"state": "CAUTION", "direction": "LEFT", "earcon": "left", "speech": "Bear left"},
+    {"state": "CAUTION", "direction": "RIGHT", "earcon": "right", "speech": "Bear right"},
+    {"state": "UNCERTAIN", "direction": "UNKNOWN", "earcon": "unknown"},
     {"state": "UNCERTAIN"},
 ]
 REQUIRED = ["seq", "t_capture", "jpeg_len", "depth_len", "conf_len", "rgb_w", "rgb_h", "depth_w", "depth_h",

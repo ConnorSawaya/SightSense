@@ -2,7 +2,7 @@ import CoreLocation
 import MapKit
 
 /// Finds a place by name or address with Apple Maps and works out a walking route to it, as the
-/// route message in contracts/MESSAGES.md. This is the app's only use of the internet.
+/// route message in contracts/MESSAGES.md. Apart from the Tailscale link to the GX10, this is the app's only use of the internet.
 /// Apple Maps calls back on the main thread.
 final class Places {
     /// Where to look: a square this far across, centred on the user (so 5 km each way).

@@ -21,7 +21,7 @@ struct GX10Message: Decodable, Equatable {
 @MainActor
 final class Speaker {
     static let earconRepeat: TimeInterval = 1.0  // the same earcon at most once a second
-    static let speechRepeat: TimeInterval = 4.0  // the same sentence at most every 4 seconds
+    static let speechRepeat: TimeInterval = 2.0  // the GX10 sends a sentence once; this only stops a flickering stop repeating itself
 
     private let synth = AVSpeechSynthesizer()
     private var players: [String: AVAudioPlayer] = [:]

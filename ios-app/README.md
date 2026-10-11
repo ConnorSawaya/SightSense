@@ -48,7 +48,7 @@ In the Simulator there is no camera or LiDAR: Connect opens the link without sen
 | `FrameEncoder.swift` | ARKit frame → frame message (640-wide JPEG, depth, confidence, scaled intrinsics, pose) |
 | `FrameMessage.swift` | The message layout and depth conversion, without ARKit, so it runs on a Mac |
 | `GX10Link.swift` | WebSocket to port 8765, reconnects every second until disconnected |
-| `Guidance.swift` | Parses guidance; beeps (at most once a second) and speaks (same sentence at most every 4 s). Stays quiet, except for a stop, while the user is talking |
+| `Guidance.swift` | Parses guidance; beeps (at most once a second) and speaks (same sentence at most every 2 s). Stays quiet, except for a stop, while the user is talking |
 | `Voice.swift` | Hold-to-talk, on-device speech recognition; sends `{"text": ...}`. Also started and stopped by the cane's talk button |
 | `Location.swift` | GPS and compass heading for the frame header |
 | `Places.swift` | Looks a place up with Apple Maps and sends the walking route to it. Not compiled yet |

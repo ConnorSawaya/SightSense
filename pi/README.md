@@ -142,6 +142,14 @@ python3 cane.py --wheel-drive --gx10 100.108.5.67:8766
 
 The address can also come from the `SIGHTSENSE_GX10` environment variable. Add `--swap` if "left" turns the wheel right, and `--duty 0.15` for less power.
 
+If the controller is already running as a service (the SD installer enables it), stop it first. Two copies cannot hold the motor pins, and the second should stop with a `GPIO busy` error (from how the pin library works; not tried on the Pi). This applies to the bench checks below as well.
+
+```bash
+sudo systemctl stop sightsense-cane.service
+```
+
+Start it again with `sudo systemctl start sightsense-cane.service`.
+
 ## Following the GX10
 
 The GX10's frame service ([`../gx10/ingest/`](../gx10/ingest/)) sends the Pi one command for every frame it processes. The command comes from the obstacle check on depth, steered toward what the navigator wants: an object found by the vision model and YOLO, a route, or straight ahead. The Pi only has to connect:
@@ -180,7 +188,7 @@ sudo cp sightsense.env.example /boot/firmware/sightsense.env
 sudo systemctl enable --now sightsense-cane.service
 ```
 
-- Edit `/boot/firmware/sightsense.env` to set the address and any options. Delete it and the controller no longer starts by itself.
+- Edit `/boot/firmware/sightsense.env` to set the address and any options, then run `sudo systemctl restart sightsense-cane.service`. Delete it and the controller no longer starts by itself.
 - The direct wheel starts off and only runs while valid LEFT or RIGHT heartbeats arrive.
 - The SD installer enables this service after copying the new files. Physical boot and motor checks remain pending until the card is returned to the Pi.
 

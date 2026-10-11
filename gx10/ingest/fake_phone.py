@@ -1,7 +1,7 @@
 """Stand in for the phone (and the Pi) to test the frame service end to end.
 
-    ../../venv-yolo/bin/python -m ingest.fake_phone --port 8775 --pi-port 8776           # walk at a wall
-    ../../venv-yolo/bin/python -m ingest.fake_phone --port 8775 --replay ../../recordings/20261010-170000
+    ../../venv-yolo/bin/python -m ingest.fake_phone --port 18775 --pi-port 18776         # walk at a wall, against a test copy of the service
+    ../../venv-yolo/bin/python -m ingest.fake_phone --port 18775 --replay ../../recordings/20261010-170000
 
 Walk: the camera walks at 0.5 m/s toward a wall 4 m away; the service should
 turn to STOP before the wall. Also connects as the Pi and prints its commands.
