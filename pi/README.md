@@ -66,6 +66,7 @@ Homing with no switch pressed: short pulses left, right, right, left until a swi
 | `steering.py` | Earlier position-steering rules and shared command validation |
 | `hardware.py` | The real motor and switches, and a simulated wheel |
 | `fake_gx10.py` | Stands in for the GX10's command port |
+| `talk_button.py`, `test_talk_button.py` | The talk button in the handle: tells the GX10 when it goes down and up |
 | `test_steering.py` | Tests |
 | `spin_test.py` | Bench test: ramps the motor from stopped to full power once |
 | `sightsense-spin-test.service` | Runs the bench test once at start-up |
@@ -269,7 +270,23 @@ sudo systemctl enable sightsense-spin-test.service
 
 Switch it off before starting `cane.py` by hand in the first half minute after start-up; the two cannot hold the motor pins at the same time.
 
+## Talk button
+
+A push button in the handle, between GPIO17 (header pin 11) and ground (pin 9). Press it, then say a command. Wiring is in [`../hardware/wiring.md`](../hardware/wiring.md).
+
+- While it follows the GX10, the controller tells it when the button goes down and up: `{"button": "down"}`, then `{"button": "up"}`. The GX10 tells the phone to listen. The Pi does no listening.
+- A change has to last 0.03 seconds to count, so a bouncing contact or a spike on the long wire is ignored.
+- It is read by default. With no button wired the pin reads "not pressed". `--no-button` leaves the pin alone.
+- It cannot reach the motor. A fault in the button code stops the button only.
+- Tested on mock pins and with a stand-in for the link. Not yet tried with a real button, or with the GX10 and the phone.
+
 ## Checking the wiring
+
+Print the talk button as it is pressed and let go:
+
+```bash
+python3 cane.py --bench button
+```
 
 Print each switch as it is pressed:
 
