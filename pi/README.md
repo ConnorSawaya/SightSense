@@ -202,7 +202,16 @@ To switch it off, delete the file `spin-test-enabled` from the SD card's boot pa
 sudo rm /boot/firmware/spin-test-enabled
 ```
 
-To run it by hand:
+If the motor does not turn, look at why, and reset the count of unfinished runs:
+
+```bash
+journalctl -u sightsense-spin-test -b
+rm ~/.sightsense-spin-test
+```
+
+When it finishes, the Pi lets go of the motor pins. It is not holding the driver off after that, so unplug the battery from the driver.
+
+To run it by hand (Ctrl+C stops it):
 
 ```bash
 python3 spin_test.py

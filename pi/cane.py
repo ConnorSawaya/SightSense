@@ -182,7 +182,9 @@ def main():
             hw = OpenLoopHardware(hw, travel_s=min(max(args.travel, 0.05), 0.35))
             log("open loop: no limit switches are read. The wheel must be at centre now.")
 
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    for name in ("SIGTERM", "SIGHUP", "SIGQUIT"):  # a closed terminal must switch the driver off too
+        if hasattr(signal, name):
+            signal.signal(getattr(signal, name), lambda *_: sys.exit(0))
     if args.bench:
         bench(hw, args.bench, duty)
         return

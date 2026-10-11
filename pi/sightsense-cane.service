@@ -1,6 +1,7 @@
 [Unit]
 Description=SightSense cane motor controller: follows the GX10's commands
 After=network-online.target sightsense-spin-test.service
+# The bench test and the controller cannot both hold the motor pins.
 Wants=network-online.target
 # Only runs while this file exists. It holds the GX10's address.
 ConditionPathExists=/boot/firmware/sightsense.env

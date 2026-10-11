@@ -70,7 +70,7 @@ class Ramp(unittest.TestCase):
         self.assertEqual(power, sorted(power))
         self.assertTrue(all(s[:2] == (1, 1) and s[3] == 0 for s in running))
         self.assertEqual(len(running), 20 + 4)  # the ramp, then the hold
-        self.assertEqual(self.lines[-1], "motor off")
+        self.assertTrue(self.lines[-1].startswith("motor off"))
 
     def test_reverse_powers_the_other_pin(self):
         self.spin(reverse=True)

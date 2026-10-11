@@ -5,6 +5,7 @@ ConditionPathExists=/boot/firmware/spin-test-enabled
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 User=sightsense
 WorkingDirectory=/tmp
 Environment=PYTHONUNBUFFERED=1

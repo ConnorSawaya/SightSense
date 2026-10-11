@@ -73,13 +73,15 @@ def spin(ramp_s=RAMP_S, hold_s=HOLD_S, reverse=False, log=print, sleep=time.slee
             sleep(STEP_S)
         return True
     finally:
-        rpwm.value = 0
-        lpwm.value = 0
-        for enable in enables:
-            enable.off()
+        for switch_off in (*(enable.off for enable in enables), rpwm.off, lpwm.off):
+            try:
+                switch_off()
+            except Exception:  # keep going: every remaining pin still has to go off
+                pass
+        time.sleep(0.005)  # let the last PWM cycle finish before the pins are let go
         for device in (rpwm, lpwm, *enables, *switches):
             device.close()
-        log("motor off")
+        log("motor off, pins released. The Pi is no longer holding the driver off.")
 
 
 def unfinished(path=RECORD):
@@ -112,7 +114,11 @@ def main():
     parser.add_argument("--uptime", type=float, default=0, help="wait until the Pi has been on this many seconds")
     parser.add_argument("--reverse", action="store_true", help="turn the other way")
     args = parser.parse_args()
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    for name in ("SIGTERM", "SIGHUP", "SIGQUIT"):  # a closed terminal must stop the motor too
+        if hasattr(signal, name):
+            signal.signal(getattr(signal, name), lambda *_: sys.exit(0))
+    if hasattr(signal, "SIGTSTP"):
+        signal.signal(signal.SIGTSTP, signal.SIG_IGN)  # Ctrl+Z would freeze it with the motor on
     count = unfinished()
     if count >= MAX_UNFINISHED:
         print(f"bench test: the last {count} runs did not finish, so not running. Delete {RECORD} to reset.", flush=True)
