@@ -90,7 +90,7 @@ Added October 11, for the talk button.
 
 - `true` when the button goes down: the phone stops speaking and starts speech recognition, as if its own talk button were held.
 - `false` when the button is let go after being held for 0.6 seconds or longer: the phone stops listening and sends what it heard as a Voice message.
-- After a shorter click no `false` is sent. The phone stops by itself 1.5 seconds after the last word it heard, or after 8 seconds if it heard nothing.
+- After a shorter click no `false` is sent. The phone stops by itself 1.5 seconds after the last word it heard, or after 8 seconds if it heard nothing, and in any case about 12 seconds after it started.
 - `true` while the phone is already listening stops it, so a second click ends a command.
 - `true` in the 2 seconds after the phone has stopped by itself is taken as the end of that command and does not start another.
 
