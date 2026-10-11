@@ -100,6 +100,7 @@ class Pipeline:
         self.states = StateSmoother()
         self.speech = deque()
         self.last_state = None
+        self.said = (None, -1e9)
         self.last_frame = -1e9
         self.status = {}
         self.view = None  # newest frame's picture and depth, for the dashboard
@@ -145,6 +146,8 @@ class Pipeline:
             msg["speech"] = obstacle_speech  # safety speech goes first
         elif self.speech:
             msg["speech"] = self.speech.popleft()
+        if msg.get("speech"):
+            self.said = (msg["speech"], time.monotonic())  # kept for the dashboard; speech is on one frame only
 
         out = [json.dumps(msg)]
         if g.lookup:
@@ -223,6 +226,8 @@ class Server:
             "dropped": self.dropped,
             "model": vlm.active_model(),
             "frame": self.pipe.status if now - self.pipe.last_frame < 2 else {},
+            "heard": self.pipe.nav.heard,
+            "said": self.pipe.said[0] if now - self.pipe.said[1] < 10 else None,
         }
 
     def _text(self, msg):
