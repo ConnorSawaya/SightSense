@@ -81,5 +81,36 @@ class Manual(unittest.TestCase):
         self.assertEqual(self.pi.got, [])
 
 
+
+class PiLink:
+    """A Pi that sends the given messages, then hangs up."""
+    remote_address = ("100.75.181.48", 40000)
+
+    def __init__(self, messages):
+        self.messages = messages
+
+    def __aiter__(self):
+        return self._gen()
+
+    async def _gen(self):
+        for m in self.messages:
+            yield m
+
+
+class PiHealth(unittest.TestCase):
+    def test_health_reaches_the_status(self):
+        s = srv.Server(FakePipe())
+        report = {"cpu_c": 44.4, "in_v": 5.28, "undervolt_now": False, "mode": "wheel-drive"}
+        asyncio.run(s.pi(PiLink(["not json", json.dumps({"other": 1}), json.dumps({"health": report})])))
+        h = s._pi_health(time.monotonic())
+        self.assertEqual((h["cpu_c"], h["in_v"], h["addr"]), (44.4, 5.28, "100.75.181.48"))
+        self.assertEqual(s.pis, set())  # hung up: no longer sent commands
+
+    def test_old_health_is_not_shown(self):
+        s = srv.Server(FakePipe())
+        asyncio.run(s.pi(PiLink([json.dumps({"health": {"cpu_c": 50}})])))
+        self.assertIsNone(s._pi_health(time.monotonic() + srv.PI_HEALTH_FRESH_S + 1))
+
+
 if __name__ == "__main__":
     unittest.main()

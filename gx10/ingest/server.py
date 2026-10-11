@@ -38,6 +38,7 @@ from .upright import box_back, decode_upright, rotate_jpeg, turn_for
 TTL_MS = 400
 MANUAL_CMDS = ("LEFT", "CENTER", "RIGHT", "STOP", "FREE")
 MANUAL_HOLD_S = 1.0  # back to automatic if the dashboard stops sending for this long (tab closed, link lost)
+PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as missing
 MANUAL_HZ = 10  # commands per second to the Pi in manual mode; also its heartbeat
 LOG_LINES = 20  # conversation lines kept for the dashboard
 
@@ -227,6 +228,7 @@ class Server:
         self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
         self.manual_sent = None  # what actually went to the Pi, after the depth check
         self.manual_seq = 0
+        self.pi_health = None  # (report, time received, address): temperature, input volts, settings
         self.rec = None
         if record_dir:
             self.rec = Path(record_dir) / time.strftime("%Y%m%d-%H%M%S")
@@ -323,7 +325,14 @@ class Server:
             "said": self.pipe.said[0] if now - self.pipe.said[1] < 10 else None,
             "log": list(self.pipe.log),
             "manual": self.manual_sent if self.manual else None,
+            "pi_health": self._pi_health(now),
         }
+
+    def _pi_health(self, now):
+        if not self.pi_health or now - self.pi_health[1] > PI_HEALTH_FRESH_S:
+            return None
+        report, t, addr = self.pi_health
+        return dict(report, age_s=round(now - t, 1), addr=addr)
 
     def _text(self, msg):
         try:
@@ -351,7 +360,15 @@ class Server:
         print("pi connected:", ws.remote_address[0], flush=True)
         self.pis.add(ws)
         try:
-            await ws.wait_closed()
+            async for msg in ws:  # the Pi only sends health reports; see contracts/MESSAGES.md
+                try:
+                    m = json.loads(msg)
+                except (TypeError, json.JSONDecodeError):
+                    continue
+                if isinstance(m, dict) and isinstance(m.get("health"), dict):
+                    self.pi_health = (m["health"], time.monotonic(), ws.remote_address[0])
+        except ConnectionClosed:
+            pass
         finally:
             self.pis.discard(ws)
             print("pi disconnected:", ws.remote_address[0], flush=True)

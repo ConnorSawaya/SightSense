@@ -67,6 +67,8 @@
   .manual-off .pad button, .manual-off .quick button { opacity: .35; pointer-events: none; }
   #manualState { margin-top: 8px; color: var(--text); }
   #manualState.warn { color: var(--caution); }
+  .ok { color: var(--clear); } .warnc { color: var(--caution); } .bad { color: var(--stop); }
+  button.qwen { width: 100%; margin-top: 10px; background: #6b4fd8; }
 </style>
 </head>
 <body>
@@ -109,7 +111,19 @@
         <button type="button" data-latch="FREE">Free wheel</button>
       </div>
       <div id="manualState">Off: the wheel follows the obstacle check.</div>
-      <div class="dim">Hold a direction to drive; let go and it stops. Keys: &larr; &uarr; &rarr;, space to stop. Depth still wins: while the phone streams, an obstacle STOP overrides you. If this page closes, the wheel goes back to automatic within a second.</div>
+      <div class="dim" style="margin-top:6px">Hold a direction to drive; let go and it stops. Keys: &larr; &uarr; &rarr;, space to stop. Depth still wins: while the phone streams, an obstacle STOP overrides you. If this page closes, the wheel goes back to automatic within a second.</div>
+    </div>
+    <div class="panel">
+      <h2>Raspberry Pi</h2>
+      <table>
+        <tr><td>CPU temperature</td><td id="piTemp">-</td></tr>
+        <tr><td>Power in (5 V)</td><td id="piVolts">-</td></tr>
+        <tr><td>Throttling</td><td id="piThrottle">-</td></tr>
+        <tr><td>Load / Wi-Fi</td><td id="piLoad">-</td></tr>
+        <tr><td>Motor mode / power</td><td id="piMotor">-</td></tr>
+        <tr><td>Up for</td><td id="piUp">-</td></tr>
+      </table>
+      <div class="dim" id="piNote">No battery gauge on the cane: the 5 V input sags as the supply runs down, so it stands in for battery level. Speed is the motor's label scaled by power, not measured.</div>
     </div>
     <div class="panel">
       <form id="say"><input id="text" placeholder="guide me to the apple" autocomplete="off"><button>Send</button></form>
@@ -119,6 +133,7 @@
         <button type="button" data-say="am I going the right way">Status</button>
         <button type="button" data-say="stop">Stop</button>
       </div>
+      <button type="button" class="qwen" id="askQwen">Ask Qwen</button>
       <div class="dim heard" id="heard"></div>
       <div class="said" id="speech"></div>
       <div class="dim" id="nav"></div>
@@ -152,6 +167,7 @@ function show(s) {
     const wheel = s.manual ? s.manual.cmd : f.cmd;
     $("cmd").textContent = (s.manual ? "Wheel (manual): " : "Wheel: ") + (wheel || "-"); $("cmd").className = "decision wheel " + (wheel === "STOP" ? "STOP" : "");
     showManual(s);
+    showPi(s.pi_health);
     $("state").textContent = f.state ? f.state + (f.desired !== null && f.desired !== undefined ? " · wants " + f.desired + "°" : "") : "waiting for frames";
     const bars = $("bars"); bars.innerHTML = "";
     for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
@@ -263,6 +279,24 @@ function showManual(s) {
   el.className = notes.length ? "warn" : "";
   if (!manualOn) { el.textContent = "Another dashboard is steering: " + m.cmd; el.className = "warn"; }
 }
+function showPi(h) {
+  const set = (id, text, cls) => { $(id).textContent = text; $(id).className = cls || ""; };
+  if (!h) {
+    for (const id of ["piTemp", "piVolts", "piThrottle", "piLoad", "piMotor", "piUp"]) set(id, "-");
+    return;
+  }
+  if (h.cpu_c != null) set("piTemp", h.cpu_c.toFixed(1) + " °C", h.cpu_c >= 80 ? "bad" : h.cpu_c >= 65 ? "warnc" : "ok");  // a Pi 5 slows itself at 85 °C
+  if (h.in_v != null) {
+    const dip = h.undervolt_now ? " · too low now" : h.undervolt_since_boot ? " · dipped since boot" : "";
+    set("piVolts", h.in_v.toFixed(2) + " V" + dip, h.undervolt_now || h.in_v < 4.8 ? "bad" : dip || h.in_v < 5.0 ? "warnc" : "ok");
+  }
+  if (h.throttled_now != null) set("piThrottle", h.throttled_now ? "slowed now" : h.throttled_since_boot ? "none now (earlier since boot)" : "none", h.throttled_now ? "bad" : h.throttled_since_boot ? "warnc" : "ok");
+  set("piLoad", (h.load != null ? h.load.toFixed(2) : "-") + " / " + (h.wifi_dbm != null ? h.wifi_dbm + " dBm" : "-"));
+  if (h.mode) set("piMotor", h.mode + " · " + Math.round((h.duty || 0) * 100) + "% (max " + Math.round((h.max_duty || 0) * 100) + "%) · about " + Math.round((h.rated_rpm || 0) * (h.duty || 0)) + " rpm est.");
+  if (h.uptime_s != null) set("piUp", Math.floor(h.uptime_s / 3600) + " h " + Math.floor(h.uptime_s % 3600 / 60) + " min");
+}
+// Ask Qwen: placeholder; the team will wire it to the model soon
+$("askQwen").addEventListener("click", () => { $("speech").textContent = "Ask Qwen is not connected yet."; });
 async function say(text) {
   await fetch("/say", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
 }
