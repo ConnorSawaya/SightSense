@@ -43,7 +43,12 @@ PROMPTS = {
     # Asked before "find": the box prompt alone always returns a box, even for things
     # that are not there (it boxed an exit sign as an apple). See README.md.
     "present": "Is there a {name} in this image? Reply only yes or no.",
+    "ask": 'Answer this question about the image in under 20 words: "{question}" '
+    "Do not estimate distances. Do not say whether it is safe to walk or whether the way is clear.",
 }
+
+# A distance in an answer is thrown away: distances come from the LiDAR only
+_DISTANCE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:m|cm|metres?|meters?|feet|foot|ft|inch(?:es)?|yards?|steps?|paces?)\b", re.I)
 
 # Box scale checked with check.py on test pictures with a known apple position.
 KNOWN_BOX_SCALES = {"qwen3-vl": "1000", "qwen3.6": "1000", "nemotron3": "1000"}
@@ -93,6 +98,24 @@ def read(jpeg: bytes) -> Answer:
     if re.fullmatch(r"[\s\"'`*.]*NONE[\s\"'`*.]*", text, re.IGNORECASE):
         text = ""
     a.text = text
+    return a
+
+
+def ask(jpeg: bytes, question: str) -> Answer:
+    """Answer a free question about the picture, e.g. "is there a chair here?". Text only.
+
+    Sentences that state a distance are dropped. The caller must not send questions
+    about whether the way is clear here; those are answered from depth.
+    """
+    question = re.sub(r'["\n]', " ", question).strip()[:200]
+    a = _one(jpeg, PROMPTS["ask"].format(question=question))
+    if not a.ok:
+        return a
+    text = _clean(a.raw)
+    kept = [s for s in re.split(r"(?<=[.!?])\s+", text) if s and not _DISTANCE.search(s)]
+    if not kept:
+        return _fail(a, "empty reply" if not text else "reply only gave a distance")
+    a.text = " ".join(" ".join(kept).split()[:30])
     return a
 
 

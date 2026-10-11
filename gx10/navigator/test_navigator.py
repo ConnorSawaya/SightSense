@@ -214,6 +214,19 @@ class Commands(unittest.TestCase):
             "no": ("no", None),
             "stop": ("cancel", None),
             "never mind": ("cancel", None),
+            "Am I going the right way": ("status", None),
+            "am I going the right way?": ("status", None),
+            "how far is it": ("status", None),
+            "where is it": ("status", None),
+            "are we there yet": ("status", None),
+            "is the path clear": ("path", None),
+            "Is it safe to walk?": ("path", None),
+            "anything in front of me": ("path", None),
+            "can I keep going": ("path", None),
+            "any obstacles": ("path", None),
+            "is there a chair here?": ("ask", "is there a chair here?"),
+            "What color is the door": ("ask", "What color is the door"),
+            "how many people are there": ("ask", "how many people are there"),
             "banana bread recipe": ("unknown", None),
             "": ("unknown", None),
         }
@@ -289,6 +302,9 @@ class FakeVLM:
     def read(self, jpeg):
         return fake.FakeAnswer(True, "EXIT\nRoom 204")
 
+    def ask(self, jpeg, question):
+        return fake.FakeAnswer(True, f"Answer to: {question}")
+
 
 class WholeNavigator(unittest.TestCase):
     def setUp(self):
@@ -332,7 +348,42 @@ class WholeNavigator(unittest.TestCase):
     def test_unknown(self):
         self.nav.on_voice("banana bread recipe")
         s = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.1)[0]
-        self.assertEqual(s.speech, "Sorry, I didn't catch that.")
+        self.assertTrue(s.speech.startswith("Sorry, I didn't catch that. You can say"))
+
+    def say_now(self, text, make_frame=lambda: fake.frame(fake.pose(), APPLE)):
+        self.nav.on_voice(text)
+        return run(self.nav, self.clock, make_frame, 1, until=lambda s: s.speech)[-1].speech
+
+    def test_status_idle_and_object(self):
+        self.assertEqual(self.say_now("am I going the right way"), "No destination yet. Say guide me to the apple, or take me to a place.")
+        self.nav.on_voice("guide me to the apple")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose(), APPLE), 3, until=lambda s: s.state == CONFIRMING)
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose(), APPLE), 0.3)  # let the queued speech out
+        self.assertEqual(self.say_now("am I going the right way"), "I found the apple. Say yes to go.")
+        self.nav.on_voice("yes")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose(), APPLE), 0.3)
+        self.assertEqual(self.say_now("am I going the right way"), "Yes. The apple is straight ahead, 2.5 metres away.")
+        turned = lambda: fake.frame(fake.pose(yaw_deg=40), APPLE)
+        run(self.nav, self.clock, turned, 0.2)
+        self.assertEqual(self.say_now("which way", turned), "Turn right. The apple is to your right, 2.5 metres away.")
+
+    def test_status_route(self):
+        self.nav.on_voice("take me to Safeway")
+        self.nav.on_route(ROUTE)
+        self.nav.on_voice("yes")
+        gps = lambda h: (lambda: fake.frame(fake.pose(), lat=37.0, lon=-122.0, gps_acc_m=5.0, heading_deg=h))
+        run(self.nav, self.clock, gps(0.0), 1.5)
+        self.assertEqual(self.say_now("am I going the right way", gps(0.0)), "Yes, you're on the route to Safeway. About 220 metres to go.")
+        run(self.nav, self.clock, gps(120.0), 1.5)
+        self.assertEqual(self.say_now("am I going the right way", gps(120.0)), "Not yet. Turn left until I stop saying turn.")
+
+    def test_path_question_left_for_the_frame_service(self):
+        self.nav.on_voice("is the path clear")
+        self.assertTrue(self.nav.take_path_question())
+        self.assertFalse(self.nav.take_path_question())  # answered once
+
+    def test_free_question_goes_to_the_model(self):
+        self.assertEqual(self.say_now("is there a chair here?"), "Answer to: is there a chair here?")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 import unittest
 
-from .core import _clean, jpeg_size, parse_box
+from .core import _DISTANCE, _clean, jpeg_size, parse_box
 
 SIZE = (640, 480)
 
@@ -35,6 +35,12 @@ class ParseBox(unittest.TestCase):
 
 
 class Other(unittest.TestCase):
+    def test_distance_sentences_are_spotted(self):
+        for s in ["The door is 3 metres away.", "About 2.5 m ahead.", "Roughly 10 feet.", "Two steps? 4 steps."]:
+            self.assertTrue(_DISTANCE.search(s), s)
+        for s in ["There is a red chair.", "Room 204 is on the left.", "EXIT"]:
+            self.assertFalse(_DISTANCE.search(s), s)
+
     def test_clean_drops_reasoning(self):
         self.assertEqual(_clean('<think>hmm</think>\n "A hallway."'), "A hallway.")
 

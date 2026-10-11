@@ -58,6 +58,29 @@ class UprightVLM:
     def read(self, jpeg):
         return vlm.read(rotate_jpeg(jpeg, self.turn))
 
+    def ask(self, jpeg, question):
+        return vlm.ask(rotate_jpeg(jpeg, self.turn), question)
+
+
+def path_answer(cmd, ahead):
+    """ "Is the path clear?" from this frame's LiDAR obstacle check only. Never calls it safe.
+
+    cmd is this frame's own command (before smoothing), so a session that has just
+    started in STOP does not answer "something is 4 metres ahead, stop".
+    """
+    from navigator.object_guide import distance_words
+    from planner.obstacle import FAR_M, USABLE_M
+
+    if ahead is None:
+        return "I can't tell. The depth straight ahead is unclear, so I'm treating it as blocked."
+    if ahead < 1.2 or (cmd == "STOP" and ahead < USABLE_M):
+        return f"No. Something is {distance_words(ahead)} ahead. Stop."
+    if ahead >= USABLE_M and cmd == "CENTER":
+        far = "as far as I can measure" if ahead >= FAR_M else f"about {distance_words(ahead)}"
+        return f"Nothing detected straight ahead for {far}. Keep using your cane."
+    turn = {"LEFT": " Steering left.", "RIGHT": " Steering right."}.get(cmd, "")
+    return f"Something is {distance_words(ahead)} ahead.{turn}"
+
 
 class Pipeline:
     def __init__(self, use_yolo: bool):
@@ -105,6 +128,8 @@ class Pipeline:
 
         state = self.states.update(cmd, c.clearance.get(0))  # held steady: see planner/state.py
 
+        if self.nav.take_path_question():
+            self.speech.appendleft(path_answer(raw_cmd, c.clearance.get(0)))
         if g.speech:
             self.speech.append(g.speech)
         msg = {"seq": f.seq, "state": state}
