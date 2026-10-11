@@ -3,6 +3,7 @@
 import asyncio
 import json
 import unittest
+from collections import deque
 
 from . import server as srv
 
@@ -11,6 +12,7 @@ class FakePipe:
     def __init__(self):
         self.last_frame = -1e9
         self.status = {}
+        self.log = deque()  # the dashboard's conversation
 
 
 class FakePhone:
@@ -62,6 +64,13 @@ class TalkButton(unittest.TestCase):
     def test_two_clicks(self):
         self.from_pi(DOWN, 0.02, UP, 0.02, DOWN, 0.02, UP)
         self.assertEqual(self.phone.got, [{"listen": True}, {"listen": True}])
+
+    def test_the_dashboard_shows_each_press_with_or_without_a_phone(self):
+        self.from_pi(DOWN, 0.02, UP)
+        self.assertEqual([line[2] for line in self.s.pipe.log], ["(talk button down: phone told to listen)"])
+        self.s.phone_ws = None
+        self.from_pi(DOWN, 0.02, UP)
+        self.assertEqual(self.s.pipe.log[-1][2], "(talk button down: no phone connected)")
 
     def test_an_up_with_no_down_is_ignored(self):
         self.from_pi(UP)

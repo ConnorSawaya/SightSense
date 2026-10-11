@@ -287,6 +287,7 @@ A push button in the handle, between GPIO17 (header pin 11) and ground (pin 9). 
 - It is read by default. With no button wired the pin reads "not pressed". `--no-button` leaves the pin alone.
 - It cannot reach the motor. A fault in the button code stops the button only.
 - Tested on mock pins and with a stand-in for the link. Not yet tried with a real button, or with the GX10 and the phone.
+- To check a fitted button: with the controller following the GX10, press it and look at the GX10 dashboard's conversation. Each press adds `(talk button down: phone told to listen)`, or `no phone connected` when the app is not connected. Nothing appearing means the press is not reaching the GX10: check the two wires with `--bench button` below, and that the Pi shows as connected on the dashboard.
 
 ## Checking the wiring
 

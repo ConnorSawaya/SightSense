@@ -50,6 +50,9 @@ g.mode, g.state, g.distance_m   # for the dashboard
 | "yes" / "no" | Answer "Say yes to go." |
 | "stop", "cancel", "never mind" | Stop guiding |
 | Anything the rules cannot place, and requests worded as questions ("could you point me toward the exit") | `vlm.interpret` (text only, about 0.4 s) picks one of the commands above: "bring me over toward the red cup" → object, "I need to get to the Starbucks on Main Street" → place, "hold on stop for a second" → cancel. It only picks a command; it never steers, and "path" is still answered from depth |
+| "help", "what can you do", "what can I ask you", "who are you" | Says what it can do, at once, without the model |
+| "say that again", "repeat that", "what did you say" | The frame service repeats the last sentence it sent to the phone |
+| "what time is it", "what day is it" | The time and date from the GX10's clock |
 | Anything else | "Sorry, I didn't catch that. You can say: what's in front of me, read the sign, or guide me to the apple." |
 
 "Am I going the right way" got "didn't catch that" three times in the first iPhone test (October 10); that is why status, path and free questions were added.

@@ -54,6 +54,15 @@ def parse(text: str) -> Command:
     if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t):
         return Command("cancel")
 
+    # About the assistant itself: answered at once, without the model
+    if re.fullmatch(r"help(?: me)?|what can (?:you|i) (?:do|say|ask)(?: you)?|what do you do|(?:who|what) are you"
+                    r"|how do (?:you|i) (?:work|use (?:you|this|it))|commands|instructions", t):
+        return Command("help")
+    if re.fullmatch(r"repeat(?: that| it)?|say (?:that|it) again|again|what did you say|pardon|come again|one more time", t):
+        return Command("repeat")
+    if re.search(r"\bwhat(?:'s| is) the time\b|\bwhat time is it\b|\bwhat(?:'s| is) (?:the|today's) date\b|\bwhat day is it\b", t):
+        return Command("time")
+
     # Is the way clear? Answered from the LiDAR obstacle check, never by the model (AGENTS.md rule 4)
     if re.search(r"\b(?:is|are) (?:the |my )?(?:path|way|road|route ahead|coast)\b.*\b(?:clear|safe|free|blocked|open|ok)\b"
                  r"|\bis it (?:safe|clear|ok)\b|\b(?:can|should|may) i (?:go|walk|keep going|move|continue)\b"

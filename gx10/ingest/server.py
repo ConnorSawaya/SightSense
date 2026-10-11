@@ -184,6 +184,8 @@ class Pipeline:
 
         if self.nav.take_path_question():
             self.speech.appendleft(path_answer(raw_cmd, c.clearance.get(0)))
+        if self.nav.take_repeat():
+            self.speech.appendleft(self.said[0] or "I haven't said anything yet.")
         if g.speech:
             self.speech.append(g.speech)
         msg = {"seq": f.seq, "state": state, "direction": cue.direction}
@@ -208,7 +210,8 @@ class Pipeline:
         self.status = {
             "seq": f.seq, "cmd": cmd, "state": state, "direction": cue.direction, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
-            "floor_seen": c.floor_seen, "nav": f"{g.mode}/{g.state}",
+            "floor_seen": c.floor_seen, "cam_h": None if c.cam_h is None else round(c.cam_h, 2),
+            "nav": f"{g.mode}/{g.state}",
             "desired": None if g.desired_bearing is None else round(g.desired_bearing, 1),
             "dets": [f"{d.label} {d.conf:.2f}" for d in dets] if dets else [],
             "objects": sorted(
@@ -413,7 +416,11 @@ class Server:
                 return
             listen = False
         ws = self.phone_ws
-        print(f"talk button {event}: " + (f"phone told to {'listen' if listen else 'stop listening'}" if ws else "no phone connected"), flush=True)
+        what = f"phone told to {'listen' if listen else 'stop listening'}" if ws else "no phone connected"
+        print(f"talk button {event}: {what}", flush=True)
+        log = getattr(self.pipe, "log", None)
+        if log is not None:  # shown in the dashboard's conversation, so the button can be checked without the phone
+            log.append((time.strftime("%H:%M:%S"), "cane", f"(talk button {event}: {what})"))
         if ws is None:
             return
         try:
@@ -478,7 +485,7 @@ class Server:
             ms = statistics.median(self.proc_ms) if self.proc_ms else 0
             cl = " ".join(f"{k:+d}:{'?' if v is None else f'{v:.1f}'}" for k, v in s["clearance"].items())
             print(f"{time.strftime('%H:%M:%S')} {fps:2d} fps in, {ms:5.1f} ms  {s['cmd']:6s} {s['state']:9s} {s['direction']:8s} "
-                  f"[{cl}] floor {'y' if s['floor_seen'] else 'n'} turn {s['turn']} nav {s['nav']} "
+                  f"[{cl}] floor {('%.2fm' % s['cam_h']) if s.get('cam_h') is not None else 'n'} turn {s['turn']} nav {s['nav']} "
                   f"desired {s['desired']} {','.join(s['dets'][:3])} pis {len(self.pis)} dropped {self.dropped}"
                   + (f"  says {s['speech']!r}" if s["speech"] else ""), flush=True)
 
@@ -495,6 +502,9 @@ async def main():
     a = ap.parse_args()
 
     server = Server(Pipeline(not a.no_yolo), a.record)
+    from planner.obstacle import OWN_CANE_M
+
+    print("own-cane strip ignored: " + (f"{OWN_CANE_M:.2f} m ahead" if OWN_CANE_M > 0 else "off (SIGHTSENSE_OWN_CANE_M)"), flush=True)
     if a.dashboard_port:
         from dashboard.dashboard import start
 
