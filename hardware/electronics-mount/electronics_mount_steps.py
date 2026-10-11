@@ -15,7 +15,7 @@ import electronics_mount as em  # also puts the neighbouring folders on the path
 import coupler_motor_mount as cm  # noqa: E402
 import preview as pv  # noqa: E402
 from build123d import Cylinder  # noqa: E402
-from walking_stick import Pos, Rot, ref_bolt  # noqa: E402
+from walking_stick import Pos  # noqa: E402
 
 EYE = (0.3, -0.85, 0.4)  # from the side, a little above: motor shaft points right
 PLACE = em.on_cane()
@@ -42,9 +42,9 @@ def arrow(ax, proj, start, end, color="crimson"):
 
 
 def pi_screws(dx):
-    """Four M2.5 screws, heads away from the plate."""
-    x = em.PLATE_IN + em.PLATE_T + em.PI_STANDOFF_H + em.PI_T
-    return [placed(Pos(x, y, z) * Rot(0, 0, -90) * ref_bolt(2.5, 6, 4.5, 2), dx) for y, z in em.pi_hole_positions()]
+    """The four M2.5 x 12 screws pulled out by dx, and their nuts in place on the inside of the plate."""
+    hardware = em.ref_pi_screws()
+    return [placed(s, dx) for s in hardware[0::2]] + [placed(n) for n in hardware[1::2]]
 
 
 def step_1(ax):
@@ -99,7 +99,7 @@ def step_3(ax):
     proj = pv.show(ax, items, EYE, "Steps 7 and 8: fit the Pi and the battery", margin=22)
     x_pi = em.PLATE_IN + em.PLATE_T + em.PI_STANDOFF_H
     arrow(ax, proj, point(x_pi + 36, em.PI_W / 2, 45), point(x_pi + 4, em.PI_W / 2, 45))
-    pv.label(ax, proj, point(x_pi + 40, em.PI_W / 2, 70), "7. Pi 5 onto the 4 standoffs,\nUSB and Ethernet ports up,\nheld by 4 M2.5 screws", (-46, 34))
+    pv.label(ax, proj, point(x_pi + 40, em.PI_W / 2, 70), "7. Pi 5 onto the 4 standoffs,\nUSB and Ethernet ports up,\n4 M2.5 x 12 screws through,\na nut on each from the inside", (-46, 34))
     face = em.battery_face_x()
     arrow(ax, proj, point(face - 32, em.BATT_W / 2, 46), point(face - em.BATT_PAD_T - 1, em.BATT_W / 2, 46))
     pv.label(ax, proj, point(face - 34 - em.BATT_T, 0, 70), "8. Stick the battery to the flat plate:\nfoam tape on one side of the pad,\nhook-and-loop on the other", (42, 34))
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     fig, axes = plt.subplots(2, 2, figsize=(20, 22))
     for ax, step in zip(axes.flat, (step_1, step_2, step_3, step_4)):
         step(ax)
-    fig.suptitle("Fitting the battery and Pi mount to the stick. Hardware: 4 x M3 x 20 screws and nuts, 4 x M2.5 screws, foam tape and hook-and-loop, tape for the tube.", fontsize=14)
+    fig.suptitle("Fitting the battery and Pi mount to the stick. Hardware: 4 x M3 x 20 screws and nuts, 4 x M2.5 x 12 screws and nuts, foam tape and hook-and-loop, tape for the tube.", fontsize=14)
     out = Path(__file__).parent / "previews" / "mount_assembly_steps.png"
     fig.savefig(out, dpi=100, bbox_inches="tight", facecolor="white")
     print("wrote", out)

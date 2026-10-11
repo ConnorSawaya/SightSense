@@ -52,10 +52,19 @@ PI_T = 1.6
 PI_HOLE_L = 58.0  # hole spacing along the board
 PI_HOLE_W = 49.0  # hole spacing across the board
 PI_HOLE_EDGE = 3.5  # holes from the board's edges, at the microSD end
+PI_HOLE_D_BOARD = 2.7  # the Pi's own mounting holes
 PI_STANDOFF_D = 6.5
 PI_STANDOFF_H = 5.0  # room for the parts and the microSD slot under the board
-PI_PILOT_D = 2.2  # an M2.5 screw cuts its own thread; the Pi's holes are 2.7 mm, too small for M3
-PI_BOTTOM_MARGIN = 3.0  # board's microSD end above the bottom of the mount
+PI_HOLE_D = 2.8  # through the standoff and the plate, for an M2.5 screw with a nut on the inside (an M2 fits too)
+PI_BOTTOM_MARGIN = 11.0  # board's microSD end above the bottom of the mount: lifts all four holes clear of the clamp bars
+
+# --- screws that hold the Pi (the Pi's holes are 2.7 mm, too small for M3) ---
+PI_SCREW_D = 2.5
+PI_SCREW_LEN = 12.0  # M2.5 x 12: through the Pi, the standoff and the plate, into a nut on the inside
+PI_SCREW_HEAD_D = 4.5
+PI_SCREW_HEAD_T = 2.5
+PI_NUT_AF = 5.0
+PI_NUT_T = 2.0
 
 # --- battery: 18650 3S1P 12 V pack ---
 BATT_W = 55.2  # measured by the team
@@ -136,9 +145,9 @@ def make_pi_half():
 
     for y, z in pi_hole_positions():
         part += extrude(Plane.YZ.offset(face) * (Pos(y, z) * teardrop(PI_STANDOFF_D / 2)), PI_STANDOFF_H)
-    for y, z in pi_hole_positions():
+    for y, z in pi_hole_positions():  # right through standoff and plate, so each screw takes a nut on the inside
         depth = PI_STANDOFF_H + PLATE_T
-        part -= Pos(face + PI_STANDOFF_H - depth / 2 + 0.5, y, z) * along_x * Cylinder(PI_PILOT_D / 2, depth + 1)
+        part -= Pos(face + PI_STANDOFF_H - depth / 2, y, z) * along_x * Cylinder(PI_HOLE_D / 2, depth + 2)
 
     holes = pi_hole_positions()
     z_low, z_high = holes[0][1], holes[-1][1]
@@ -149,6 +158,24 @@ def make_pi_half():
         part -= Pos(HEAD_SEAT_X / 2, y, z) * along_x * Cylinder(SCREW_D / 2, HEAD_SEAT_X + 2)
         part -= Pos((HEAD_SEAT_X + face + 1) / 2, y, z) * along_x * Cylinder(HEAD_BORE_D / 2, face + 1 - HEAD_SEAT_X)
     return part
+
+
+def pi_screw_grip():
+    """What an M2.5 screw passes through before its nut: the Pi, the standoff and the plate."""
+    return PI_T + PI_STANDOFF_H + PLATE_T
+
+
+def ref_pi_screws():
+    """The four M2.5 x 12 screws and their nuts in place, in the mount frame: screw, nut, screw, nut..."""
+    head_x = PLATE_IN + PLATE_T + PI_STANDOFF_H + PI_T  # under the head, on the Pi's top face
+    along_x = Rot(0, 0, -90)  # head towards +X, nut on the plate's inner face
+    screw = along_x * ref_bolt(PI_SCREW_D, PI_SCREW_LEN, PI_SCREW_HEAD_D, PI_SCREW_HEAD_T)
+    nut = along_x * ref_nut(PI_NUT_AF, PI_NUT_T, PI_SCREW_D)
+    out = []
+    for y, z in pi_hole_positions():
+        out.append(Pos(head_x, y, z) * screw)
+        out.append(Pos(PLATE_IN, y, z) * nut)
+    return out
 
 
 def battery_face_x():
@@ -250,6 +277,12 @@ def run_checks(parts):
 
     pi = ref_pi()
     report(overlap(pi, pi_half) < 1e-6, f"Pi 5 sits on four standoffs {PI_STANDOFF_H:.0f} mm off the plate, holes on {PI_HOLE_L:.0f} x {PI_HOLE_W:.0f} mm")
+    pi_screws = ref_pi_screws()
+    clear = sum(overlap(s, pi_half) + overlap(s, pi) + overlap(s, batt_half) + overlap(s, tube) for s in pi_screws)
+    report(clear < 1e-6, f"four M2.5 x {PI_SCREW_LEN:.0f} screws pass through the Pi's {PI_HOLE_D_BOARD} mm holes, the standoffs and the plate; their nuts sit on the inside clear of the clamp bars, ribs and tube")
+    spare = PI_SCREW_LEN - pi_screw_grip()
+    report(spare >= PI_NUT_T, f"each M2.5 x {PI_SCREW_LEN:.0f} passes through {pi_screw_grip():.1f} mm and leaves {spare:.1f} mm of thread for its {PI_NUT_T:.0f} mm nut")
+    report(PI_SCREW_D < PI_HOLE_D_BOARD and PI_SCREW_D < PI_HOLE_D, f"the holes through the standoffs and the plate are {PI_HOLE_D} mm, so an M2.5 screw drops through with {(PI_HOLE_D - PI_SCREW_D) / 2:.2f} mm to spare each side")
     report(all(overlap(b, pi) < 1e-6 for b in bolts), f"screw heads are {BOLT_Y - HEAD_BORE_D / 2 - PI_W / 2:.2f} mm outside the Pi's edge, reachable with the Pi fitted")
     report(2 * HALF_W >= BATT_W + 6 and MOUNT_H >= BATT_L + 6,
            f"the flat plate is {2 * HALF_W:.0f} x {MOUNT_H:.0f} mm, bigger than the {BATT_W} x {BATT_L:.0f} mm pack all round")
@@ -330,7 +363,10 @@ def render(parts, out):
 
 
 def printable_parts():
-    return {"electronics_mount_pi_half": make_pi_half(), "electronics_mount_battery_half": make_battery_half()}
+    return {
+        "electronics_mount_pi_half": make_pi_half(),
+        "electronics_mount_battery_half": make_battery_half(),
+    }
 
 
 if __name__ == "__main__":
