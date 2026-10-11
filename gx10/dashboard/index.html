@@ -135,7 +135,9 @@ function show(s) {
     if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
     const st = s.phone ? (f.state || "NO_DATA") : "";
     $("guidance").className = "guidance " + st;
-    $("gstate").textContent = st ? st.replace("_", " ") : "STANDBY"; $("gstate").className = "big " + st;
+    // The direction the phone is told (planner/cue.py); the colour is still the state.
+    const words = {LEFT: "\u2190 BEAR LEFT", STRAIGHT: "\u2191 STRAIGHT", RIGHT: "BEAR RIGHT \u2192", STOP: "STOP", UNKNOWN: "CAN'T SEE AHEAD"};
+    $("gstate").textContent = st ? (words[f.direction] || st.replace("_", " ")) : "STANDBY"; $("gstate").className = "big " + st;
     $("gline").textContent = s.phone ? (s.said || "") : "Waiting for the phone";
     if (s.said) $("speech").textContent = "Says: " + s.said;
     $("ahead").textContent = s.centre_m != null ? "Ahead (LiDAR, centre): " + s.centre_m.toFixed(2) + " m" : "";

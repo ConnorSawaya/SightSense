@@ -65,10 +65,10 @@ One message per camera frame, laid out as:
 ## Guidance: GX10 → iPhone (text)
 
 ```json
-{"seq": 412, "state": "STOP", "earcon": "stop", "speech": "Obstacle ahead. Stop."}
+{"seq": 412, "state": "CAUTION", "direction": "LEFT", "earcon": "left", "speech": "Bear left"}
 ```
 
-`state` is one of `CLEAR`, `CAUTION`, `STOP`, `UNCERTAIN`, `NO_DATA`. `earcon` and `speech` are optional.
+`state` is one of `CLEAR`, `CAUTION`, `STOP`, `UNCERTAIN`, `NO_DATA`. `direction` (added October 11) is one of `LEFT`, `STRAIGHT`, `RIGHT`, `STOP`, `UNKNOWN`: which way to go, the same as the wheel. `direction`, `earcon` and `speech` are optional. `earcon` is one of `stop`, `left`, `right`, `unknown` (`caution` from older GX10 code); it comes only when something changes, not with every frame, so the phone plays it every time it arrives. `left` and `right` are meant to be heard in that ear.
 
 ## Voice: iPhone → GX10 (text)
 

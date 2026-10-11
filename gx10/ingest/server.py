@@ -31,6 +31,7 @@ from websockets.exceptions import ConnectionClosed
 import vlm
 from navigator import Navigator, decode
 from planner.obstacle import HEADINGS, Smoother, check
+from planner.cue import DirectionCue
 from planner.state import StateSmoother
 
 from .upright import box_back, decode_upright, rotate_jpeg, turn_for
@@ -126,8 +127,8 @@ class Pipeline:
             print("yolo:", self.det.using, flush=True)
         self.smoother = Smoother()
         self.states = StateSmoother()
+        self.cue = DirectionCue()
         self.speech = deque()
-        self.last_state = None
         self.said = (None, -1e9)
         self.last_frame = -1e9
         self.status = {}
@@ -138,7 +139,7 @@ class Pipeline:
         f = decode(raw)
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
-            self.smoother, self.states, self.last_state = Smoother(), StateSmoother(), None
+            self.smoother, self.states, self.cue = Smoother(), StateSmoother(), DirectionCue()
         self.last_frame = now
         self.vlm.turn = turn = turn_for(f.pose)
         depth = np.frombuffer(f.depth_mm, dtype=np.uint16).reshape(f.depth_h, f.depth_w)
@@ -163,19 +164,19 @@ class Pipeline:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
 
         state = self.states.update(cmd, c.clearance.get(0))  # held steady: see planner/state.py
+        cue = self.cue.update(cmd, c.clearance.get(0), now)  # sounds only on a change: see planner/cue.py
 
         if self.nav.take_path_question():
             self.speech.appendleft(path_answer(raw_cmd, c.clearance.get(0)))
         if g.speech:
             self.speech.append(g.speech)
-        msg = {"seq": f.seq, "state": state}
-        if state == "STOP":
-            msg["earcon"] = "stop"  # the app plays it at most once a second
-        elif state == "CAUTION" and self.last_state != "CAUTION":
-            msg["earcon"] = "caution"
-        self.last_state = state
+        msg = {"seq": f.seq, "state": state, "direction": cue.direction}
+        if cue.earcon:
+            msg["earcon"] = cue.earcon
         if obstacle_speech:
             msg["speech"] = obstacle_speech  # safety speech goes first
+        elif cue.speech:
+            msg["speech"] = cue.speech
         elif self.speech:
             msg["speech"] = self.speech.popleft()
         if msg.get("speech"):
@@ -189,7 +190,7 @@ class Pipeline:
         done = time.monotonic()
         self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf}
         self.status = {
-            "seq": f.seq, "cmd": cmd, "state": state, "turn": turn * 90, "best": c.best,
+            "seq": f.seq, "cmd": cmd, "state": state, "direction": cue.direction, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
             "floor_seen": c.floor_seen, "nav": f"{g.mode}/{g.state}",
             "desired": None if g.desired_bearing is None else round(g.desired_bearing, 1),
@@ -335,7 +336,7 @@ class Server:
                 continue
             ms = statistics.median(self.proc_ms) if self.proc_ms else 0
             cl = " ".join(f"{k:+d}:{'?' if v is None else f'{v:.1f}'}" for k, v in s["clearance"].items())
-            print(f"{time.strftime('%H:%M:%S')} {fps:2d} fps in, {ms:5.1f} ms  {s['cmd']:6s} {s['state']:9s} "
+            print(f"{time.strftime('%H:%M:%S')} {fps:2d} fps in, {ms:5.1f} ms  {s['cmd']:6s} {s['state']:9s} {s['direction']:8s} "
                   f"[{cl}] floor {'y' if s['floor_seen'] else 'n'} turn {s['turn']} nav {s['nav']} "
                   f"desired {s['desired']} {','.join(s['dets'][:3])} pis {len(self.pis)} dropped {self.dropped}"
                   + (f"  says {s['speech']!r}" if s["speech"] else ""), flush=True)
