@@ -44,8 +44,14 @@ g.mode, g.state, g.distance_m   # for the dashboard
 | "take me to Safeway", "take me to the train station" | Look up a place, then follow the route |
 | "what's in front of me", "describe" | Describe |
 | "read the sign", "what does it say" | Read |
+| "am I going the right way", "how far is it", "where is it", "which way" | Status from the navigator: direction and distance (LiDAR) to the object, or on/off the route and metres to go |
+| "is the path clear", "is it safe to walk", "anything in front of me", "can I keep going" | Answered by the frame service from the LiDAR obstacle check, never the model. Never says "safe" |
+| Any other question ("is there a chair here?", "what colour is the door?") | `vlm.ask`: the model answers in under 20 words; it is told not to give distances or judge safety, and any sentence with a distance is dropped |
 | "yes" / "no" | Answer "Say yes to go." |
 | "stop", "cancel", "never mind" | Stop guiding |
+| Anything else | "Sorry, I didn't catch that. You can say: what's in front of me, read the sign, or guide me to the apple." |
+
+"Am I going the right way" got "didn't catch that" three times in the first iPhone test (October 10); that is why status, path and free questions were added.
 
 Object or place: a known room object ("door", "red cup") is an object; a place word ("station", "store") or a capitalised name ("Safeway") is a place; otherwise "the ..." is an object and a bare word is a place. The lists are in `commands.py`.
 

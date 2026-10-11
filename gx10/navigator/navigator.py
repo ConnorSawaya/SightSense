@@ -22,7 +22,7 @@ from typing import Callable, Optional
 
 from . import commands
 from .frame import Frame
-from .object_guide import ARRIVED, IDLE, ObjectGuide
+from .object_guide import ARRIVED, CONFIRMING, GUIDING, IDLE, SEARCHING, ObjectGuide, direction_words, distance_words
 from .route import RouteFollower
 
 ROUTE_EVERY_S = 1.0
@@ -52,8 +52,10 @@ class Navigator:
         self._place = None
         self._speech = deque()
         self._lookup = None
-        self._ask = None  # "describe" or "read", waiting for the next frame
+        self._ask = None  # ("describe" | "read" | "ask", question), waiting for the next frame
         self._asking = False
+        self._last_obj = None  # the object guide's last step, for "am I going the right way"
+        self.path_asked = False  # "is the path clear": the frame service answers from depth
         self._last_route = -1e9
         self._route_step = None
 
@@ -96,9 +98,16 @@ class Navigator:
                 self.mode = "idle"
                 self._say(said or ("Cancelled." if had_route else "Stopped."))
             elif cmd.kind in ("describe", "read"):
-                self._ask = cmd.kind
+                self._ask = (cmd.kind, None)
+            elif cmd.kind == "ask":
+                self._ask = ("ask", cmd.target)
+            elif cmd.kind == "status":
+                self._say(self._status())
+            elif cmd.kind == "path":
+                self.path_asked = True
             else:
-                self._say("Sorry, I didn't catch that.")
+                self._say("Sorry, I didn't catch that. You can say: what's in front of me, read the sign, "
+                          "or guide me to the apple.")
         return cmd
 
     def on_route(self, route: dict):
@@ -126,12 +135,13 @@ class Navigator:
         """detections: this frame's YOLO results from gx10/detector, if it is running."""
         with self._lock:
             if self._ask and not self._asking and f.jpeg:
-                kind, self._ask, self._asking = self._ask, None, True
-                threading.Thread(target=self._ask_worker, args=(kind, f.jpeg), daemon=True).start()
+                (kind, question), self._ask, self._asking = self._ask, None, True
+                threading.Thread(target=self._ask_worker, args=(kind, question, f.jpeg), daemon=True).start()
 
             g = Guidance(self.mode, IDLE)
             if self.mode == "object":
                 step = self.objects.update(f, detections)
+                self._last_obj = step
                 g.state, g.desired_bearing, g.stop, g.distance_m = step.state, step.desired_bearing, step.stop, step.distance_m
                 if step.speech:
                     self._say(step.speech)
@@ -161,6 +171,45 @@ class Navigator:
 
     # ------------------------------------------------------------ internals
 
+    def take_path_question(self) -> bool:
+        """True once after "is the path clear?"; the frame service answers it from depth."""
+        with self._lock:
+            asked, self.path_asked = self.path_asked, False
+            return asked
+
+    def _status(self) -> str:
+        """Answer to "am I going the right way?" (called with the lock held)."""
+        if self.mode == "object":
+            name, s = self.objects.name, self._last_obj
+            state = s.state if s else self.objects.state
+            if state == SEARCHING:
+                return f"Still looking for the {name}."
+            if state == CONFIRMING:
+                return f"I found the {name}. Say yes to go."
+            if state == ARRIVED:
+                return f"The {name} is within reach."
+            if state == GUIDING and s and s.desired_bearing is not None and s.distance_m is not None:
+                b, d = s.desired_bearing, distance_words(s.distance_m)
+                if abs(b) < 15:
+                    return f"Yes. The {name} is straight ahead, {d} away."
+                side = "right" if b > 0 else "left"
+                return f"Turn {side}. The {name} is {direction_words(b)}, {d} away."
+            return f"I'm looking for the {name} again."
+        if self.mode == "route":
+            if self.route is None:
+                return f"Still looking up {self._place}." if self._route_confirm is None else \
+                    f"The route to {self._route_confirm.dest} is ready. Say yes to go."
+            s = self._route_step
+            if s is None:
+                return f"Starting the route to {self.route.dest}."
+            if s.hold_center and s.turn:
+                return f"Not yet. Turn {s.turn} until I stop saying turn."
+            if s.off_route_m is not None and s.off_route_m > 15:
+                return f"You are about {round(s.off_route_m)} metres off the route. I'll reroute if it continues."
+            left = f" About {round(s.remaining_m / 10) * 10:g} metres to go." if s.remaining_m else ""
+            return f"Yes, you're on the route to {self.route.dest}.{left}"
+        return "No destination yet. Say guide me to the apple, or take me to a place."
+
     def _say(self, text):
         if text:
             self._speech.append(text)
@@ -168,9 +217,9 @@ class Navigator:
     def _stop_route(self):
         self.route = self._route_confirm = self._route_step = self._place = None
 
-    def _ask_worker(self, kind, jpeg):
+    def _ask_worker(self, kind, question, jpeg):
         try:
-            a = getattr(self._vlm, kind)(jpeg)
+            a = self._vlm.ask(jpeg, question) if kind == "ask" else getattr(self._vlm, kind)(jpeg)
             if not a.ok:
                 text = a.text
             elif kind == "read":

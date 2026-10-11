@@ -5,6 +5,9 @@ Plain pattern matching, no model, so it is instant and predictable.
     parse("guide me to the apple")  -> Command("object", "apple")
     parse("take me to Safeway")     -> Command("place", "Safeway")
     parse("what's in front of me")  -> Command("describe")
+    parse("am I going the right way") -> Command("status")
+    parse("is the path clear")      -> Command("path")       (answered from depth, never the model)
+    parse("is there a chair here?") -> Command("ask", ...)   (any other question goes to the model)
 """
 
 import re
@@ -33,7 +36,7 @@ ARTICLES = r"(?:the|a|an|my|some|that|this)"
 
 @dataclass
 class Command:
-    kind: str  # object, place, describe, read, yes, no, cancel, unknown
+    kind: str  # object, place, describe, read, status, path, ask, yes, no, cancel, unknown
     target: Optional[str] = None
 
 
@@ -49,6 +52,18 @@ def parse(text: str) -> Command:
         return Command("no")
     if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t):
         return Command("cancel")
+
+    # Is the way clear? Answered from the LiDAR obstacle check, never by the model (AGENTS.md rule 4)
+    if re.search(r"\b(?:is|are) (?:the |my )?(?:path|way|road|route ahead|coast)\b.*\b(?:clear|safe|free|blocked|open|ok)\b"
+                 r"|\bis it (?:safe|clear|ok)\b|\b(?:can|should|may) i (?:go|walk|keep going|move|continue)\b"
+                 r"|\b(?:anything|something|any obstacles?|obstacles?) (?:in front|ahead|in (?:my|the) way)"
+                 r"|\bany obstacles?\b|\bclear ahead\b|\bwill i (?:hit|bump)", t):
+        return Command("path")
+    # How am I doing? Answered by the navigator
+    if re.search(r"\b(?:am i|are we) (?:going|heading|walking|moving) (?:the )?(?:right|correct|wrong) (?:way|direction)"
+                 r"|\bright (?:way|direction)\b|\bhow far\b|\bwhere(?:'s| is) it\b|\bhow (?:much )?(?:further|farther|long)\b"
+                 r"|\bare we (?:there|close)\b|\bam i (?:there|close|near)\b|\bwhich way\b|\b(?:status|progress|update)\b", t):
+        return Command("status")
 
     if re.search(r"\bread\b|what does (?:it|that|the sign|this) say|any signs?\b", t):
         return Command("read")
@@ -70,6 +85,12 @@ def parse(text: str) -> Command:
         if _is_place(target, original, had_article):
             return Command("place", original)
         return Command("object", target)
+
+    # Any other question goes to the model, which is told not to give distances or judge safety
+    if raw.rstrip().endswith("?") or re.match(
+        r"(?:is|are|was|were|what|what's|whats|which|who|whose|how|does|do|did|can|could|will|would|should|tell me)\b", t
+    ):
+        return Command("ask", raw.strip())
 
     return Command("unknown")
 

@@ -29,6 +29,7 @@ EARTH_R = 6371000.0
 class RouteStep:
     desired_bearing: Optional[float] = None  # degrees, positive right; None = no preference
     hold_center: bool = False  # True: user should turn on the spot; keep the wheel centred
+    turn: Optional[str] = None  # "left" or "right" when hold_center
     speech: Optional[str] = None
     lookup: Optional[str] = None  # send {"lookup": ...} to the phone for a new route
     arrived: bool = False
@@ -134,6 +135,7 @@ class RouteFollower:
         desired = wrap180(compass - heading_deg)
         if abs(desired) > TURN_IN_PLACE_DEG:
             out.hold_center = True
+            out.turn = "right" if desired > 0 else "left"
             if now - self._last_turn >= REPEAT_TURN_S:
                 self._last_turn = now
                 out.speech = out.speech or ("Turn right." if desired > 0 else "Turn left.")
