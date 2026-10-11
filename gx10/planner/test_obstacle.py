@@ -15,7 +15,7 @@ def run(pose, boxes=(), glass=(), desired=0.0, last=0.0):
 
 
 CANE = fake.pose(pitch_deg=-25, height=0.9)  # phone on a cane handle, looking down the path
-WALL_AHEAD = ((-3, 0, -1.2), (3, 2.5, -1.0))  # wall 1 m ahead, 6 m wide
+WALL_AHEAD = ((-3, 0, -0.8), (3, 2.5, -0.6))  # wall 0.6 m ahead, 6 m wide
 BOX = ((-0.1, 0, -1.5), (0.5, 1.2, -1.2))  # 1.2 m ahead, a little right of centre
 
 
@@ -31,7 +31,20 @@ class Check(unittest.TestCase):
         c = run(CANE, [WALL_AHEAD])
         self.assertEqual(c.usable, [])
         self.assertEqual(c.raw_cmd, "STOP")
-        self.assertAlmostEqual(c.clearance[0], 1.0, delta=0.1)
+        self.assertAlmostEqual(c.clearance[0], 0.6, delta=0.1)
+
+    def test_tight_space_steers_to_the_most_open_side(self):
+        # Nothing open to USABLE_M, but the right is open past STOP_AHEAD_M: steer right, no STOP.
+        c = run(CANE, [((-3, 0, -1.0), (-0.1, 2.5, -0.9)), ((-0.1, 0, -1.3), (3, 2.5, -1.2))])
+        self.assertEqual(c.usable, [])
+        self.assertEqual(c.raw_cmd, "RIGHT")
+
+    def test_leaving_stop_needs_more_room(self):
+        wall = [((-3, 0, -1.0), (3, 2.5, -0.9))]  # 0.9 m: past STOP_AHEAD_M, short of LEAVE_STOP_M
+        self.assertEqual(run(CANE, wall).raw_cmd, "CENTER")
+        f = render(CANE, wall)
+        d, c = arrays(f)
+        self.assertEqual(check(d, c, f.fx, f.fy, f.cx, f.cy, f.pose, stopped=True).raw_cmd, "STOP")
 
     def test_wall_2_5_m_ahead_does_not_stop(self):
         # The team found stopping about 2.2 m from things too cautious (October 10).

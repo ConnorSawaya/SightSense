@@ -23,7 +23,12 @@ TOO_CLOSE_SHARE = 0.2  # this share of a wedge reading nearer than NEAR_M: block
 # Distances are from the phone. Was 2.5 m and 1.2 m; on October 10 that stopped about 2.2 m
 # from things, which the team found too cautious for a cane whose tip is already ahead of the user.
 USABLE_M = 1.5
+# Nothing usable but some heading open past STOP_AHEAD_M: steer slowly that way instead of
+# stopping. Once stopped, a heading must be open past LEAVE_STOP_M to go again, so it does
+# not flip in and out of STOP. On the October 10 evening walk (indoors, 15 min) STOP fell
+# from 51% to 28% of the time; what still stopped was about 0.3 m away (median).
 STOP_AHEAD_M = 0.8
+LEAVE_STOP_M = 1.0
 CAMERA_HEIGHT_M = 0.9  # used only when the floor cannot be seen (estimate for a cane handle)
 CHANGE_FRAMES, STOP_FRAMES = 3, 2
 STUCK_S = 5.0
@@ -39,8 +44,10 @@ class Check:
     points: int
 
 
-def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired: float = 0.0, last: float = 0.0) -> Check:
-    """One frame. depth_mm and conf are (h, w) arrays; pose is 16 numbers, column by column."""
+def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired: float = 0.0, last: float = 0.0,
+          stopped: bool = False) -> Check:
+    """One frame. depth_mm and conf are (h, w) arrays; pose is 16 numbers, column by column.
+    stopped: the smoothed command is STOP now (going again needs LEAVE_STOP_M)."""
     h, w = depth_mm.shape
     M = np.asarray(pose, dtype=np.float64).reshape(4, 4).T  # column by column -> matrix
     R, t = M[:3, :3], M[:3, 3]
@@ -99,6 +106,12 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
             usable.append(hd)
 
     best = min(usable, key=lambda hd: abs(hd - desired) + 0.5 * abs(hd - last)) if usable else None
+    if best is None:  # nothing usable: the most open heading, if it is open far enough
+        known = {hd: v for hd, v in clearance.items() if v is not None}
+        if known:
+            hd = max(known, key=lambda k: (known[k], -abs(k - desired)))
+            if known[hd] >= (LEAVE_STOP_M if stopped else STOP_AHEAD_M):
+                best = hd
     return Check(clearance, usable, best, wheel(best), floor_seen, len(obst))
 
 
