@@ -100,7 +100,7 @@ Set up on October 10, 2026.
 | Bootloader | 2026-09-25, rewritten with the recovery files (see below) |
 | Name and user | `sightsense.local`, user `sightsense` |
 | Login | SSH key from the team lead's laptop; the password also works |
-| Network | `Bono` Wi-Fi, verified October 11. Tailscale `100.75.181.48`; Wi-Fi LAN `192.168.1.227` at that check (DHCP can change it). Credentials stay outside Git. |
+| Network | On October 11 at 10:31 AM the Pi's SD card was staged again on the laptop, from commit 18f5b35: the controller code with the talk button, and three Wi-Fi profiles, tried in this order: `AIHackathon@UCSC` (WPA2), the same network as WPA3, then `Bono` as before. All 35 staged files matched their checksums when read back from the card. It has not been booted in the Pi since, so the install, the new network and the new code on the Pi are not yet checked. The laptop saved that network as both WPA2 and WPA3; on October 10 it dropped a laptop about a minute after each join, which is why `Bono` is kept as a fallback. Before that: `Bono` Wi-Fi, verified October 11. Tailscale `100.75.181.48`; Wi-Fi LAN `192.168.1.227` at that check (DHCP can change it). Credentials stay outside Git. |
 | Installed | `python3-gpiozero`, `python3-lgpio`, `python3-websockets`, `git` |
 | Motor driver | IBT-2 (BTS7960), wired as in `../hardware/wiring.md` |
 | Code | `~/SightSense/pi`, copied from this folder |
