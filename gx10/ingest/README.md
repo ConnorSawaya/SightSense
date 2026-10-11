@@ -26,6 +26,8 @@ In the app, enter the GX10's address on the network the phone is on, e.g. `169.2
 4. Sends the phone `{"seq", "state", "earcon", "speech"}` (and `{"lookup": ...}` when needed). The Pi command keeps the same `seq`, `cmd`, `ttl_ms` fields, but its TTL is the remainder of the frame's 400 ms receive-time budget. Expired frames send no motor command. Slow Pi peers are closed without holding up other peers.
 5. After a gap of more than 1 s it starts again from `STOP`.
 
+The cane's talk button: the Pi sends `{"button": "down"}` and `{"button": "up"}` on its connection. Down sends the phone `{"listen": true}`. Up sends `{"listen": false}` only if the button was held for 0.6 s or longer; after a shorter click the phone stops listening by itself. What the phone heard comes back as an ordinary `{"text": ...}` message. Tested with stand-ins for the Pi and the phone (`ingest.test_talk_button`), not with the real ones.
+
 Prints one line a second: frames in, processing time, command, state, clearance per heading, navigator state, detections, Pis connected, frames dropped.
 
 ## Test without the phone
