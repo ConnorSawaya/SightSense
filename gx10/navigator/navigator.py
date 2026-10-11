@@ -206,8 +206,8 @@ class Navigator:
             cmd = commands.Command(a.label, a.text or None)
             if cmd.kind in ("object", "place") and not cmd.target:
                 cmd = commands.Command("unknown")
-            if cmd.kind == "question" and not cmd.target:
-                cmd.target = text
+            if cmd.kind == "question":
+                cmd.target = text  # ask with the whole sentence; the model shortens it ("colour")
             print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} ({getattr(a, 'seconds', 0):.2f} s)", flush=True)
             self._apply(cmd)
 

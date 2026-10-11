@@ -51,7 +51,7 @@ def parse(text: str) -> Command:
         return Command("cancel")
 
     if re.search(r"(?:am i|are we) (?:going|heading|walking) (?:the )?(?:right|correct) way|on the right (?:way|track|path)|"
-                 r"how far (?:is it|away|to go|left)|are we (?:there|close)|how much (?:further|farther|longer)", t):
+                 r"how far (?:is it|to go|is left|do (?:i|we) have)\b(?! from)|are we (?:there|close)|how much (?:further|farther|longer)", t):
         return Command("status")
     if re.search(r"\bread\b|what does (?:it|that|the sign|this) say|any signs?\b", t):
         return Command("read")

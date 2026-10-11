@@ -49,12 +49,14 @@ PROMPTS = {
         "Pick the one command they mean:\n"
         '- object: go to or find a thing nearby (target: the thing, like "door" or "red cup")\n'
         "- place: go to a named place, shop or address (target: the place)\n"
-        "- describe: what is around or ahead\n"
+        "- describe: a general request to describe what is around or ahead, nothing specific asked\n"
         "- read: read signs or text\n"
-        "- yes or no: answering a question the cane asked\n"
+        "- yes: agreeing, or saying go ahead\n"
+        "- no: refusing\n"
         "- cancel: stop guiding\n"
         "- status: how the trip is going (am I going the right way, how far is it, are we there yet)\n"
-        "- question: another question about what is in front of them (target: the question)\n"
+        "- question: a specific question about what is in front of them, such as a colour, a count "
+        "or whether something is there (target: the question)\n"
         "- unknown: none of these\n"
         'Reply only as JSON: {{"command": "...", "target": "..." or null}}'
     ),

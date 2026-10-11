@@ -344,7 +344,7 @@ class ThinkingVLM(FakeVLM):
 
     MEANINGS = {
         "could you bring me over toward the red cup": ("object", "red cup"),
-        "is anybody sitting at that table": ("question", "is anybody sitting at that table"),
+        "is anybody sitting at that table": ("question", "anybody sitting"),  # the real model shortens it
         "uh banana pancakes": ("unknown", ""),
     }
 
@@ -361,6 +361,7 @@ class ThinkingVLM(FakeVLM):
         return a
 
     def ask(self, jpeg, question):
+        self.asked = question
         return fake.FakeAnswer(True, "Two people are sitting at the table.")
 
 
@@ -380,6 +381,9 @@ class ModelVoice(unittest.TestCase):
 
     def test_status_is_a_rule_and_answered_from_the_navigator(self):
         self.assertEqual(parse("Am I going the right way?").kind, "status")
+        self.assertEqual(parse("how far is it").kind, "status")
+        self.assertEqual(parse("are we there yet").kind, "status")
+        self.assertEqual(parse("how far away is the wall").kind, "unknown")  # a question for the model, not the trip
         self.assertEqual(self.say_and_listen("Am I going the right way?", 0.1),
                          ["You're not being guided right now. Say guide me to, and a thing or a place."])
         self.assertEqual(self.vlm.interpreted, [])
@@ -398,6 +402,7 @@ class ModelVoice(unittest.TestCase):
 
     def test_question_is_answered_from_the_picture(self):
         self.assertEqual(self.say_and_listen("is anybody sitting at that table"), ["Two people are sitting at the table."])
+        self.assertEqual(self.vlm.asked, "is anybody sitting at that table")
 
     def test_model_unknown_or_down(self):
         self.assertEqual(self.say_and_listen("uh banana pancakes", 0.5), ["Sorry, I didn't catch that."])

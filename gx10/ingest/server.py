@@ -58,6 +58,12 @@ class UprightVLM:
     def read(self, jpeg):
         return vlm.read(rotate_jpeg(jpeg, self.turn))
 
+    def ask(self, jpeg, question):
+        return vlm.ask(rotate_jpeg(jpeg, self.turn), question)
+
+    def interpret(self, text):
+        return vlm.interpret(text)  # text only, no picture
+
 
 class Pipeline:
     def __init__(self, use_yolo: bool):
