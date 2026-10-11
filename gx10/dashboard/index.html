@@ -50,6 +50,12 @@
   #edge { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 0 transparent; transition: box-shadow .2s; }
   #edge.STOP { animation: pulse .9s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { box-shadow: inset 0 0 40px 10px rgba(239,75,75,.35); } 50% { box-shadow: inset 0 0 60px 18px rgba(239,75,75,.9); } }
+  .list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
+  .list li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #262c34; font-variant-numeric: tabular-nums; }
+  .list li:last-child { border-bottom: 0; }
+  .who { color: var(--dim); min-width: 3.2em; }
+  .you .what { color: #8fb8ff; } .cane .what { color: var(--text); }
+  h2 { font-size: 14px; margin: 0; color: var(--dim); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -64,6 +70,8 @@
   <section>
     <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
     <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading; the square and number are the distance at the centre. Live stream from the GX10, newest frame only (up to 8 a second).</p>
+    <div class="panel"><h2>Objects (YOLO, distance from LiDAR)</h2><ul class="list" id="objects"><li class="dim">none</li></ul></div>
+    <div class="panel"><h2>Conversation</h2><ul class="list" id="log"><li class="dim">nothing yet</li></ul></div>
   </section>
   <section>
     <div class="guidance" id="guidance">
@@ -140,6 +148,21 @@ function show(s) {
       const b = document.createElement("b"); b.textContent = "“" + h.text + "”"; $("heard").append(b);
       $("heard").append(" → " + how + " (" + (h.kind === "interpret" ? "model" : h.by) + ")");
     }
+    const objs = f.objects || [];
+    $("objects").replaceChildren(...(objs.length ? objs.map((o) => {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); a.textContent = o.label + " " + o.conf.toFixed(2);
+      const b = document.createElement("span"); b.textContent = (o.dist_m === null ? "no depth" : o.dist_m.toFixed(1) + " m") + (o.side ? " · " + o.side : "");
+      li.append(a, b); return li;
+    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "none" })]));
+    const log = (s.log || []).slice().reverse();
+    $("log").replaceChildren(...(log.length ? log.map(([t, who, text]) => {
+      const li = document.createElement("li"); li.className = who;
+      const w = document.createElement("span"); w.className = "who"; w.textContent = who === "you" ? "You" : "Cane";
+      const x = document.createElement("span"); x.className = "what"; x.textContent = text; x.style.flex = "1";
+      const tt = document.createElement("span"); tt.className = "dim"; tt.textContent = t;
+      li.append(w, x, tt); return li;
+    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "nothing yet" })]));
     $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "");
     $("fps").textContent = s.fps + " / s";
     $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";
