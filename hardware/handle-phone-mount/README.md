@@ -1,6 +1,6 @@
 # Handle and phone mount (v1)
 
-A handle for the top of the cane, with a thumb button in its nose, and an adjustable phone mount that clamps on the pole below it. Three printed parts: the handle, a collar for the pole, and a cradle for the phone.
+A handle for the top of the cane, with a thumb button in its nose, and an adjustable phone mount that clamps on the pole below it. Four printed parts: the handle, a plug glued into the tube inside the handle's socket, a collar for the pole, and a cradle for the phone.
 
 Experimental prototype. Nothing here has been printed, fitted or load tested, and it is not a replacement for a white cane or a guide dog.
 
@@ -111,7 +111,7 @@ The STLs in `export/` are already turned this way.
 
 Print `handle_fit_test` first, then `cradle_fit_test` to see how the phone and the joint fit.
 
-**Why the plug is its own part.** The tube's thin wall is held between the socket's bore outside it and a plug inside it. Until October 11 the plug was part of the handle. With the handle lying on its side, as it prints, that plug hung over a 1.3 mm gap along the whole 43 mm socket: either support filled the slot and could not be got out, or the plastic sagged into it, and the tube would not go in. The plug is now a 15.7 × 43 mm peg printed on its own and glued into the tube, which leaves the handle a plain bore. `handle_fit_test` still has both in one piece, standing up, so it checks both fits.
+**Why the plug is its own part.** The tube's thin wall is held between the socket's bore outside it and a plug inside it. Until October 11 the plug was part of the handle. With the handle lying on its side, as it prints, that plug hung over a 1.3 mm gap along 43 mm of the 45 mm socket: either support filled the slot and could not be got out, or the plastic sagged into it, and the tube would not go in. The plug is now a 15.7 × 43 mm peg printed on its own and glued into the tube, which leaves the handle a plain bore. `handle_fit_test` still has both in one piece, standing up, so it checks both fits.
 
 ## Assembly
 

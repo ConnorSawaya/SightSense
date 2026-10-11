@@ -2,7 +2,7 @@
 
 The agreed messages between the iPhone, the GX10 and the Raspberry Pi. Everyone builds against these, so tell the whole team before changing anything here.
 
-All links are WebSockets. The plan was the team's private router. The router was not at the venue, so since October 10 the phone and the Pi reach the GX10 over Tailscale, at the GX10's Tailscale address.
+All links are WebSockets. The plan was the team's private router. The router was not at the venue, so since October 10 the phone reaches the GX10 over Tailscale, at the GX10's Tailscale address, and the Pi is set up to do the same.
 
 ## Addresses
 
@@ -92,7 +92,7 @@ Added October 11, for the talk button.
 - `false` when the button is let go after being held for 0.6 seconds or longer: the phone stops listening and sends what it heard as a Voice message.
 - After a shorter click no `false` is sent. The phone stops by itself 1.5 seconds after the last word it heard, or after 8 seconds if it heard nothing, and in any case about 12 seconds after it started.
 - `true` while the phone is already listening stops it, so a second click ends a command.
-- `true` in the 2 seconds after the phone has stopped by itself is taken as the end of that command and does not start another.
+- `true` in the 2 seconds after the phone has stopped by itself with something heard is taken as the end of that command and does not start another. If it heard nothing, `true` starts listening again.
 
 ## Guidance: GX10 → iPhone (text)
 
@@ -100,7 +100,7 @@ Added October 11, for the talk button.
 {"seq": 412, "state": "CAUTION", "direction": "LEFT", "earcon": "left", "speech": "Bear left"}
 ```
 
-`state` is one of `CLEAR`, `CAUTION`, `STOP`, `UNCERTAIN`, `NO_DATA`. `direction` (added October 11) is one of `LEFT`, `STRAIGHT`, `RIGHT`, `STOP`, `UNKNOWN`: which way to go, the same as the wheel. `direction`, `earcon` and `speech` are optional. `earcon` is one of `stop`, `left`, `right`, `unknown` (`caution` from older GX10 code); it comes only when something changes, not with every frame, so the phone plays it every time it arrives. `left` and `right` are meant to be heard in that ear.
+`state` is one of `CLEAR`, `CAUTION`, `STOP`, `UNCERTAIN`, `NO_DATA`. `direction` (added October 11) is one of `LEFT`, `STRAIGHT`, `RIGHT`, `STOP`, `UNKNOWN`: which way to go, the same as the wheel. `direction`, `earcon` and `speech` are optional. `earcon` is one of `stop`, `left`, `right`, `unknown` (`caution` from older GX10 code); it comes only when something changes, not with every frame, so the phone plays it when it arrives, except the same tone again within 1 second. `left` and `right` are meant to be heard in that ear.
 
 ## Voice: iPhone → GX10 (text)
 

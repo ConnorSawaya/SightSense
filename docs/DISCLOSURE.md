@@ -32,7 +32,7 @@ Update this table as tools are added or dropped.
 
 ## What uses the internet
 
-Two things. The place lookup ("take me to Safeway") goes through Apple Maps. And since October 10 the phone and the Pi reach the GX10 over Tailscale, so camera frames, depth and commands travel encrypted between the team's own devices over the internet, through Tailscale's relay servers when no direct path exists. The obstacle check and all AI models run on the GX10. No cloud AI is used.
+Two things. The place lookup ("take me to Safeway") goes through Apple Maps. And since October 10 the phone reaches the GX10 over Tailscale, and the Pi is set up to, so camera frames, depth and commands travel encrypted between the team's own devices over the internet, through Tailscale's relay servers when no direct path exists. The obstacle check and all AI models run on the GX10. No cloud AI is used.
 
 ## Work done before the event
 

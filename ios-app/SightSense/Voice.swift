@@ -93,11 +93,11 @@ final class Voice: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
             guard let self, self.isListening, self.quietTimer == mine else { return }
             if !self.heard.isEmpty { self.stoppedItselfAt = Date() }  // nothing heard: there is no command for a click to end
-            self.stop()
+            self.stop(wait: self.heard.isEmpty ? 0 : 0.4)  // and nothing to finish, so a click straight after can start again
         }
     }
 
-    func stop() {
+    func stop(wait: TimeInterval = 0.4) {
         guard isListening else { return }
         isListening = false
         quietTimer += 1
@@ -108,7 +108,7 @@ final class Voice: ObservableObject {
         finished = nil
         finishing = true
         // Give the recognizer a moment to finish the last words.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
             guard let self else { return }
             self.finishing = false
             self.task?.cancel()

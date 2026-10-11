@@ -8,7 +8,7 @@ Open `SightSense.xcodeproj` in Xcode. No packages to install.
 
 1. In Xcode, pick the SightSense target → Signing & Capabilities → choose your team. With a free Apple ID, change the bundle identifier if `com.sightsense.capture` is taken.
 2. Plug in the iPhone, pick it as the destination, Run.
-3. Enter the GX10 address (`192.168.8.10`) and tap Connect. `host:port` also works.
+3. Pick the "GX10 over Tailscale" preset (`100.108.5.67:8775`) and tap Connect. A typed address needs the port (`host:8775`): without one the app uses 8765, which is not the port the service is started on for the cane.
 
 Command line build, without opening Xcode:
 
@@ -60,7 +60,7 @@ A push button in the cane's handle does the same job as the talk button on the s
 - `true` plays a short tone and starts listening. If the phone is already listening it stops instead, so a second click ends a command.
 - `false` stops listening and sends what was heard. It comes when the button is let go after a hold.
 - After a click, with no `false`, the phone stops by itself 1.5 seconds after the last new word, or after 8 seconds if it heard nothing, and in any case about 12 seconds after it started.
-- A click in the 2 seconds after the phone has stopped by itself is taken as the end of that command. It plays the tone but does not start another.
+- A click in the 2 seconds after the phone has stopped by itself with something heard is taken as the end of that command. It plays the tone but does not start another. If the phone heard nothing, the click starts a new listen.
 - While the phone is listening, from either button, it does not speak. Tones still play, the stop tone among them.
 
 **Not built yet.** This was written on a Windows laptop with no Xcode. It has not been compiled or run on a phone. Build it and try both buttons before relying on it.

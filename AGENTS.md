@@ -34,7 +34,7 @@ What exists so far, by area:
 | Motor mount 2 (`hardware/motor-mount-2/`) | Designed on motor sizes from a published drawing, geometric checks only, not printed; two small fit tests to print first |
 | Electronics mount (`hardware/electronics-mount/`) | Clamp for the Pi and battery; designed, not printed |
 | Joint sleeve (`hardware/joint-sleeve/`) | Clamp over each tube joint; designed, geometric checks only, not printed; strength figures are estimates |
-| Whole-cane model (`hardware/assembly/`) | Four 400 mm tubes with couplers and every printed part in place; model only |
+| Whole-cane model (`hardware/assembly/`) | Four 400 mm tubes with couplers and the printed parts in place, without the joint sleeves; model only |
 | Whole system on one computer (`pi/test_whole_system.py`) | Fake phone frames, typed voice, a place, the talk button and the dashboard through the real GX10 service and Pi controller to mock motor pins. Passes on a laptop with the model stubbed and YOLO off; not run on the cane |
 
 Update this table when you finish something.

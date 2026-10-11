@@ -12,7 +12,7 @@ export YOLO_CONFIG_DIR=~/SightSense-work/.ultralytics
 ../../venv-yolo/bin/python -m ingest.server --phone-port 8775                          # for the cane: phone 8775, Pi 8766
 ../../venv-yolo/bin/python -m ingest.server --phone-port 8775 --record ../../recordings   # also save every frame and voice message
 ../../venv-yolo/bin/python -m ingest.server                                            # the ports in the contract: phone 8765, Pi 8766
-../../venv-yolo/bin/python -m ingest.server --no-yolo --phone-port 18775 --pi-port 18776   # a second copy for tests, beside the live one
+../../venv-yolo/bin/python -m ingest.server --no-yolo --phone-port 18775 --pi-port 18776 --dashboard-port 0   # a second copy for tests, beside the live one (dashboard off: the live one holds 8000)
 ```
 
 **Use the first line for the cane.** The app's presets connect to port 8775 and the Pi is set up for 8766, so one service started with `--phone-port 8775` serves both. Checked on the GX10 over Tailscale on October 11 at 8:50 AM, from a laptop: 8775, 8766 and the dashboard on 8000 are one running service (a silent test client on 8775 showed as the phone in the dashboard's status, and one on 8766 as a Pi). Port 8765 also accepts connections but is not that service, so do not point the phone at it. The service running then was older code than this branch.
@@ -21,7 +21,7 @@ If Ollama is not running the service still starts, prints `vision-language model
 
 It needs the project virtual environment (numpy, OpenCV, YOLO, `websockets`); see `../detector/README.md`. Ports can also be set with `SIGHTSENSE_PHONE_PORT` and `SIGHTSENSE_PI_PORT`. Nothing is hard-coded to an address: the phone and the Pi connect to whatever address the GX10 has.
 
-In the app, enter the GX10's address on the network the phone is on, e.g. `169.233.72.156:8765` on the venue Wi-Fi (the GX10's address there on October 10). Keep the phone on the same Wi-Fi: over a hotspot the first test got 0.3–0.7 frames a second.
+In the app, enter the GX10's address on the network the phone is on, e.g. `169.233.72.156:8775` on the venue Wi-Fi (the GX10's address there on October 10). Keep the phone on the same Wi-Fi: over a hotspot the first test got 0.3–0.7 frames a second.
 
 ## What it does with each frame
 
