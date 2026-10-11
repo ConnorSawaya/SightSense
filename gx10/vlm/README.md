@@ -61,6 +61,26 @@ python3 -m vlm.bench MODEL [MODEL ...]      # time a describe answer, check it i
 
 `make_test_images.py` pastes an apple photo onto a plain floor at a known spot, and draws an exit sign with known text, so `check.py` can score the answers. Test pictures are not committed. The ones used below were made from Wikimedia Commons `Red_Apple.jpg` and Ultralytics' sample `bus.jpg`.
 
+## Voice answers (October 11)
+
+Live answers on the cane were odd: "hello" became a trip status, "the computer near my right" was looked for by that whole name, answers said "in the image" and "ahead of the camera", object lists came in no order, and "read the sign" read jacket logos. `eval_voice.py` is a mock test of the whole path on real phone frames from `../../recordings`:
+
+```bash
+../../venv-yolo/bin/python -m vlm.eval_voice          # from gx10/, needs Ollama; about 40 s
+../../venv-yolo/bin/python -m vlm.eval_voice --routes # the sentences only, no model
+```
+
+It runs every sentence in `navigator/voice_cases.py` (said on the cane, plus greetings, filler words and speech-recognition slips), five sign pictures, and six questions on each of seven recorded scenes, and prints every answer with anything wrong marked.
+
+| | Before | After |
+| --- | --- | --- |
+| Sentences routed right | 49 of 71 | 77 of 77 (6 added) |
+| Answers with nothing wrong found | 19 of 42 | 42 of 42 |
+| Signs read right | not checked | 5 of 5 |
+| Slowest answer | 0.59 s | 0.72 s (reading now asks yes/no first) |
+
+What changed: every spoken prompt starts with `VOICE` (talk to the person as "you", never about the picture, no distances, no safety); `tidy()` fixes what still slips through; "what objects are here" gets `objects()`, things by side ("On your left: chair. Ahead: table."), each named once; `read()` asks whether there is readable text first, drops fragments and reads at most three lines; greetings and thanks are answered at once; where a thing is ("the door on the left") is a side hint, not part of its name; "computer" matches YOLO's "laptop" (`object_guide.SAME`).
+
 ## Measured on the GX10 (October 10)
 
 `check.py`: 11 checks (5 describe, 3 read, 4 find — 2 with an apple, 2 without).

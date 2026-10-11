@@ -362,7 +362,7 @@ class WholeNavigator(unittest.TestCase):
         self.assertEqual(steps[-1].speech, "A table with an apple on it.")
         self.nav.on_voice("read the sign")
         steps = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 1, until=lambda s: s.speech)
-        self.assertEqual(steps[-1].speech, "EXIT. Room 204")
+        self.assertEqual(steps[-1].speech, "It says: EXIT. Room 204.")
 
     def test_place(self):
         self.nav.on_voice("take me to Safeway")

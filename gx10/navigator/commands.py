@@ -8,6 +8,10 @@ Plain pattern matching, no model, so it is instant and predictable.
     parse("am I going the right way") -> Command("status")
     parse("is the path clear")      -> Command("path")       (answered from depth, never the model)
     parse("is there a chair here?") -> Command("ask", ...)   (any other question goes to the model)
+    parse("hello")                  -> Command("chat")       (greetings and thanks, answered at once)
+    parse("what objects are here")  -> Command("objects")    (things by side, from the model)
+
+Sentences people actually said on the cane are in voice_cases.py and checked by test_commands.py.
 """
 
 import re
@@ -36,18 +40,53 @@ ARTICLES = r"(?:the|a|an|my|some|that|this)"
 
 @dataclass
 class Command:
-    kind: str  # object, place, describe, read, status, path, ask, yes, no, cancel, unknown
+    kind: str  # object, place, describe, objects, read, status, path, ask, chat, yes, no, cancel, unknown ...
     target: Optional[str] = None
+    side: Optional[str] = None  # "left" or "right" when the user said which side ("the door on the left")
+
+
+FILLER = r"(?:uh+|um+|erm|er|hmm+|so|well|okay so|ok so|like|and|now)"
+GREETING = r"(?:say )?(?:hello|hi|hey|yo|good (?:morning|afternoon|evening))(?: there)?(?: (?:cane|sightsense|buddy))?"
+CHAT = (r"(?:(?:how are (?:you|we doing|things)(?: doing)?|how(?:'s| is) it going|how are we|what's up|whats up"
+        r"|what's good|whats good|how do you do|nice to meet you"
+        r"|thank(?:s| you)(?: (?:so|very) much)?(?: for (?:that|the help))?|cheers|good (?:job|work)|nice(?: job| work)?"
+        r"|great(?: job)?|well done|awesome|cool|perfect|you're (?:great|awesome|the best))"
+        r"(?: (?:buddy|mate|man|friend|cane|sightsense))?)")
+# Where an object is, said after its name: kept as a side hint, taken off the name
+QUALIFIER = re.compile(
+    r"\s+(?:(?:that(?:'s| is) |which is )?(?:on|to|at|near|by|towards?|over (?:on|to)) (?:my|the|your) (left|right)(?: side| hand side)?"
+    r"|over there|over here|right there|in front of me|ahead of me|ahead|nearby|near me|close to me|around here"
+    r"|thing|things|one|stuff|thingy"
+    r"|(?:on|near|by|next to|beside|behind|under|in front of|against|at) (?:the|a|my|this|that) [a-z ]+)$")
 
 
 def parse(text: str) -> Command:
     # the phone's speech recognition writes what's and let's with a curly apostrophe
     raw = re.sub(r"\s+", " ", (text or "").replace("\u2019", "'").replace("\u2018", "'")).strip()
     t = raw.lower().strip(" .!?,")
-    t = re.sub(r"^(?:hey|ok|okay|please|cane|sightsense)[, ]+", "", t).strip()
+    t = re.sub(r"^[a-z](?=(?:what|where|who|how|which|why)\b)", "", t)  # "jwhat": a stray letter from speech recognition
+    t = re.sub(r"^(?:" + FILLER + r"[, ]+)+", "", t).strip()
+    t = re.sub(r"^(?:ok|okay|please|cane|sightsense)[, ]+", "", t).strip()
     t = re.sub(r"[, ]+please$", "", t)
 
-    if re.fullmatch(r"(yes|yeah|yep|yup|go|go ahead|sure|ok|okay|correct|let's go)", t):
+    # Greetings and thanks: answered at once. "Hello, where am I going" is the question after the hello.
+    m = re.fullmatch(GREETING + r"[,.!? ]*(.*)", t)
+    if m:
+        rest = m.group(1).strip(" ,.!?")
+        if not rest:
+            return Command("chat")
+        sub = parse(rest)
+        return sub if sub.kind != "unknown" else Command("chat")
+    if re.fullmatch(CHAT, t):
+        return Command("chat")
+    # "Can you / could you / please tell me ..." : the request inside, if the rules know it
+    m = re.fullmatch(r"(?:(?:can|could|would|will) you(?: please)?|please|tell me|i want to know|i'd like to know)[, ]+(.+)", t)
+    if m:
+        inner = parse(m.group(1))
+        if inner.kind not in ("unknown", "ask"):
+            return inner
+
+    if re.fullmatch(r"(?:(?:yes|yeah|yep|yup|sure|ok|okay|correct|right)[, ]*)?(?:go|go ahead|let's go|do it|that's it|that one)?", t) and t:
         return Command("yes")
     if re.fullmatch(r"(no|nope|nah|wrong)", t):
         return Command("no")
@@ -75,17 +114,24 @@ def parse(text: str) -> Command:
     # How am I doing? Answered by the navigator
     if re.search(r"\b(?:am i|are we) (?:going|heading|walking|moving) (?:the )?(?:right|correct|wrong) (?:way|direction)"
                  r"|\bright (?:way|direction)\b|\bhow far\b|\bwhere(?:'s| is) it\b|\bhow (?:much )?(?:further|farther|long)\b"
-                 r"|\bare we (?:there|close)\b|\bam i (?:there|close|near)\b|\bwhich way\b|\b(?:status|progress|update)\b", t):
+                 r"|\bare we (?:there|close)\b|\bam i (?:there|close|near)\b|\bwhich way\b|\b(?:status|progress|update)\b"
+                 r"|\bwhere (?:am i|are we) (?:going|headed|heading|walking)\b|\bwhere (?:are you|is this) taking me\b", t):
         return Command("status")
 
     if re.search(r"\bread\b|what does (?:it|that|the sign|this) say|any signs?\b", t):
         return Command("read")
-    if re.search(r"\bdescribe\b|what(?:'s| is) (?:in front|ahead|around|there)|what do you see|what can you see|where am i\b", t):
+    # A list of things, by side ("what objects are here"); answered by the model
+    if re.search(r"\bwhat (?:are )?(?:the |all the |other )?(?:objects?|things|items|stuff)\b|\blist (?:what|the|everything|all)"
+                 r"|\bwhat(?:'s| is) (?:here|in (?:this|the) room)\b|\bwhat(?:'s| is) all (?:this|that)\b", t):
+        return Command("objects")
+    if re.search(r"\bdescribe\b|what(?:'s| is) (?:in front|ahead|around|there)|what do you see|what can you see|where am i\b"
+                 r"|\bwhat you (?:can )?see\b|\blook around\b|\bwhat(?:'s| is) going on\b", t):
         return Command("describe")
 
     m = re.search(r"\b(?:find|locate|where(?:'s| is)|look for|search for)\s+(.+)", t)
     if m:
-        return Command("object", _clean_target(m.group(1))[0])
+        target, side = _qualified(_clean_target(m.group(1))[0])
+        return Command("object", target, side) if target else Command("unknown")
 
     m = re.search(r"\b(?:guide|take|bring|lead|walk|get|navigate|steer|help)\s+me\s+(?:to|towards?|over to)\s+(.+)", t) or re.search(
         r"^(?:go|navigate|head)\s+(?:to|towards?)\s+(.+)", t
@@ -97,7 +143,8 @@ def parse(text: str) -> Command:
         original = _original_case(raw, target)
         if _is_place(target, original, had_article):
             return Command("place", original)
-        return Command("object", target)
+        target, side = _qualified(target)
+        return Command("object", target, side) if target else Command("unknown")
 
     # Any other question goes to the model, which is told not to give distances or judge safety
     if raw.rstrip().endswith("?") or re.match(
@@ -114,6 +161,17 @@ def _clean_target(s):
     had_article = bool(re.match(ARTICLES + r"\s", s))
     s = re.sub(r"^" + ARTICLES + r"\s+", "", s).strip()
     return s, had_article
+
+
+def _qualified(target):
+    """"door on the left" -> ("door", "left"); "red cup on the table" -> ("red cup", None)."""
+    side = None
+    while True:
+        m = QUALIFIER.search(target)
+        if not m or m.start() == 0:
+            return target, side
+        side = side or m.group(1)
+        target = target[: m.start()].strip()
 
 
 def _original_case(raw, target):
