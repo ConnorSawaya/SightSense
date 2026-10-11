@@ -113,10 +113,11 @@ def path_answer(cmd, ahead):
         return "I can't tell. The depth straight ahead is unclear, so I'm treating it as blocked."
     if ahead < STOP_AHEAD_M or (cmd == "STOP" and ahead < USABLE_M):
         return f"No. Something is {distance_words(ahead)} ahead. Stop."
-    if ahead >= USABLE_M and cmd == "CENTER":
-        far = "as far as I can measure" if ahead >= FAR_M else f"for about {distance_words(ahead)}"
-        return f"Nothing detected straight ahead {far}. Keep using your cane."
     turn = {"LEFT": " Steering left.", "RIGHT": " Steering right."}.get(cmd, "")
+    if ahead >= FAR_M:  # no obstacle points straight ahead at all, whichever way the wheel is steering
+        return f"Nothing detected straight ahead as far as I can measure.{turn} Keep using your cane."
+    if cmd == "CENTER" and ahead >= USABLE_M:
+        return f"Nothing detected straight ahead for about {distance_words(ahead)}. Keep using your cane."
     return f"Something is {distance_words(ahead)} ahead.{turn}"
 
 

@@ -29,6 +29,7 @@ OLLAMA_URL = os.environ.get("SIGHTSENSE_OLLAMA_URL", "http://127.0.0.1:11434").r
 MODEL = os.environ.get("SIGHTSENSE_VLM_MODEL", "qwen3-vl:30b-a3b-instruct")
 FALLBACK = os.environ.get("SIGHTSENSE_VLM_FALLBACK", "qwen3-vl:8b-instruct")
 TIMEOUT_S = float(os.environ.get("SIGHTSENSE_VLM_TIMEOUT", "6"))
+BUSY_WAIT_S = 3.0  # a spoken question waits this long for a find() that is running; find() itself never waits
 # Ollama's default context for these models is 262144 tokens, which made qwen3-vl:8b
 # take 48 GB. Every request must send the same value or Ollama reloads the model.
 CTX = int(os.environ.get("SIGHTSENSE_VLM_CTX", "8192"))
@@ -309,7 +310,7 @@ def _clean(raw: str) -> str:
 
 
 def _one(jpeg: bytes, prompt: str) -> Answer:
-    if not _lock.acquire(blocking=False):
+    if not _lock.acquire(timeout=BUSY_WAIT_S):
         return _busy()
     try:
         return _ask(jpeg, prompt, time.monotonic() + TIMEOUT_S)
@@ -318,7 +319,7 @@ def _one(jpeg: bytes, prompt: str) -> Answer:
 
 
 def _busy() -> Answer:
-    # Never queue: the caller asks again later with a newer picture
+    # find() never queues: the object guide asks again later with a newer picture
     return Answer(False, COULDNT_TELL, model=active_model(), error="busy: another request is running")
 
 

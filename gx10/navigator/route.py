@@ -59,6 +59,7 @@ class RouteFollower:
         self._last_turn = -1e9
         self._last_reroute = -1e9
         self._bad_gps_said = False
+        self._no_heading_said = False
         self.done = False
 
     def _to_xy(self, lat, lon):
@@ -129,7 +130,10 @@ class RouteFollower:
                 break
 
         if heading_deg is None:
+            if not self._no_heading_said:
+                self._no_heading_said, out.speech = True, out.speech or "No compass heading. Route guidance paused."
             return out
+        self._no_heading_said = False
         target = self._point_at(along + LOOKAHEAD_M)
         compass = math.degrees(math.atan2(target[0] - p[0], target[1] - p[1]))  # 0 north, 90 east
         desired = wrap180(compass - heading_deg)

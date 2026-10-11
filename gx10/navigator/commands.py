@@ -41,7 +41,8 @@ class Command:
 
 
 def parse(text: str) -> Command:
-    raw = re.sub(r"\s+", " ", text or "").strip()
+    # the phone's speech recognition writes what's and let's with a curly apostrophe
+    raw = re.sub(r"\s+", " ", (text or "").replace("\u2019", "'").replace("\u2018", "'")).strip()
     t = raw.lower().strip(" .!?,")
     t = re.sub(r"^(?:hey|ok|okay|please|cane|sightsense)[, ]+", "", t).strip()
     t = re.sub(r"[, ]+please$", "", t)

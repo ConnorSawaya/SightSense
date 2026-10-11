@@ -130,10 +130,15 @@ class Navigator:
 
     def on_route(self, route: dict):
         with self._lock:
+            if self.route is None and self._place is None:
+                return  # no lookup is waiting: it was cancelled, or the user asked for something else
             try:
                 follower = RouteFollower(route, self._clock)
             except (ValueError, KeyError, TypeError):
                 self._say("I couldn't find a walking route.")
+                if self.route is None:  # a first lookup, not a reroute: nothing is left to wait for
+                    self._stop_route()
+                    self.mode = "idle"
                 return
             if self.route is not None:  # a reroute while already walking: switch straight over
                 self.route = follower
@@ -246,6 +251,10 @@ class Navigator:
                 return f"Starting the route to {self.route.dest}."
             if s.hold_center and s.turn:
                 return f"Not yet. Turn {s.turn} until I stop saying turn."
+            if s.off_route_m is None:  # the last update had no usable GPS fix
+                return "I can't tell. GPS is weak, so route guidance is paused."
+            if s.desired_bearing is None and not s.hold_center:  # GPS, but no compass heading
+                return "I can't tell which way you are facing. There is no compass heading."
             if s.off_route_m is not None and s.off_route_m > 15:
                 return f"You are about {round(s.off_route_m)} metres off the route. I'll reroute if it continues."
             left = f" About {round(s.remaining_m / 10) * 10:g} metres to go." if s.remaining_m else ""
