@@ -12,6 +12,8 @@ What in this project we did not make ourselves, and what existed before the even
 | Ollama | Running the vision-language model on the GX10 |
 | Qwen3-VL (Alibaba) | Describing scenes, reading signs, finding named objects (`qwen3-vl:30b-a3b-instruct` is the default; `qwen3-vl:8b-instruct` tested as the fallback) |
 | Ultralytics YOLO (YOLO26s, COCO-trained weights) | Detecting common objects |
+| Ultralytics YOLOE (YOLOE-26s-seg weights) | Finding hazards YOLO has no name for: door, stairs, pole, curb and others |
+| Apple MobileCLIP2 (via Ultralytics) and the `clip` package | Turning the hazard names into YOLOE's prompts, once; Ultralytics installed `clip` and its helpers itself |
 | PyTorch, OpenCV | Running YOLO on the GX10 (`gx10/detector/`) |
 | NumPy, websockets | Obstacle check and the frame service on the GX10 (`gx10/planner/`, `gx10/ingest/`) |
 | NVIDIA Nemotron | Preloaded on the GX10 (`nemotron3:33b`, Nemotron 3 Nano Omni); tested as a vision-language model |

@@ -37,6 +37,10 @@ from planner.state import StateSmoother
 from .upright import box_back, decode_upright, rotate_jpeg, turn_for
 
 TTL_MS = 400
+MANUAL_CMDS = ("LEFT", "CENTER", "RIGHT", "STOP", "FREE")
+MANUAL_HOLD_S = 1.0  # back to automatic if the dashboard stops sending for this long (tab closed, link lost)
+PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as missing
+MANUAL_HZ = 10  # commands per second to the Pi in manual mode; also its heartbeat
 LOG_LINES = 20  # conversation lines kept for the dashboard
 
 
@@ -122,8 +126,10 @@ class Pipeline:
         self.det = None
         if use_yolo:
             from detector.detector import Detector
+            from detector.stable import KEEP, Stabilizer
 
             self.det = Detector()
+            self.stable, self.keep = Stabilizer(), KEEP  # answers held steady across frames
             print("yolo:", self.det.using, flush=True)
         self.smoother = Smoother()
         self.states = StateSmoother()
@@ -140,6 +146,8 @@ class Pipeline:
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
             self.smoother, self.states, self.last_state = Smoother(), StateSmoother(), None
+            if self.det is not None:
+                self.stable.reset()
         self.last_frame = now
         self.vlm.turn = turn = turn_for(f.pose)
         depth = np.frombuffer(f.depth_mm, dtype=np.uint16).reshape(f.depth_h, f.depth_w)
@@ -148,7 +156,7 @@ class Pipeline:
         dets = None
         upright = decode_upright(f.jpeg, turn)  # decoded once: YOLO and the dashboard share it
         if self.det is not None and upright is not None:
-            dets = self.det.detect_image(upright)
+            dets = self.stable.update(self.det.detect_image(upright, conf=self.keep))
             for d in dets:
                 d.box = box_back(d.box, turn, f.rgb_w, f.rgb_h)
                 locate(d, f, depth, conf)
@@ -220,6 +228,10 @@ class Server:
         self.expired = 0
         self.received = 0
         self.phone_ws = None
+        self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
+        self.manual_sent = None  # what actually went to the Pi, after the depth check
+        self.manual_seq = 0
+        self.pi_health = None  # (report, time received, address): temperature, input volts, settings
         self.rec = None
         if record_dir:
             self.rec = Path(record_dir) / time.strftime("%Y%m%d-%H%M%S")
@@ -253,6 +265,52 @@ class Server:
         """The dashboard's text box: the same as a voice command from the phone."""
         self._text(json.dumps({"text": text}))
 
+    def manual_command(self, cmd: str) -> bool:
+        """The dashboard's manual steering. "AUTO" hands the wheel back to the pipeline.
+        Sent again every 100-200 ms while manual mode is on; stops if that stops."""
+        cmd = str(cmd).upper()
+        if cmd == "AUTO":
+            if self.manual:
+                print("manual steering off", flush=True)
+            self.manual = self.manual_sent = None
+            return True
+        if cmd not in MANUAL_CMDS:
+            return False
+        if not self.manual:
+            print("manual steering on", flush=True)
+        self.manual = (cmd, time.monotonic())
+        return True
+
+    def _manual_for_pi(self, now):
+        """The command the Pi gets in manual mode. Depth still wins: while phone frames
+        arrive and the obstacle check says STOP, a turn or CENTER becomes STOP."""
+        cmd = self.manual[0]
+        depth_live = now - self.pipe.last_frame < 0.5
+        if depth_live and cmd in ("LEFT", "CENTER", "RIGHT") and self.pipe.status.get("cmd") == "STOP":
+            return "STOP", True
+        return cmd, False
+
+    async def manual_loop(self):
+        while True:
+            await asyncio.sleep(1 / MANUAL_HZ)
+            if not self.manual:
+                continue
+            now = time.monotonic()
+            if now - self.manual[1] > MANUAL_HOLD_S:
+                print("manual steering off: the dashboard stopped sending", flush=True)
+                self.manual = self.manual_sent = None
+                continue
+            cmd, overridden = self._manual_for_pi(now)
+            self.manual_seq += 1
+            self.manual_sent = {"asked": self.manual[0], "cmd": cmd, "depth_stop": overridden,
+                                "depth_live": now - self.pipe.last_frame < 0.5}
+            msg = json.dumps({"seq": self.manual_seq, "cmd": cmd, "ttl_ms": TTL_MS})
+            for p in list(self.pis):
+                try:
+                    await p.send(msg)
+                except ConnectionClosed:
+                    self.pis.discard(p)
+
     def status(self) -> dict:
         now = time.monotonic()
         ws = self.phone_ws
@@ -270,7 +328,15 @@ class Server:
             "heard": self.pipe.nav.heard,
             "said": self.pipe.said[0] if now - self.pipe.said[1] < 10 else None,
             "log": list(self.pipe.log),
+            "manual": self.manual_sent if self.manual else None,
+            "pi_health": self._pi_health(now),
         }
+
+    def _pi_health(self, now):
+        if not self.pi_health or now - self.pi_health[1] > PI_HEALTH_FRESH_S:
+            return None
+        report, t, addr = self.pi_health
+        return dict(report, age_s=round(now - t, 1), addr=addr)
 
     def _text(self, msg):
         try:
@@ -298,7 +364,15 @@ class Server:
         print("pi connected:", ws.remote_address[0], flush=True)
         self.pis.add(ws)
         try:
-            await ws.wait_closed()
+            async for msg in ws:  # the Pi only sends health reports; see contracts/MESSAGES.md
+                try:
+                    m = json.loads(msg)
+                except (TypeError, json.JSONDecodeError):
+                    continue
+                if isinstance(m, dict) and isinstance(m.get("health"), dict):
+                    self.pi_health = (m["health"], time.monotonic(), ws.remote_address[0])
+        except ConnectionClosed:
+            pass
         finally:
             self.pis.discard(ws)
             print("pi disconnected:", ws.remote_address[0], flush=True)
@@ -320,7 +394,9 @@ class Server:
                 print("frame error:", repr(e), flush=True)
                 continue
             self.proc_ms.append((time.monotonic() - t0) * 1000)
-            if time.monotonic() - t_recv >= TTL_MS / 1000:
+            if self.manual:
+                pass  # in manual mode manual_loop talks to the Pi
+            elif time.monotonic() - t_recv >= TTL_MS / 1000:
                 self.expired += 1
             else:
                 await asyncio.gather(*(self._send_pi(p, pi, t_recv) for p in list(self.pis)))
@@ -384,7 +460,7 @@ async def main():
             serve(server.pi, a.host, a.pi_port):
         print(f"listening: phone on {a.host}:{a.phone_port}, pi on {a.host}:{a.pi_port}"
               + (f", dashboard on http://{a.host}:{a.dashboard_port}" if a.dashboard_port else ""), flush=True)
-        await asyncio.gather(server.run_frames(), server.report())
+        await asyncio.gather(server.run_frames(), server.report(), server.manual_loop())
 
 
 if __name__ == "__main__":

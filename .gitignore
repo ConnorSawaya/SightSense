@@ -19,6 +19,7 @@ recordings/
 *.engine
 *.onnx
 *.pt
+mobileclip*.ts
 
 # Xcode
 DerivedData/
