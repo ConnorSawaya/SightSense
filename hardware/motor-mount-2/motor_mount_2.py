@@ -162,6 +162,21 @@ def make_motor_mount_2():
     return body
 
 
+def make_tube_fit_test(mount=None):
+    """The top of the mount alone: half the sleeve, the tongue socket and the cross-bolt hole. Print this first
+    and try it on the end of the tube, with the main insert glued in and the bolt through."""
+    mount = make_motor_mount_2() if mount is None else mount
+    z0, z1 = bolt_z() - 5.0, cm.RECEIVER_LEN + SLEEVE_LEN / 2  # from just under the bolt's head and nut to half way up the sleeve
+    return mount & (Pos(layout()[0], 0, (z0 + z1) / 2) * Cylinder(SLEEVE_OD / 2 + 1, z1 - z0))
+
+
+def make_motor_fit_test(mount=None):
+    """The band round the top of the gearbox alone, without the shelf above it. Print this first and slide
+    it over the gearbox: it checks the pocket, the channel for the motor can and the two screw holes."""
+    mount = make_motor_mount_2() if mount is None else mount
+    return mount & box(-200, 200, -200, 200, -(cm.HOLE_FROM_TOP + 3.0), 0)  # 3 mm below the two screw holes
+
+
 # ---------------------------------------------------------------------------
 # reference geometry, never exported
 # ---------------------------------------------------------------------------
@@ -264,6 +279,16 @@ def run_checks(mount):
     gap = min(s.distance_to(o) for s in carried for o in others)
     report(hit < 1e-6 and gap >= 2.0, f"the battery and Pi mount, clamped {z:.0f} mm above the top of the gearbox, clears this mount and the motor by {gap:.1f} mm")
 
+    tube_test, motor_test = make_tube_fit_test(mount), make_motor_fit_test(mount)
+    for name, piece in (("tube fit test", tube_test), ("motor fit test", motor_test)):
+        bb = piece.bounding_box().size
+        report(piece.is_valid and len(piece.solids()) == 1,
+               f"{name}: {bb.X:.1f} x {bb.Y:.1f} x {bb.Z:.1f} mm, {piece.volume / 1000:.1f} cm3, valid={piece.is_valid}, solids={len(piece.solids())}")
+    report(overlap(tube_test, tube) + overlap(tube_test, seated) + overlap(tube_test, bolt) + overlap(tube_test, nut) < 1e-6,
+           "tube fit test: the tube's end, the main insert's tongue and the cross bolt go into it as they go into the mount")
+    report(all(overlap(motor_test, cm.ref_motor(side)) < 1e-6 for side in (-1, 1)) and all(overlap(s, motor_test) < 1e-6 for s in ref_motor_screws()),
+           "motor fit test: the gearbox, the motor can either way round and the two screws go into it as they go into the mount")
+
     side_len = cm.GB_L
     print(f"  the gearbox is held along {side_len:.0f} mm of its {cm.GB_L:.0f} mm length (v4: 16 mm)")
     print(f"  receiver axis is {-x_r:.1f} mm behind the gearbox's front face (v4: {-cm.receiver_x():.1f} mm), {cm.CAN_GAP} mm off the motor can")
@@ -330,7 +355,10 @@ if __name__ == "__main__":
     export_step(mount, str(out / "motor_mount_2.step"))
     laid = Pos(0, 0, -mount.bounding_box().min.Z) * mount  # prints standing upright, as modelled
     export_stl(laid, str(out / "motor_mount_2.stl"), tolerance=0.01, angular_tolerance=0.1)
-    print("exported motor_mount_2 to", out)
+    for name, piece in (("motor_mount_2_tube_fit_test", make_tube_fit_test(mount)), ("motor_mount_2_motor_fit_test", make_motor_fit_test(mount))):
+        export_step(piece, str(out / f"{name}.step"))
+        export_stl(Pos(0, 0, -piece.bounding_box().min.Z) * piece, str(out / f"{name}.stl"), tolerance=0.01, angular_tolerance=0.1)
+    print("exported motor_mount_2 and its two fit-test pieces to", out)
     print("all geometric checks passed" if passed else "SOME CHECKS FAILED")
     if "--preview" in sys.argv:
         (here / "previews").mkdir(exist_ok=True)
