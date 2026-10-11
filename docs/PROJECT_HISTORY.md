@@ -103,6 +103,7 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - Prepared an SD update tool that backs up bootfs, restores an empty kernel command line from a matching backup, removes the old full-power bench startup, and installs the Pi files on its next boot. Network and login settings are preserved.
 - The laptop's Tailscale status showed the GX10 online at `100.108.5.67` and an existing Pi named `sightsense` offline at `100.75.181.48`. The GX10 accepted a command WebSocket on port 8766. Actual motor RPM and lateral direction remain physical measurements.
 - The user then requested the `Bono` Wi-Fi network; the PC's current SSID confirmed that spelling. Its private credentials were written only to the SD card. The updater can install a supplied NetworkManager profile on the next normal boot, including on an already configured Pi, while keeping the existing Tailscale identity. The Pi's Wi-Fi connection still needs a physical boot check.
+- After the card was returned, the Pi's explicit `multi-user.target` default bypassed the generated boot installer. Ethernet brought it online for SSH. The installer was run there, its private Wi-Fi profile activated, and the controller connected to the live GX10. It stayed reachable on Bono with Ethernet disabled and reconnected after a normal reboot. GPIO18/23/24/25 were low while STOP commands arrived; `get_throttled` returned `0x0`. The updater now explicitly selects `kernel-command-line.target`. Physical wheel direction and RPM remain unmeasured.
 
 ## Ideas considered and dropped
 

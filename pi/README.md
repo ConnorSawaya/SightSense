@@ -100,12 +100,12 @@ Set up on October 10, 2026.
 | Bootloader | 2026-09-25, rewritten with the recovery files (see below) |
 | Name and user | `sightsense.local`, user `sightsense` |
 | Login | SSH key from the team lead's laptop; the password also works |
-| Network | A phone hotspot. The Wi-Fi name and password are on the SD card only. |
+| Network | `Bono` Wi-Fi, verified October 11. Tailscale `100.75.181.48`; Wi-Fi LAN `192.168.1.227` at that check (DHCP can change it). Credentials stay outside Git. |
 | Installed | `python3-gpiozero`, `python3-lgpio`, `python3-websockets`, `git` |
 | Motor driver | IBT-2 (BTS7960), wired as in `../hardware/wiring.md` |
 | Code | `~/SightSense/pi`, copied from this folder |
 
-The name `sightsense.local` does not always resolve. If it fails, use the Pi's address from the hotspot's list of connected devices.
+The name `sightsense.local` does not always resolve. If it fails, use `ssh sightsense@100.75.181.48` over Tailscale, or the current LAN address from the router's list of connected devices.
 
 The Pi has to be on a network that can reach the GX10's command port.
 
@@ -190,7 +190,7 @@ sudo systemctl enable --now sightsense-cane.service
 
 - Edit `/boot/firmware/sightsense.env` to set the address and any options, then run `sudo systemctl restart sightsense-cane.service`. Delete it and the controller no longer starts by itself.
 - The direct wheel starts off and only runs while valid LEFT or RIGHT heartbeats arrive.
-- The SD installer enables this service after copying the new files. Physical boot and motor checks remain pending until the card is returned to the Pi.
+- The controller was installed over SSH on October 11. Its live GX10 connection was verified with Ethernet disabled, then automatic Wi-Fi and controller startup were verified after reboot. GPIO outputs were low while receiving STOP; physical lateral direction and actual RPM remain unmeasured.
 
 Watch what it is doing:
 
@@ -322,6 +322,8 @@ It backs up bootfs outside the card, writes and reads back SHA-256 hashes for th
 To add a Wi-Fi network, append `--wifi-profile C:/private/wifi.nmconnection` with a private [NetworkManager keyfile](https://www.networkmanager.dev/docs/api/latest/nm-settings-keyfile.html). The installer copies it to `/etc/NetworkManager/system-connections/sightsense-wifi.nmconnection`, owned by root with mode 600. NetworkManager reads it on the normal reboot, including on a Pi whose cloud-init setup has already run. Existing network profiles stay available. Keep the input outside the repo; `.nmconnection` files are ignored by Git. The copy on FAT32 bootfs is readable to anyone with the card.
 
 Safely eject the card, put it back in the Pi and power it. On its first boot, a one-time installer copies the code and services into the Linux partition, backs up the previous Pi files, masks the boot spin service and enables the controller. It then restores the normal boot command line and reboots. Dependency setup runs on the normal boot and installs only the packages already listed above if missing. SSH credentials and the existing Tailscale identity are preserved. Wi-Fi settings stay as they were unless a profile is supplied.
+
+The boot hook selects `systemd.unit=kernel-command-line.target` explicitly. This Pi OS has a local `default.target` pointing to `multi-user.target`, which bypassed the original hook's generated default. The installed Pi was recovered over Ethernet and SSH; the updater now selects the generated installer target directly.
 
 Check after that reboot:
 
