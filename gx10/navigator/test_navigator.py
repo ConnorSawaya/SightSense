@@ -246,6 +246,8 @@ class Commands(unittest.TestCase):
             "What can I ask you?": ("help", None),
             "help me to the door": ("object", "door"),
             "say that again": ("repeat", None),
+            "sound check": ("soundcheck", None),
+            "test the sound": ("soundcheck", None),
             "what time is it": ("time", None),
             "banana bread recipe": ("unknown", None),
             "": ("unknown", None),

@@ -136,6 +136,8 @@ struct SettingsSheet: View {
                 Text("Connect first. Same as holding the talk button.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
+            Button("Test sounds and speech") { capture.soundCheck() }
+                .accessibilityHint("Plays each tone and says its name. Works without the GX10.")
         }
     }
 

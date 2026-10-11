@@ -91,6 +91,17 @@ final class Capture: ObservableObject {
         }
     }
 
+    /// Plays each tone and speaks its name, so the phone's sound can be checked with no GX10.
+    func soundCheck() {
+        let steps = [("left", "Left"), ("right", "Right"), ("unknown", "Can't see ahead"), ("stop", "Stop. Sound check done.")]
+        for (i, step) in steps.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 1.8) { [weak self] in
+                self?.speaker.play(step.0)
+                self?.speaker.say(step.1)
+            }
+        }
+    }
+
     /// Called when the phone starts or stops listening for a command, from its own talk button or the cane's.
     func talking(_ on: Bool) {
         speaker.quiet = on

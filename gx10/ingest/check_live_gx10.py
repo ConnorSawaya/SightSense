@@ -3,6 +3,7 @@
     python -m ingest.check_live_gx10                      (from gx10/; the GX10's Tailscale address)
     python -m ingest.check_live_gx10 127.0.0.1            (on the GX10 itself)
     python -m ingest.check_live_gx10 127.0.0.1 "what can you do" "say that again"
+    python -m ingest.check_live_gx10 127.0.0.1 "guide me to the red circle" wait stop      (wait: 10 s of frames, saying nothing)
 
 It uses the real vision-language model, so it shows describe, read and questions working end to end.
 Only frames that make the obstacle check say STOP are sent (a wall 0.2 m ahead), so a Pi on the same
@@ -85,6 +86,12 @@ async def main():
         questions = [(q, 10) for q in sys.argv[2:]] or [("what's in front of me", 10), ("read the sign", 10), ("is the path clear", 4), ("what can you do", 6)]
         for text, wait in questions:
             mark, t0 = len(got), time.monotonic()
+            if text == "wait":  # say nothing; keep sending frames and print whatever is said, as after "guide me to ..."
+                await frames(wait)
+                for t, m in got[mark:]:
+                    if m.get("speech"):
+                        print(f"   after {t - t0:5.2f} s more the GX10 says: {m['speech']!r}")
+                continue
             await ws.send(json.dumps({"text": text}))
 
             def answered():
@@ -98,6 +105,9 @@ async def main():
             if not said:
                 print("   no answer within", wait, "s")
         listener.cancel()
+        s = status()
+        f = s.get("frame") or {}
+        print("while connected: frames in", s.get("fps"), "a second, processing", s.get("proc_ms"), "ms, YOLO sees", f.get("dets"), "| command", f.get("cmd"))
     await asyncio.sleep(0.5)
     s = status()
     print("GX10 after:", {k: s.get(k) for k in ("phone", "pis", "fps")})
