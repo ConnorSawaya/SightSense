@@ -337,3 +337,70 @@ class WholeNavigator(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ThinkingVLM(FakeVLM):
+    """FakeVLM plus the model's voice understanding: interpret() and ask()."""
+
+    MEANINGS = {
+        "could you bring me over toward the red cup": ("object", "red cup"),
+        "is anybody sitting at that table": ("question", "is anybody sitting at that table"),
+        "uh banana pancakes": ("unknown", ""),
+    }
+
+    def __init__(self, ok=True):
+        super().__init__()
+        self.ok, self.interpreted = ok, []
+
+    def interpret(self, text):
+        self.interpreted.append(text)
+        if not self.ok:
+            return fake.FakeAnswer(False, "I couldn't tell")
+        a = fake.FakeAnswer(True, self.MEANINGS.get(text, ("unknown", ""))[1])
+        a.label, a.seconds = self.MEANINGS.get(text, ("unknown", ""))[0], 0.3
+        return a
+
+    def ask(self, jpeg, question):
+        return fake.FakeAnswer(True, "Two people are sitting at the table.")
+
+
+class ModelVoice(unittest.TestCase):
+    def setUp(self):
+        self.clock = Clock()
+        self.vlm = ThinkingVLM()
+        self.nav = Navigator(self.vlm, self.clock)
+
+    def say_and_listen(self, text, seconds=1.0, frame=None):
+        self.nav.on_voice(text)
+        return said(run(self.nav, self.clock, frame or (lambda: fake.frame(fake.pose())), seconds))
+
+    def test_rules_still_go_first(self):
+        self.assertEqual(self.say_and_listen("guide me to the apple", 0.1), ["Looking for the apple."])
+        self.assertEqual(self.vlm.interpreted, [])
+
+    def test_status_is_a_rule_and_answered_from_the_navigator(self):
+        self.assertEqual(parse("Am I going the right way?").kind, "status")
+        self.assertEqual(self.say_and_listen("Am I going the right way?", 0.1),
+                         ["You're not being guided right now. Say guide me to, and a thing or a place."])
+        self.assertEqual(self.vlm.interpreted, [])
+
+    def test_status_while_guiding(self):
+        self.nav.on_voice("guide me to the apple")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose(), APPLE), 3, until=lambda s: s.state == CONFIRMING)
+        self.nav.on_voice("yes")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose(), APPLE), 0.3)
+        out = self.say_and_listen("how far is it", 0.2, lambda: fake.frame(fake.pose(), APPLE))
+        self.assertEqual(out, ["Yes. The apple is 2.5 metres, slightly left."])
+
+    def test_model_understands_an_odd_phrasing(self):
+        self.assertEqual(self.say_and_listen("could you bring me over toward the red cup", 0.5)[0], "Looking for the red cup.")
+        self.assertEqual(self.nav.mode, "object")
+
+    def test_question_is_answered_from_the_picture(self):
+        self.assertEqual(self.say_and_listen("is anybody sitting at that table"), ["Two people are sitting at the table."])
+
+    def test_model_unknown_or_down(self):
+        self.assertEqual(self.say_and_listen("uh banana pancakes", 0.5), ["Sorry, I didn't catch that."])
+        nav = Navigator(ThinkingVLM(ok=False), self.clock)
+        nav.on_voice("could you bring me over toward the red cup")
+        self.assertEqual(said(run(nav, self.clock, lambda: fake.frame(fake.pose()), 0.5)), ["Sorry, I didn't catch that."])

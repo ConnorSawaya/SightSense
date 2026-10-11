@@ -33,7 +33,7 @@ ARTICLES = r"(?:the|a|an|my|some|that|this)"
 
 @dataclass
 class Command:
-    kind: str  # object, place, describe, read, yes, no, cancel, unknown
+    kind: str  # object, place, describe, read, yes, no, cancel, status, unknown (question and interpret come from the model)
     target: Optional[str] = None
 
 
@@ -50,6 +50,9 @@ def parse(text: str) -> Command:
     if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t):
         return Command("cancel")
 
+    if re.search(r"(?:am i|are we) (?:going|heading|walking) (?:the )?(?:right|correct) way|on the right (?:way|track|path)|"
+                 r"how far (?:is it|away|to go|left)|are we (?:there|close)|how much (?:further|farther|longer)", t):
+        return Command("status")
     if re.search(r"\bread\b|what does (?:it|that|the sign|this) say|any signs?\b", t):
         return Command("read")
     if re.search(r"\bdescribe\b|what(?:'s| is) (?:in front|ahead|around|there)|what do you see|what can you see|where am i\b", t):

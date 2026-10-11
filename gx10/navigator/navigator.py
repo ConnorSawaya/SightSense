@@ -22,7 +22,7 @@ from typing import Callable, Optional
 
 from . import commands
 from .frame import Frame
-from .object_guide import ARRIVED, IDLE, ObjectGuide
+from .object_guide import ARRIVED, CONFIRMING, GUIDING, IDLE, SEARCHING, ObjectGuide, direction_words, distance_words
 from .route import RouteFollower
 
 ROUTE_EVERY_S = 1.0
@@ -52,54 +52,74 @@ class Navigator:
         self._place = None
         self._speech = deque()
         self._lookup = None
-        self._ask = None  # "describe" or "read", waiting for the next frame
+        self._ask = None  # ("describe" | "read" | "question", question), waiting for the next frame
         self._asking = False
+        self._interpreting = False  # the model is working out a sentence the rules did not understand
+        self._last = None  # the last Guidance, for "am I going the right way"
         self._last_route = -1e9
         self._route_step = None
 
     # ------------------------------------------------------------ from the phone
 
     def on_voice(self, text: str) -> commands.Command:
+        """Rules first: instant and predictable. A sentence they do not understand goes to the
+        model (vlm.interpret), which only picks one of the same commands, plus "status" (answered
+        from the navigator's own numbers) and "question" (answered from the picture)."""
         cmd = commands.parse(text)
         with self._lock:
-            if cmd.kind == "object":
-                self._stop_route()
-                self.mode = "object"
-                self._say(self.objects.start(cmd.target))
-            elif cmd.kind == "place":
-                self.objects.cancel()
-                self._stop_route()
-                self.mode = "route"
-                self._place = cmd.target
-                self._lookup = cmd.target
-                self._say(f"Looking up {cmd.target}.")
-            elif cmd.kind in ("yes", "no"):
-                yes = cmd.kind == "yes"
-                if self._route_confirm is not None:
-                    if yes:
-                        self.route, self._route_confirm = self._route_confirm, None
-                        self._say(f"Going to {self.route.dest}.")
-                    else:
-                        self._stop_route()
-                        self.mode = "idle"
-                        self._say("Cancelled.")
+            if cmd.kind == "unknown" and hasattr(self._vlm, "interpret"):
+                if self._interpreting:
+                    self._say("One moment.")
                 else:
-                    said = self.objects.confirm(yes)
-                    if said:
-                        self._say(said)
-                        if not yes:
-                            self.mode = "idle"
-            elif cmd.kind == "cancel":
-                said = self.objects.cancel()
-                had_route = self.route is not None or self._route_confirm is not None or self._place
-                self._stop_route()
-                self.mode = "idle"
-                self._say(said or ("Cancelled." if had_route else "Stopped."))
-            elif cmd.kind in ("describe", "read"):
-                self._ask = cmd.kind
-            else:
-                self._say("Sorry, I didn't catch that.")
+                    self._interpreting = True
+                    threading.Thread(target=self._interpret_worker, args=(text,), daemon=True).start()
+                return commands.Command("interpret", text)
+            self._apply(cmd)
         return cmd
+
+    def _apply(self, cmd: commands.Command):
+        """Carry out a command. Call with the lock held."""
+        if cmd.kind == "object":
+            self._stop_route()
+            self.mode = "object"
+            self._say(self.objects.start(cmd.target))
+        elif cmd.kind == "place":
+            self.objects.cancel()
+            self._stop_route()
+            self.mode = "route"
+            self._place = cmd.target
+            self._lookup = cmd.target
+            self._say(f"Looking up {cmd.target}.")
+        elif cmd.kind in ("yes", "no"):
+            yes = cmd.kind == "yes"
+            if self._route_confirm is not None:
+                if yes:
+                    self.route, self._route_confirm = self._route_confirm, None
+                    self._say(f"Going to {self.route.dest}.")
+                else:
+                    self._stop_route()
+                    self.mode = "idle"
+                    self._say("Cancelled.")
+            else:
+                said = self.objects.confirm(yes)
+                if said:
+                    self._say(said)
+                    if not yes:
+                        self.mode = "idle"
+        elif cmd.kind == "cancel":
+            said = self.objects.cancel()
+            had_route = self.route is not None or self._route_confirm is not None or self._place
+            self._stop_route()
+            self.mode = "idle"
+            self._say(said or ("Cancelled." if had_route else "Stopped."))
+        elif cmd.kind in ("describe", "read"):
+            self._ask = (cmd.kind, None)
+        elif cmd.kind == "question":
+            self._ask = ("question", cmd.target)
+        elif cmd.kind == "status":
+            self._say(self._status())
+        else:
+            self._say("Sorry, I didn't catch that.")
 
     def on_route(self, route: dict):
         with self._lock:
@@ -126,8 +146,8 @@ class Navigator:
         """detections: this frame's YOLO results from gx10/detector, if it is running."""
         with self._lock:
             if self._ask and not self._asking and f.jpeg:
-                kind, self._ask, self._asking = self._ask, None, True
-                threading.Thread(target=self._ask_worker, args=(kind, f.jpeg), daemon=True).start()
+                (kind, question), self._ask, self._asking = self._ask, None, True
+                threading.Thread(target=self._ask_worker, args=(kind, f.jpeg, question), daemon=True).start()
 
             g = Guidance(self.mode, IDLE)
             if self.mode == "object":
@@ -157,6 +177,7 @@ class Navigator:
 
             g.speech = self._speech.popleft() if self._speech else None
             g.lookup, self._lookup = self._lookup, None
+            self._last = g
             return g
 
     # ------------------------------------------------------------ internals
@@ -168,9 +189,58 @@ class Navigator:
     def _stop_route(self):
         self.route = self._route_confirm = self._route_step = self._place = None
 
-    def _ask_worker(self, kind, jpeg):
+    def _interpret_worker(self, text):
         try:
-            a = getattr(self._vlm, kind)(jpeg)
+            a = self._vlm.interpret(text)
+        except Exception as e:
+            print(f"navigator: interpret failed: {e}")
+            a = None
+        with self._lock:
+            self._interpreting = False
+            if a is None or not a.ok:
+                error = getattr(a, "error", None) or ("exception" if a is None else "failed")
+                busy = error.startswith("busy")
+                print(f"navigator: model could not interpret {text!r}: {error}", flush=True)
+                self._say("One moment, then ask again." if busy else "Sorry, I didn't catch that.")
+                return
+            cmd = commands.Command(a.label, a.text or None)
+            if cmd.kind in ("object", "place") and not cmd.target:
+                cmd = commands.Command("unknown")
+            if cmd.kind == "question" and not cmd.target:
+                cmd.target = text
+            print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} ({getattr(a, 'seconds', 0):.2f} s)", flush=True)
+            self._apply(cmd)
+
+    def _status(self) -> str:
+        """Answer "am I going the right way" from the navigator's own numbers, never from the model."""
+        g = self._last
+        if self.mode == "object":
+            o, name = self.objects, self.objects.name
+            if o.state == SEARCHING:
+                return f"I'm still looking for the {name}. Turn slowly to scan."
+            if o.state == CONFIRMING:
+                return f"I found the {name}. Say yes to go."
+            if o.state == GUIDING and g is not None and g.distance_m is not None and g.desired_bearing is not None:
+                return f"Yes. The {name} is {distance_words(g.distance_m)}, {direction_words(g.desired_bearing)}."
+            if o.state == GUIDING:
+                return f"Going to the {name}."
+        if self.mode == "route":
+            if self.route is None:
+                return f"Say yes to go to {self._route_confirm.dest}." if self._route_confirm else f"Still looking up {self._place}."
+            s = self._route_step
+            if s is None:
+                return f"Starting the route to {self.route.dest}."
+            if s.desired_bearing is None:
+                return "GPS is weak, so I can't tell right now."
+            left = "" if s.remaining_m is None else f" About {max(10, round(s.remaining_m / 10) * 10):g} metres to go."
+            if abs(s.desired_bearing) <= 30:
+                return f"Yes, you're on the way to {self.route.dest}.{left}"
+            return f"Not quite. {self.route.dest} is {direction_words(s.desired_bearing)}.{left}"
+        return "You're not being guided right now. Say guide me to, and a thing or a place."
+
+    def _ask_worker(self, kind, jpeg, question=None):
+        try:
+            a = self._vlm.ask(jpeg, question) if kind == "question" else getattr(self._vlm, kind)(jpeg)
             if not a.ok:
                 text = a.text
             elif kind == "read":

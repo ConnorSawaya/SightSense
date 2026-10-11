@@ -43,7 +43,31 @@ PROMPTS = {
     # Asked before "find": the box prompt alone always returns a box, even for things
     # that are not there (it boxed an exit sign as an apple). See README.md.
     "present": "Is there a {name} in this image? Reply only yes or no.",
+    # Voice commands the rules in navigator/commands.py did not understand. Text only, no picture.
+    "interpret": (
+        'A blind person said this to their smart guide cane: "{text}"\n'
+        "Pick the one command they mean:\n"
+        '- object: go to or find a thing nearby (target: the thing, like "door" or "red cup")\n'
+        "- place: go to a named place, shop or address (target: the place)\n"
+        "- describe: what is around or ahead\n"
+        "- read: read signs or text\n"
+        "- yes or no: answering a question the cane asked\n"
+        "- cancel: stop guiding\n"
+        "- status: how the trip is going (am I going the right way, how far is it, are we there yet)\n"
+        "- question: another question about what is in front of them (target: the question)\n"
+        "- unknown: none of these\n"
+        'Reply only as JSON: {{"command": "...", "target": "..." or null}}'
+    ),
+    "ask": (
+        'A blind person asks about this picture: "{question}"\n'
+        "Answer in under 20 words. Do not estimate distances, and never say whether it is safe "
+        "or clear to walk. If you cannot tell, say so."
+    ),
 }
+
+INTENTS = ("object", "place", "describe", "read", "yes", "no", "cancel", "status", "question", "unknown")
+DISTANCE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:m|cm|metres?|meters?|feet|foot|ft|steps?|yards?)\b", re.IGNORECASE)
+NO_DISTANCES = "I can't judge distances from the picture. The cane measures them."
 
 # Box scale checked with check.py on test pictures with a known apple position.
 KNOWN_BOX_SCALES = {"qwen3-vl": "1000", "qwen3.6": "1000", "nemotron3": "1000"}
@@ -128,6 +152,43 @@ def find(jpeg: bytes, name: str) -> Answer:
     box, label = parsed
     a.box, a.label = box, label or name
     a.text = f"I see the {name}." if box else f"I don't see the {name}."
+    return a
+
+
+def interpret(text: str) -> Answer:
+    """What a sentence the rules did not understand asks for. Text only, no picture.
+
+    label is one of INTENTS; text is its target or the question ("" if none).
+    The model only picks a command; it never steers and never says whether the way is clear.
+    """
+    text = re.sub(r"\s+", " ", text or "").strip()[:200].replace('"', "'")
+    a = _one(None, PROMPTS["interpret"].format(text=text))
+    if not a.ok:
+        return a
+    obj = _first_json(a.raw)
+    if not isinstance(obj, dict) or obj.get("command") not in INTENTS:
+        return _fail(a, "unparseable interpret reply")
+    target = obj.get("target")
+    a.label = obj["command"]
+    a.text = re.sub(r"\s+", " ", target).strip(" .!?,")[:80] if isinstance(target, str) else ""
+    return a
+
+
+def ask(jpeg: bytes, question: str) -> Answer:
+    """Answer a question about the picture in a few words. Never a distance, never whether it is safe."""
+    question = re.sub(r"\s+", " ", question or "").strip()[:200].replace('"', "'")
+    a = _one(jpeg, PROMPTS["ask"].format(question=question))
+    if not a.ok:
+        return a
+    text = _clean(a.raw)
+    if not text:
+        return _fail(a, "empty reply")
+    words = text.split()
+    if len(words) > 30:
+        text = " ".join(words[:30])
+    if DISTANCE.search(text):
+        text = NO_DISTANCES  # distances come from the LiDAR, never from the model
+    a.text = text
     return a
 
 
@@ -274,7 +335,7 @@ def _ask(jpeg: bytes, prompt: str, deadline: float) -> Answer:
                 "think": False,  # reasoning adds seconds
                 "keep_alive": -1,
                 "options": {"temperature": 0, "num_predict": 200, "num_ctx": CTX},
-                "messages": [{"role": "user", "content": prompt, "images": [base64.b64encode(jpeg).decode()]}],
+                "messages": [_message(prompt, jpeg)],
             },
             deadline - t0,
         )
@@ -287,6 +348,13 @@ def _ask(jpeg: bytes, prompt: str, deadline: float) -> Answer:
         reason = getattr(e, "reason", e)
         kind = "timeout" if "timed out" in str(reason) else "error"
         return Answer(False, COULDNT_TELL, model=model, seconds=time.monotonic() - t0, error=f"{kind}: {reason}")
+
+
+def _message(prompt: str, jpeg: Optional[bytes]) -> dict:
+    m = {"role": "user", "content": prompt}
+    if jpeg:
+        m["images"] = [base64.b64encode(jpeg).decode()]
+    return m
 
 
 def _post(path: str, body: dict, timeout_s: float) -> dict:
