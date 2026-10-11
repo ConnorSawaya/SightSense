@@ -92,6 +92,7 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - **The Pi would not start.** Its green light blinked three long and one short: a bootloader error, reported before it reads the SD card. Copying the official bootloader recovery files onto the card fixed it at about 4:15 PM. Time had already been lost to a Wi-Fi password with one wrong capital letter, which looked like the cause until the blink code was read.
 - **First login** at about 4:25 PM. The Pi reported under-voltage on its supply.
 - **The parts differed from the plan.** The motor driver is an IBT-2 (BTS7960) board, not an L298N, and the motor has a worm gear, so it holds its position when unpowered. A 12 V to 5 V converter powers the Pi from the motor's battery. The wiring notes and the controller were changed to match at about 5:00 PM.
+- **Wiring.** The six wires between the Pi and the driver were fitted between about 8:00 and 8:45 PM and read back from photos. The limit switches, the fuse and the kill switch were not fitted, and nothing had been run through the driver.
 - **Motor controller.** Written from about 2:00 PM against a simulated wheel on a laptop, because the Pi was not yet running. Its tests passed on the Pi at about 4:25 PM. It had not yet driven a real motor.
 
 ## Ideas considered and dropped
