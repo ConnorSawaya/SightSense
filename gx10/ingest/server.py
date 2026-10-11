@@ -121,8 +121,10 @@ class Pipeline:
         self.det = None
         if use_yolo:
             from detector.detector import Detector
+            from detector.stable import KEEP, Stabilizer
 
             self.det = Detector()
+            self.stable, self.keep = Stabilizer(), KEEP  # answers held steady across frames
             print("yolo:", self.det.using, flush=True)
         self.smoother = Smoother()
         self.states = StateSmoother()
@@ -139,6 +141,8 @@ class Pipeline:
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
             self.smoother, self.states, self.last_state = Smoother(), StateSmoother(), None
+            if self.det is not None:
+                self.stable.reset()
         self.last_frame = now
         self.vlm.turn = turn = turn_for(f.pose)
         depth = np.frombuffer(f.depth_mm, dtype=np.uint16).reshape(f.depth_h, f.depth_w)
@@ -147,7 +151,7 @@ class Pipeline:
         dets = None
         upright = decode_upright(f.jpeg, turn)  # decoded once: YOLO and the dashboard share it
         if self.det is not None and upright is not None:
-            dets = self.det.detect_image(upright)
+            dets = self.stable.update(self.det.detect_image(upright, conf=self.keep))
             for d in dets:
                 d.box = box_back(d.box, turn, f.rgb_w, f.rgb_h)
                 locate(d, f, depth, conf)
