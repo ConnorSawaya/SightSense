@@ -28,8 +28,8 @@ final class Speaker {
     private var lastEarcon: (name: String, time: Date)?
     private var lastSpeech: (text: String, time: Date)?
 
-    /// Set while the user is talking to the phone. Speech under way is cut off and nothing new is spoken
-    /// except a stop, so the phone neither talks over the user nor hears itself.
+    /// Set while the user is talking to the phone. Speech under way is cut off and nothing new is spoken,
+    /// so the phone neither talks over the user nor hears itself. Tones still play, the stop tone among them.
     var quiet = false {
         didSet { if quiet && !oldValue { synth.stopSpeaking(at: .immediate) } }
     }
@@ -55,7 +55,7 @@ final class Speaker {
                 lastEarcon = (e, now)
             }
         }
-        if let s = m.speech, !s.isEmpty {
+        if let s = m.speech, !s.isEmpty, !quiet {  // a sentence dropped while the user talks does not count as said
             if lastSpeech?.text != s || now.timeIntervalSince(lastSpeech!.time) >= Self.speechRepeat {
                 say(s, interrupt: m.state == "STOP")
                 lastSpeech = (s, now)
@@ -70,7 +70,7 @@ final class Speaker {
     }
 
     func say(_ text: String, interrupt: Bool = false) {
-        guard !quiet || interrupt else { return }
+        guard !quiet else { return }  // a spoken stop would go into the open microphone and into the user's command
         if interrupt { synth.stopSpeaking(at: .immediate) }
         let u = AVSpeechUtterance(string: text)
         u.rate = 0.55

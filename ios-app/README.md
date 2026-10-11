@@ -48,7 +48,7 @@ In the Simulator there is no camera or LiDAR: Connect opens the link without sen
 | `FrameEncoder.swift` | ARKit frame → frame message (640-wide JPEG, depth, confidence, scaled intrinsics, pose) |
 | `FrameMessage.swift` | The message layout and depth conversion, without ARKit, so it runs on a Mac |
 | `GX10Link.swift` | WebSocket to port 8765, reconnects every second until disconnected |
-| `Guidance.swift` | Parses guidance; beeps (at most once a second) and speaks (same sentence at most every 2 s). Stays quiet, except for a stop, while the user is talking |
+| `Guidance.swift` | Parses guidance; beeps (at most once a second) and speaks (same sentence at most every 2 s). Does not speak while the user is talking; tones still play |
 | `Voice.swift` | Hold-to-talk, on-device speech recognition; sends `{"text": ...}`. Also started and stopped by the cane's talk button |
 | `Location.swift` | GPS and compass heading for the frame header |
 | `Places.swift` | Looks a place up with Apple Maps and sends the walking route to it. Not compiled yet |
@@ -59,9 +59,9 @@ A push button in the cane's handle does the same job as the talk button on the s
 
 - `true` plays a short tone and starts listening. If the phone is already listening it stops instead, so a second click ends a command.
 - `false` stops listening and sends what was heard. It comes when the button is let go after a hold.
-- After a click, with no `false`, the phone stops by itself 1.5 seconds after the last new word, or after 8 seconds if it heard nothing.
+- After a click, with no `false`, the phone stops by itself 1.5 seconds after the last new word, or after 8 seconds if it heard nothing, and in any case about 12 seconds after it started.
 - A click in the 2 seconds after the phone has stopped by itself is taken as the end of that command. It plays the tone but does not start another.
-- While the phone is listening, from either button, it does not speak, except for a stop.
+- While the phone is listening, from either button, it does not speak. Tones still play, the stop tone among them.
 
 **Not built yet.** This was written on a Windows laptop with no Xcode. It has not been compiled or run on a phone. Build it and try both buttons before relying on it.
 

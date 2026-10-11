@@ -4,6 +4,7 @@ A message the service cannot use must not end the phone's link, and when the lin
 does end the service must stop showing that phone as connected.
 """
 
+import asyncio
 import json
 import unittest
 from unittest.mock import patch
@@ -56,6 +57,36 @@ class BadText(unittest.IsolatedAsyncioTestCase):
             await self.s.phone(BrokenPhone())
         self.assertIsNone(self.s.phone_ws)
         self.assertIsNone(self.s.status()["phone"])
+
+
+class StayingPhone(FakePhone):
+    """A phone that stays connected until told to leave."""
+
+    def __init__(self):
+        self.leave = asyncio.Event()
+
+    async def _messages(self):
+        await self.leave.wait()
+        for m in ():
+            yield m
+
+
+class TwoPhones(unittest.IsolatedAsyncioTestCase):
+    async def test_a_second_client_leaving_does_not_forget_the_first(self):
+        with patch.object(srv.vlm, "warm", return_value="stubbed"):
+            s = srv.Server(srv.Pipeline(False))
+        try:
+            cane = StayingPhone()
+            link = asyncio.create_task(s.phone(cane))
+            await asyncio.sleep(0.01)
+            await s.phone(FakePhone({"text": "stop"}))  # a test client connects, says one thing and leaves
+            self.assertIs(s.phone_ws, cane)  # the talk button still has a phone to tell
+            cane.leave.set()
+            await link
+            self.assertIsNone(s.phone_ws)
+        finally:
+            s.worker.shutdown(wait=True)
+            s.writer.shutdown(wait=True)
 
 
 class ManualRead(unittest.TestCase):

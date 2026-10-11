@@ -16,7 +16,7 @@ from pathlib import Path
 
 from websockets.asyncio.client import connect
 
-from navigator import encode, fake
+from navigator import decode, encode, fake
 from planner.fake_scene import render
 
 WALL = ((-3, 0, -4.2), (3, 2.5, -4.0))
@@ -84,7 +84,7 @@ async def main():
         sent = {}
         for i, (msg, wall_m) in enumerate(frames):
             await asyncio.sleep(max(0, t0 + i / 15 - time.monotonic()))
-            sent[i + 1] = (time.monotonic(), wall_m)
+            sent[decode(msg).seq] = (time.monotonic(), wall_m)  # the frame's own seq: a recording need not start at 1
             await ws.send(msg)
         await asyncio.sleep(1.0)
 

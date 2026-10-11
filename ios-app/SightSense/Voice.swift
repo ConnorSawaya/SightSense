@@ -18,12 +18,14 @@ final class Voice: ObservableObject {
     /// When asked to stop by itself: this long after the last new word, or this long with nothing heard.
     static let quietAfterWords: TimeInterval = 1.5
     static let quietAtStart: TimeInterval = 8
+    static let longest: TimeInterval = 12  // and about this long after it started, even if words keep arriving (other people talking)
     private var stopsItself = false
     private var quietTimer = 0  // counts up; a waiting stop only fires if nothing newer was set
     private var finishing = false  // from stop() until its 0.4 s wait is over: the last command is still being finished
     /// When the phone last ended a command by itself, and how long after that a click still counts as its end.
     private(set) var stoppedItselfAt = Date.distantPast
     static let endClick: TimeInterval = 2
+    private var startedAt = Date.distantPast
 
     func requestPermission() {
         SFSpeechRecognizer.requestAuthorization { _ in }
@@ -70,12 +72,15 @@ final class Voice: ObservableObject {
         finished = done
         isListening = true
         self.stopsItself = stopsItself
+        startedAt = Date()
         if stopsItself { stopAfter(Voice.quietAtStart) }
         task = recognizer.recognitionTask(with: request) { [weak self] result, _ in
             guard let text = result?.bestTranscription.formattedString else { return }
             Task { @MainActor in
                 guard let self else { return }
-                if self.isListening, self.stopsItself, text != self.heard { self.stopAfter(Voice.quietAfterWords) }
+                // Each new word puts the stop off again, but not past the longest a command may take.
+                if self.isListening, self.stopsItself, text != self.heard,
+                   Date().timeIntervalSince(self.startedAt) < Voice.longest { self.stopAfter(Voice.quietAfterWords) }
                 self.heard = text
             }
         }
@@ -87,7 +92,7 @@ final class Voice: ObservableObject {
         let mine = quietTimer
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
             guard let self, self.isListening, self.quietTimer == mine else { return }
-            self.stoppedItselfAt = Date()
+            if !self.heard.isEmpty { self.stoppedItselfAt = Date() }  // nothing heard: there is no command for a click to end
             self.stop()
         }
     }

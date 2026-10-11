@@ -234,7 +234,8 @@ class Server:
         self.dropped = 0
         self.expired = 0
         self.received = 0
-        self.phone_ws = None
+        self.phone_ws = None  # the newest phone connection: the dashboard shows it and the talk button tells it
+        self.phones = []  # every open phone connection, oldest first
         self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
         self.manual_sent = None  # what actually went to the Pi, after the depth check
         self.manual_seq = 0
@@ -248,6 +249,7 @@ class Server:
 
     async def phone(self, ws):
         print("phone connected:", ws.remote_address[0], flush=True)
+        self.phones.append(ws)
         self.phone_ws = ws
         try:
             async for msg in ws:
@@ -270,8 +272,9 @@ class Server:
             pass
         finally:
             print("phone disconnected:", ws.remote_address[0], flush=True)
+            self.phones.remove(ws)
             if self.phone_ws is ws:
-                self.phone_ws = None
+                self.phone_ws = self.phones[-1] if self.phones else None  # an earlier phone may still be connected
 
     def text_command(self, text: str):
         """The dashboard's text box: the same as a voice command from the phone."""
