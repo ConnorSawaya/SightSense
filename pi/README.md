@@ -32,6 +32,9 @@ Homing with no switch pressed: short pulses left, right, right, left until a swi
 | `hardware.py` | The real motor and switches, and a simulated wheel |
 | `fake_gx10.py` | Stands in for the GX10's command port |
 | `test_steering.py` | Tests |
+| `spin_test.py` | Bench test: ramps the motor from stopped to full power once |
+| `sightsense-spin-test.service` | Runs the bench test once at start-up |
+| `test_spin.py` | Tests for the bench test |
 
 ## Setup
 
@@ -129,6 +132,40 @@ The tests use the same simulated wheel:
 ```bash
 python3 -m unittest -v
 ```
+
+## Start-up motor test
+
+For the bench only. It is a way to see the motor turn without logging in to the Pi.
+
+When the Pi has been on for 15 seconds, the motor ramps from stopped to full power over 10 seconds, holds for 2 seconds, and switches off. It does this once each time the Pi starts.
+
+- The motor must be free to turn. Do not run this with the motor fitted to the steering: it goes past the 25% power cap and the 0.4 second limit that the controller keeps.
+- If limit switches are fitted, it does not start, and it stops at once, when one is pressed.
+- It needs 12 V at the driver. With the battery unplugged nothing moves.
+- Written and tested on mock pins. Not yet run on the Pi.
+
+To switch it off, delete the file `spin-test-enabled` from the SD card's boot partition, on any computer. On the Pi that is:
+
+```bash
+sudo rm /boot/firmware/spin-test-enabled
+```
+
+To run it by hand:
+
+```bash
+python3 spin_test.py
+```
+
+To install it on a Pi that does not have it:
+
+```bash
+sudo install -D -m 755 spin_test.py /opt/sightsense/spin_test.py
+sudo install -m 644 sightsense-spin-test.service /etc/systemd/system/
+sudo touch /boot/firmware/spin-test-enabled
+sudo systemctl enable sightsense-spin-test.service
+```
+
+Switch it off before starting `cane.py` by hand in the first half minute after start-up; the two cannot hold the motor pins at the same time.
 
 ## Checking the wiring
 

@@ -27,7 +27,7 @@ As of the commit that added this file, the repository holds structure and docume
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Not started |
 | GX10 software (`gx10/`) | Not started |
-| Pi motor controller (`pi/`) | Written; tests pass on the Pi and its GPIO pins open; not yet run with a real motor or switches |
+| Pi motor controller (`pi/`) | Written; tests pass on the Pi and its GPIO pins open; not yet run with a real motor or switches. A bench test (`pi/spin_test.py`) ramps the motor to full power at start-up; it is for the bench only and must be switched off before the motor goes on the steering |
 | Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos; limit switches, fuse and kill switch not fitted; not tested under power |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |

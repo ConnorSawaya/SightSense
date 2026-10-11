@@ -175,6 +175,8 @@ Start with no 12 V at the driver, so nothing can move: kill switch off. Until th
 
 More on these in [`../pi/README.md`](../pi/README.md).
 
+The Pi's card is also set to run a bench test at start-up: 15 seconds after the Pi comes on, the motor ramps to full power for about 12 seconds. The motor must be free to turn. How to switch it off is in [`../pi/README.md`](../pi/README.md).
+
 ## If something is wrong
 
 These are what to look at first. None has been needed yet, so none is proven.
