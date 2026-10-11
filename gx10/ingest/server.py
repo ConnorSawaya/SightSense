@@ -100,11 +100,11 @@ def path_answer(cmd, ahead):
     started in STOP does not answer "something is 4 metres ahead, stop".
     """
     from navigator.object_guide import distance_words
-    from planner.obstacle import FAR_M, USABLE_M
+    from planner.obstacle import FAR_M, STOP_AHEAD_M, USABLE_M
 
     if ahead is None:
         return "I can't tell. The depth straight ahead is unclear, so I'm treating it as blocked."
-    if ahead < 1.2 or (cmd == "STOP" and ahead < USABLE_M):
+    if ahead < STOP_AHEAD_M or (cmd == "STOP" and ahead < USABLE_M):
         return f"No. Something is {distance_words(ahead)} ahead. Stop."
     if ahead >= USABLE_M and cmd == "CENTER":
         far = "as far as I can measure" if ahead >= FAR_M else f"for about {distance_words(ahead)}"

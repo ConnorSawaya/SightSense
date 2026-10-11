@@ -20,8 +20,10 @@ MIN_POINTS = 30  # fewer obstacle points than this in a corridor: clear to range
 MIN_VALID = 0.6  # fewer good depth pixels than this in a heading's wedge: unknown (blocked)
 MIN_WEDGE_PX = 150  # a wedge the camera barely sees is unknown too (estimate, to tune)
 TOO_CLOSE_SHARE = 0.2  # this share of a wedge reading nearer than NEAR_M: blocked at 0 m
-USABLE_M = 2.5
-STOP_AHEAD_M = 1.2
+# Distances are from the phone. Was 2.5 m and 1.2 m; on October 10 that stopped about 2.2 m
+# from things, which the team found too cautious for a cane whose tip is already ahead of the user.
+USABLE_M = 1.5
+STOP_AHEAD_M = 0.8
 CAMERA_HEIGHT_M = 0.9  # used only when the floor cannot be seen (estimate for a cane handle)
 CHANGE_FRAMES, STOP_FRAMES = 3, 2
 STUCK_S = 5.0
