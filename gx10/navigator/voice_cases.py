@@ -71,6 +71,16 @@ ROUTES = [
     ("go to the kitchen", "object", "kitchen"),
     ("take me to Safeway", "place", "Safeway"),
     ("take me to the train station", "place", "train station"),
+    # Simple moves: one step, no model; the obstacle check still decides
+    ("move left please", "move", "left"),
+    ("can you move clockwise", "move", "right"),
+    ("turn right", "move", "right"),
+    ("spin counter-clockwise", "move", "left"),
+    ("go forward", "move", "ahead"),
+    ("can you not move?", "cancel", None),
+    ("don't move", "cancel", None),
+    ("stay still", "cancel", None),
+    ("turn the volume up", "volume", None),
     # Several steps or a way of getting there: planned by the model
     ("get me around the table to the window", "plan", None),
     ("take me out of this room", "plan", None),

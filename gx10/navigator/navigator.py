@@ -131,7 +131,16 @@ class Navigator:
 
     def _apply(self, cmd: commands.Command):
         """Carry out a command. Call with the lock held."""
-        if cmd.kind == "plan":
+        if cmd.kind == "move":  # one step, no model: depth still decides whether it can go that way
+            step = {"do": "go", "way": "ahead", "seconds": 3.0} if cmd.target == "ahead" else \
+                {"do": "turn", "way": cmd.target, "seconds": 2.5}
+            self.objects.cancel()
+            self._stop_route()
+            self.plan, self.mode = PlanRunner({"say": "", "steps": [step]}, self.objects, self._clock()), "plan"
+            self._say("Going straight." if cmd.target == "ahead" else f"Turning {cmd.target}.")
+        elif cmd.kind == "volume":
+            self._say("I can't change the volume. Use the buttons on the side of the phone.")
+        elif cmd.kind == "plan":
             self._ask = ("plan", cmd.target)  # needs a picture: planned with the next frame
             self._say("Let me plan that.")
         elif cmd.kind == "object":
@@ -288,6 +297,12 @@ class Navigator:
                 self._apply(commands.Command("unknown"))
                 return
             cmd = commands.Command(a.label, a.text or None)
+            if cmd.kind == "move":  # the model's target, as the rules would have it
+                w = (cmd.target or "").lower()
+                cmd.target = "right" if w in ("right", "clockwise") else "left" if "left" in w or "clockwise" in w else \
+                    "ahead" if w in ("ahead", "forward", "straight") else None
+                if cmd.target is None:
+                    cmd = commands.Command("unknown")
             if cmd.kind in ("object", "place") and not cmd.target:
                 cmd = commands.Command("unknown")
             if cmd.kind == "ask":

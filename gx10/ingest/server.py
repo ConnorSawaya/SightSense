@@ -111,6 +111,9 @@ class UprightVLM:
     def objects(self, jpeg):
         return vlm.objects(rotate_jpeg(jpeg, self.turn))
 
+    def plan(self, jpeg, request, scene):
+        return vlm.plan(rotate_jpeg(jpeg, self.turn), request, scene)
+
     def interpret(self, text):
         return vlm.interpret(text)  # text only, no picture
 

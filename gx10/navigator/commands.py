@@ -90,8 +90,21 @@ def parse(text: str) -> Command:
         return Command("yes")
     if re.fullmatch(r"(no|nope|nah|wrong)", t):
         return Command("no")
-    if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t):
+    if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t) \
+            or re.search(r"\b(?:don'?t|do not|not|stop) (?:move|moving|go|going|turn|turning|spin|spinning)\b"
+                         r"|\b(?:stay|hold) (?:still|there|here)\b|\bfreeze\b|\bstand still\b", t):
         return Command("cancel")
+    if re.search(r"\bvolume\b|\b(?:louder|quieter|speak up)\b", t):
+        return Command("volume")
+    # A simple move: one step, no model ("move left", "turn right", "spin clockwise", "go forward")
+    m = re.fullmatch(r"(?:(?:can|could|would|will) you |please )?(?:move|go|turn|steer|head|step|walk|bear|veer|spin|rotate)"
+                     r"(?: (?:to|towards?) (?:the|my) | )(left|right|forward|forwards|ahead|straight(?: ahead)?|clockwise"
+                     r"|counter[- ]?clockwise|anti[- ]?clockwise)(?: a bit| a little)?(?: please)?", t)
+    if m:
+        way = m.group(1)
+        way = "right" if way == "clockwise" else "left" if "clockwise" in way else \
+            "ahead" if way.startswith(("forward", "ahead", "straight")) else way
+        return Command("move", way)
 
     # A check of the phone's tones and speech
     if re.fullmatch(r"(?:sound|audio|speech|voice|speaker) (?:check|test)|(?:test|check) (?:the |my )?(?:sounds?|audio|speech|voice|speaker|tones?)", t):

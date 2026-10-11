@@ -79,5 +79,12 @@ class Speed(unittest.TestCase):
         self.assertEqual(s.status()["speed"], 0.35)
 
 
+class Adapter(unittest.TestCase):
+    def test_the_live_model_adapter_has_everything_the_navigator_calls(self):
+        # the navigator calls these on whatever it is given; the live service gives it UprightVLM
+        for name in ("find", "describe", "read", "ask", "objects", "plan", "interpret"):
+            self.assertTrue(callable(getattr(srv.UprightVLM(), name, None)), name)
+
+
 if __name__ == "__main__":
     unittest.main()

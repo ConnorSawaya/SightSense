@@ -77,6 +77,7 @@ PROMPTS = {
         "or whether something is there\n"
         "- chat: a greeting, thanks, or small talk such as how are you\n"
         "- help: what the cane can do\n"
+        "- move: one simple move, such as move left, turn right or go forward (target: left, right or ahead)\n"
         "- plan: getting somewhere in several steps or in a particular way, such as around something, "
         "out of a room, past people, or slowly\n"
         "- yes: agreeing, or saying go ahead\n"
@@ -112,7 +113,7 @@ PROMPTS["plan"] = (
     'Reply only as JSON: {{"say": "one short sentence telling them the plan", "steps": [...]}}'
 )
 
-INTENTS = ("object", "place", "describe", "objects", "read", "status", "path", "ask", "chat", "help", "plan", "yes",
+INTENTS = ("object", "place", "describe", "objects", "read", "status", "path", "ask", "chat", "help", "move", "plan", "yes",
            "no", "cancel", "unknown")
 
 # A distance in an answer is thrown away: distances come from the LiDAR only
