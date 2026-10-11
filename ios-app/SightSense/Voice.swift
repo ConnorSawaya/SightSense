@@ -1,7 +1,8 @@
 import AVFoundation
 import Speech
 
-/// Push-to-talk speech recognition, on the phone only.
+/// Push-to-talk speech recognition, on the phone only. Started and stopped by the talk button on the
+/// screen, or by the one on the cane (which can also leave it to stop by itself).
 @MainActor
 final class Voice: ObservableObject {
     @Published private(set) var isListening = false
@@ -14,13 +15,20 @@ final class Voice: ObservableObject {
     private var task: SFSpeechRecognitionTask?
     private var finished: ((String) -> Void)?
 
+    /// When asked to stop by itself: this long after the last new word, or this long with nothing heard.
+    static let quietAfterWords: TimeInterval = 1.5
+    static let quietAtStart: TimeInterval = 8
+    private var stopsItself = false
+    private var quietTimer = 0  // counts up; a waiting stop only fires if nothing newer was set
+
     func requestPermission() {
         SFSpeechRecognizer.requestAuthorization { _ in }
         AVAudioApplication.requestRecordPermission { _ in }
     }
 
     /// Starts listening. `done` gets the final text when `stop()` is called (not called if nothing was heard).
-    func start(done: @escaping (String) -> Void) {
+    /// With `stopsItself`, it also stops when the speaker has finished; `stop()` still ends it sooner.
+    func start(stopsItself: Bool = false, done: @escaping (String) -> Void) {
         guard !isListening else { return }
         problem = nil
         heard = ""
@@ -57,15 +65,32 @@ final class Voice: ObservableObject {
         self.request = request
         finished = done
         isListening = true
+        self.stopsItself = stopsItself
+        if stopsItself { stopAfter(Voice.quietAtStart) }
         task = recognizer.recognitionTask(with: request) { [weak self] result, _ in
             guard let text = result?.bestTranscription.formattedString else { return }
-            Task { @MainActor in self?.heard = text }
+            Task { @MainActor in
+                guard let self else { return }
+                if self.isListening, self.stopsItself, text != self.heard { self.stopAfter(Voice.quietAfterWords) }
+                self.heard = text
+            }
+        }
+    }
+
+    /// Stops after this long unless a newer wait replaces this one, or `stop()` is called first.
+    private func stopAfter(_ seconds: TimeInterval) {
+        quietTimer += 1
+        let mine = quietTimer
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
+            guard let self, self.isListening, self.quietTimer == mine else { return }
+            self.stop()
         }
     }
 
     func stop() {
         guard isListening else { return }
         isListening = false
+        quietTimer += 1
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
         request?.endAudio()

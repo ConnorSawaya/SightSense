@@ -1,17 +1,18 @@
 import AVFoundation
 import Foundation
 
-/// A message from the GX10. Guidance has `state`; a place lookup has `lookup` (contracts/MESSAGES.md).
+/// A message from the GX10. Guidance has `state`; a place lookup has `lookup`; the cane's talk button has `listen` (contracts/MESSAGES.md).
 struct GX10Message: Decodable, Equatable {
     var seq: Int?
     var state: String?
     var earcon: String?
     var speech: String?
     var lookup: String?
+    var listen: Bool?
 
     static func parse(_ text: String) -> GX10Message? {
         guard let m = try? JSONDecoder().decode(GX10Message.self, from: Data(text.utf8)),
-              m.state != nil || m.lookup != nil else { return nil }
+              m.state != nil || m.lookup != nil || m.listen != nil else { return nil }
         return m
     }
 }
@@ -26,6 +27,12 @@ final class Speaker {
     private var players: [String: AVAudioPlayer] = [:]
     private var lastEarcon: (name: String, time: Date)?
     private var lastSpeech: (text: String, time: Date)?
+
+    /// Set while the user is talking to the phone. Speech under way is cut off and nothing new is spoken
+    /// except a stop, so the phone neither talks over the user nor hears itself.
+    var quiet = false {
+        didSet { if quiet && !oldValue { synth.stopSpeaking(at: .immediate) } }
+    }
 
     init() {
         let session = AVAudioSession.sharedInstance()
@@ -62,6 +69,7 @@ final class Speaker {
     }
 
     func say(_ text: String, interrupt: Bool = false) {
+        guard !quiet || interrupt else { return }
         if interrupt { synth.stopSpeaking(at: .immediate) }
         let u = AVSpeechUtterance(string: text)
         u.rate = 0.55
