@@ -68,8 +68,9 @@ PLUG_FIT = 0.3  # removed from the plug that goes inside the tube
 GRIP_W = 30.0  # across the palm
 GRIP_H = 26.0
 # Rear to nose, before tilting. The pole joins near the front, so all four
-# fingers wrap the grip behind it; the third point sits on the pole axis.
-GRIP_PATH = [(-108, 0, 9), (-70, 0, 15), (0, 0, 16), (14, 0, 15), (26, 0, 12)]
+# fingers wrap the grip behind it; the third point sits on the pole axis. The
+# nose runs on level ahead of the pole to carry the thumb button.
+GRIP_PATH = [(-102, 0, 9), (-66, 0, 15), (0, 0, 16), (24, 0, 16), (52, 0, 14.5)]
 STICK_LEAN_DEG = 30.0  # how far the pole leans back in use (top towards the user)
 GRIP_TILT_DEG = STICK_LEAN_DEG  # grip is turned nose-down by this, so it is level in use
 SOCKET_OD = 28.0
@@ -77,6 +78,17 @@ SOCKET_DEPTH = 45.0  # how far the tube goes in
 PLUG_RECESS = 2.0  # plug stops short of the mouth so the tube starts easily
 BLEND_R = 6.0  # fillet where the socket meets the grip
 SET_SCREW_D = 2.6  # M3 screw cuts its own thread and pinches the tube against the plug
+
+# --- thumb button in the nose ---  UNCONFIRMED: sized for a 12 mm panel-mount push button
+BUTTON_HOLE_D = 12.3  # mounting hole for the button's threaded body
+BUTTON_FROM_POLE = 34.0  # along the grip, ahead of the pole axis; any closer and its pocket cuts into the socket
+BUTTON_SEAT_D = 17.0  # flat cut into the top of the grip for the button's head to sit on
+BUTTON_SEAT_DROP = 2.0  # how far that flat sits below the crown of the grip
+BUTTON_PANEL_T = 4.0  # plastic clamped between the button's head and its nut
+BUTTON_POCKET_D = 17.5  # pocket under the nose for the nut (14 mm across flats) and the wires
+BUTTON_HEAD_D = 15.0  # reference model only
+BUTTON_HEAD_H = 2.5
+BUTTON_BODY_LEN = 21.0  # below the head, reference model only
 
 # --- motor: 37 mm DC gearmotor (JGB37 style) ---
 MOTOR_D = 37.0
@@ -181,6 +193,41 @@ def grip_location():
     return Pos(0, 0, centre) * Rot(0, GRIP_TILT_DEG, 0) * Pos(0, 0, -centre)
 
 
+def path_param_at_x(x):
+    """Where along the untilted grip path the centreline reaches this x."""
+    path = grip_path()
+    lo, hi = 0.0, 1.0
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if (path @ mid).X < x else (lo, mid)
+    return (lo + hi) / 2
+
+
+def button_location():
+    """Button frame in the stick frame: origin on the grip centreline, +Z out through the top of the grip."""
+    path = grip_path()
+    u = path_param_at_x(BUTTON_FROM_POLE)
+    tangent = path % u
+    frame = Plane(origin=path @ u, x_dir=tangent, z_dir=(-tangent.Z, 0, tangent.X))
+    return grip_location() * frame.location
+
+
+def button_cut():
+    """Hole for the button's thread, a flat for its head, and a pocket for its nut and wires."""
+    seat_z = GRIP_H / 2 - BUTTON_SEAT_DROP
+    # the thread hole only spans the clamped plastic; any longer and it would run on into the pole socket
+    cut = Pos(0, 0, seat_z - BUTTON_PANEL_T / 2) * Cylinder(BUTTON_HOLE_D / 2, BUTTON_PANEL_T + 1)
+    cut += Pos(0, 0, seat_z + GRIP_H / 2) * Cylinder(BUTTON_SEAT_D / 2, GRIP_H)
+    return cut + button_pocket()
+
+
+def button_pocket():
+    """The nut pocket alone, in the button frame: from under the clamped plastic down through the nose."""
+    pocket_top = GRIP_H / 2 - BUTTON_SEAT_DROP - BUTTON_PANEL_T
+    depth = pocket_top + GRIP_H / 2 + 1
+    return Pos(0, 0, pocket_top - depth / 2) * Cylinder(BUTTON_POCKET_D / 2, depth)
+
+
 def make_handle():
     path = grip_path()
     section = Plane(origin=path @ 0, x_dir=(0, 1, 0), z_dir=path % 0) * Ellipse(GRIP_W / 2, GRIP_H / 2)
@@ -208,7 +255,8 @@ def make_handle():
                 break
         except Exception:
             continue
-    return cut_tube_socket(handle, SOCKET_DEPTH, set_screw_z=-SOCKET_DEPTH / 2)
+    handle = cut_tube_socket(handle, SOCKET_DEPTH, set_screw_z=-SOCKET_DEPTH / 2)
+    return handle - button_location() * button_cut()
 
 
 def cut_tube_socket(body, depth, set_screw_z=None):
@@ -443,11 +491,21 @@ def ref_stick(length=360.0):
 def ref_hand():
     """Space a gripping hand needs: the grip grown by HAND_CLEARANCE all round."""
     path = grip_path()
-    sub = Spline(*[path @ (0.1 + 0.78 * i / 6) for i in range(7)])
+    u_front = path_param_at_x(SOCKET_OD / 2 + 6)  # the hand ends just ahead of the pole; the nose beyond is the thumb's
+    sub = Spline(*[path @ (0.1 + (u_front - 0.1) * i / 6) for i in range(7)])
     section = Plane(origin=sub @ 0, x_dir=(0, 1, 0), z_dir=sub % 0) * Ellipse(
         GRIP_W / 2 + HAND_CLEARANCE, GRIP_H / 2 + HAND_CLEARANCE
     )
     return grip_location() * sweep(section, sub)
+
+
+def ref_button():
+    """12 mm panel-mount push button in the nose: head on the flat, threaded body through the hole."""
+    seat_z = GRIP_H / 2 - BUTTON_SEAT_DROP
+    head = Pos(0, 0, seat_z + BUTTON_HEAD_H / 2) * Cylinder(BUTTON_HEAD_D / 2, BUTTON_HEAD_H)
+    body = Pos(0, 0, seat_z - BUTTON_BODY_LEN / 2) * Cylinder(BUTTON_HOLE_D / 2 - 0.3, BUTTON_BODY_LEN)
+    nut = Pos(0, 0, seat_z - BUTTON_PANEL_T - 1.5) * (Cylinder(8.0, 3.0) - Cylinder(BUTTON_HOLE_D / 2 - 0.2, 4.0))
+    return button_location() * (head + body + nut)
 
 
 def ref_strap():
@@ -594,6 +652,19 @@ def run_checks(parts):
     collar = collar_location() * parts["camera_collar"]
     stick, hand, phone, view = ref_stick(), ref_hand(), ref_phone(), ref_camera_view()
     collar_r, pivot_x = collar_layout()
+
+    print("thumb button")
+    cut = button_location() * button_cut()
+    socket_len = SOCKET_DEPTH + GRIP_PATH[2][2]
+    socket = Pos(0, 0, GRIP_PATH[2][2] - socket_len / 2) * Cylinder(SOCKET_OD / 2, socket_len)
+    report(overlap(cut, socket) < 1e-6, f"everything cut for the button stays {cut.distance_to(socket):.1f} mm clear of the pole socket, so the socket's wall is untouched")
+    blank_socket = cut_tube_socket(socket, SOCKET_DEPTH, set_screw_z=-SOCKET_DEPTH / 2)
+    lost = overlap(blank_socket, socket) - overlap(handle, socket)
+    report(abs(lost) < 0.5, f"the socket in the finished handle has all its plastic ({lost:+.2f} mm3 against a plain socket)")
+    button = ref_button()
+    report(overlap(button, handle) < 1e-6, "a 12 mm button with its nut sits in the hole, flat and pocket without collision")
+    top = (button_location() * Pos(0, 0, GRIP_H / 2)).position
+    print(f"  button is {BUTTON_FROM_POLE:.0f} mm ahead of the pole axis along the grip; its top is at x={top.X:.0f}, z={top.Z:.0f} in the stick frame")
 
     print("keep-outs (from the parameters)")
     _, _, _, _, back_h = cradle_layout()

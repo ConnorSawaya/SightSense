@@ -1,6 +1,6 @@
 # Handle and phone mount (v1)
 
-A handle for the top of the cane and an adjustable phone mount that clamps on the pole below it. Three printed parts: the handle, a collar for the pole, and a cradle for the phone.
+A handle for the top of the cane, with a thumb button in its nose, and an adjustable phone mount that clamps on the pole below it. Three printed parts: the handle, a collar for the pole, and a cradle for the phone.
 
 Experimental prototype. Nothing here has been printed, fitted or load tested, and it is not a replacement for a white cane or a guide dog.
 
@@ -13,7 +13,7 @@ Experimental prototype. Nothing here has been printed, fitted or load tested, an
 | `walking_stick.py` | build123d source for every part. Running it exports the parts and runs the geometric checks. |
 | `preview.py` | Renders the review images into `previews/`. |
 | `viewer.py`, `viewer.html` | Builds, and is, a self-contained 3D viewer. Open `viewer.html` in a browser. |
-| `export/stick_handle.stl` | Handle |
+| `export/stick_handle.stl` | Handle, with the hole and pocket for the thumb button |
 | `export/camera_collar.stl` | Collar that clamps on the pole and carries the tilt joint |
 | `export/phone_cradle.stl` | Phone cradle (generic phone size; the phone is strapped in) |
 | `export/handle_fit_test.stl` | Short slice of the handle socket, to check the tube fit |
@@ -37,16 +37,26 @@ python viewer.py
 
 ## Layout
 
-- **Handle** (`stick_handle`): just a handle. The grip is turned 30 degrees
-  nose-down (`GRIP_TILT_DEG`), so it is level when the pole leans back 30
-  degrees. The pole joins near the front of the grip and all four fingers wrap
-  the grip behind it.
+- **Handle** (`stick_handle`): the grip is turned 30 degrees nose-down
+  (`GRIP_TILT_DEG`), so it is level when the pole leans back 30 degrees. The
+  pole joins near the front of the grip and all four fingers wrap the grip
+  behind it. Overall 141.5 x 30 x 116.2 mm.
+- **Thumb button**: the nose runs on level for about 50 mm ahead of the pole
+  and carries a panel-mount push button, 34 mm ahead of the pole axis. From the
+  top there is a 12.3 mm hole for the button's thread and a 17 mm flat for its
+  head; underneath, a 17.5 mm pocket, open at the bottom of the nose, takes the
+  nut and lets the wires out. 4 mm of plastic is clamped between head and nut.
+  The wires run down the outside of the pole. **The button's size is
+  unconfirmed**: these values are for a 12 mm button, estimated from a photo.
+  Set the `BUTTON_*` values at the top of `walking_stick.py` if it differs.
 - **Collar** (`camera_collar`): split clamp on the pole below the handle, two
   M3 pinch screws. Slide it up or down and turn it before tightening. A tongue
   on its front carries the tilt joint.
 - **Cradle** (`phone_cradle`): pivots on the collar's tongue. The phone stands
   up from the pivot in portrait, screen facing back at the pole, rear camera
   facing forward.
+
+![Handle with the thumb button](previews/10_handle_button.png)
 
 `PHONE_TILT_DEG` is the angle between the camera axis and the pole's forward
 normal. At 0 the phone is parallel to the pole; positive values swing its top
@@ -64,6 +74,7 @@ horizon at a 30 degree lean.
 | 1 | M3 x 20 screw | tilt index pin | 3.2 mm close fit through cheeks and tongue |
 | 4 | M3 nut | one per screw above | hex pockets, 5.7 mm across flats |
 | 1 | M3 x 6 to 8 screw | tube lock in the handle socket | 2.6 mm pilot: the screw cuts its own thread |
+| 1 | 12 mm panel-mount push button with its nut (size unconfirmed) | handle nose | 12.3 mm hole, 17.5 mm nut pocket |
 | 1 | 20 mm hook-and-loop cinch strap, about 250 mm | phone retention | sits in the plate's edge notches |
 | 1 | cord or lanyard, up to 3 mm | tether | 4 mm eyelet under the back plate |
 
@@ -108,6 +119,8 @@ Print `handle_fit_test` first, then `cradle_fit_test` to see how the phone and t
 Checked by `walking_stick.py`, geometrically, on the generic phone size:
 
 - every part is a single valid solid
+- everything cut for the button stays clear of the pole socket (by 0.4 mm), and
+  the socket in the finished handle has all its plastic
 - at each of the six tilt steps: no collision between cradle or phone and the
   collar, tube, handle or hand envelope; the index pin lines up with a hole; a
   straight tool reaches every screw head and nut
@@ -119,6 +132,8 @@ Checked by `walking_stick.py`, geometrically, on the generic phone size:
 Not checked, and needing a physical prototype:
 
 - [ ] Tube fit of the handle and collar, using `handle_fit_test`.
+- [ ] The push button's thread diameter against the 12.3 mm hole, and whether
+      the thumb reaches it comfortably 34 mm ahead of the pole.
 - [ ] Grip comfort and angle with the pole leaning as you actually hold it.
 - [ ] Collar does not slip down or twist on the carbon tube.
 - [ ] Phone fit, using `cradle_fit_test` and the real phone in its case.
