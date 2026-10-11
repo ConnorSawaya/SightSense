@@ -142,6 +142,7 @@ When the Pi has been on for 15 seconds, the motor ramps from stopped to full pow
 - The motor must be free to turn. Do not run this with the motor fitted to the steering: it goes past the 25% power cap and the 0.4 second limit that the controller keeps.
 - If limit switches are fitted, it does not start, and it stops at once, when one is pressed.
 - It needs 12 V at the driver. With the battery unplugged nothing moves.
+- If three runs in a row do not finish, it stops trying. That is in case the motor starting makes the Pi lose power and restart. Deleting `~/.sightsense-spin-test` on the Pi resets it.
 - Written and tested on mock pins. Not yet run on the Pi.
 
 To switch it off, delete the file `spin-test-enabled` from the SD card's boot partition, on any computer. On the Pi that is:

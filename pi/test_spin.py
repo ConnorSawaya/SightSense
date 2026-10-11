@@ -5,6 +5,8 @@
 Skipped where gpiozero is not installed.
 """
 
+import os
+import tempfile
 import unittest
 
 import hardware
@@ -24,6 +26,20 @@ class Pins(unittest.TestCase):
             (hardware.PIN_RPWM, hardware.PIN_LPWM, hardware.PIN_R_EN, hardware.PIN_L_EN),
         )
         self.assertEqual(set(spin_test.PIN_SWITCHES), set(hardware.PIN_SWITCH.values()))
+
+
+class Record(unittest.TestCase):
+    def test_counts_unfinished_runs(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "record")
+            self.assertEqual(spin_test.unfinished(path), 0)  # no file yet
+            spin_test.record(2, path)
+            self.assertEqual(spin_test.unfinished(path), 2)
+            spin_test.record(0, path)
+            self.assertEqual(spin_test.unfinished(path), 0)
+            with open(path, "w") as f:
+                f.write("not a number")
+            self.assertEqual(spin_test.unfinished(path), 0)
 
 
 @unittest.skipUnless(Device, "gpiozero is not installed")

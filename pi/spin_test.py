@@ -9,10 +9,15 @@ steering. It goes past the two limits the controller keeps (25% power and
 0.4 seconds a move), because its job is to show the motor's whole range.
 It does not start, and it stops at once, if a limit switch is pressed.
 
+If three runs in a row do not finish, it refuses to run again. That stops a
+loop where the motor starting makes the Pi lose power and restart. Delete
+~/.sightsense-spin-test to reset it.
+
 sightsense-spin-test.service runs it once at start-up. See README.md.
 """
 
 import argparse
+import os
 import signal
 import sys
 import time
@@ -28,6 +33,8 @@ PWM_HZ = 1000
 RAMP_S = 10.0  # from stopped to full power
 HOLD_S = 2.0  # at full power
 STEP_S = 0.05
+MAX_UNFINISHED = 3  # runs in a row that may fail to finish before it refuses
+RECORD = os.path.expanduser("~/.sightsense-spin-test")
 
 
 def spin(ramp_s=RAMP_S, hold_s=HOLD_S, reverse=False, log=print, sleep=time.sleep):
@@ -75,6 +82,24 @@ def spin(ramp_s=RAMP_S, hold_s=HOLD_S, reverse=False, log=print, sleep=time.slee
         log("motor off")
 
 
+def unfinished(path=RECORD):
+    """How many runs in a row have started and not finished."""
+    try:
+        with open(path) as f:
+            return int(f.read().strip() or 0)
+    except (OSError, ValueError):
+        return 0
+
+
+def record(count, path=RECORD):
+    """Write the count so that it survives the power being cut."""
+    with open(path, "w") as f:
+        f.write(f"{count}
+")
+        f.flush()
+        os.fsync(f.fileno())
+
+
 def wait_for_uptime(seconds, sleep=time.sleep):
     """Sleep until the Pi has been running for this long."""
     with open("/proc/uptime") as f:
@@ -89,9 +114,15 @@ def main():
     parser.add_argument("--reverse", action="store_true", help="turn the other way")
     args = parser.parse_args()
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    count = unfinished()
+    if count >= MAX_UNFINISHED:
+        print(f"bench test: the last {count} runs did not finish, so not running. Delete {RECORD} to reset.", flush=True)
+        return
     wait_for_uptime(args.uptime)
     print("bench test: ramping the motor to full power. The motor must be free to turn.", flush=True)
+    record(count + 1)
     spin(reverse=args.reverse, log=lambda text: print(text, flush=True))
+    record(0)
 
 
 if __name__ == "__main__":
