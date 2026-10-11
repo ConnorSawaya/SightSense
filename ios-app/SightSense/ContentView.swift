@@ -44,9 +44,7 @@ struct ContentView: View {
             new == "STOP" ? .warning : nil
         }
         // A turn can be felt as well as heard: a light tap for left, a heavy one for right.
-        .sensoryFeedback(trigger: capture.guidance?.direction) { _, new in
-            new == "LEFT" ? SensoryFeedback.impact(weight: .light) : (new == "RIGHT" ? SensoryFeedback.impact(weight: .heavy) : nil)
-        }
+        .sensoryFeedback(trigger: capture.guidance?.direction) { _, new in Self.turnFeel(new) }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(capture: capture, host: $host, recentRaw: $recentRaw, connect: connect)
                 .presentationDetents([.medium, .large])
@@ -59,19 +57,7 @@ struct ContentView: View {
                 connect(args[i + 1])
             }
             if args.contains("-settings") { showSettings = true }
-            // The talk button on the cane: a press starts listening, as the button on the screen does.
-            // Letting go after a hold stops it; after a click it stops by itself, or on a second click.
-            let talker = voice, link = capture
-            link.onListen = { [weak talker, weak link] on in
-                guard let talker, let link else { return }
-                if on, !talker.isListening {
-                    // A click just after the phone stopped by itself is the user ending that command, not starting another.
-                    guard Date().timeIntervalSince(talker.stoppedItselfAt) > Voice.endClick else { return }
-                    talker.start(stopsItself: true) { [weak link] text in link?.send(command: text) }
-                } else {
-                    talker.stop()
-                }
-            }
+            Self.wireCaneButton(voice: voice, capture: capture)
         }
         .onChange(of: voice.isListening) { _, on in
             capture.talking(on)  // no speech over the user while they talk
@@ -84,6 +70,31 @@ struct ContentView: View {
             } else if phase == .active, resumeOnActive {
                 resumeOnActive = false
                 connect(host)
+            }
+        }
+    }
+
+    /// A light tap for a left turn, a heavy one for right.
+    private static func turnFeel(_ direction: String?) -> SensoryFeedback? {
+        switch direction {
+        case "LEFT": return .impact(weight: .light)
+        case "RIGHT": return .impact(weight: .heavy)
+        default: return nil
+        }
+    }
+
+    /// The talk button on the cane: a press starts listening, as the button on the screen does.
+    /// Letting go after a hold stops it; after a click it stops by itself, or on a second click.
+    /// A separate function so the compiler does not time out type-checking `body`.
+    private static func wireCaneButton(voice: Voice, capture: Capture) {
+        capture.onListen = { [weak voice, weak capture] (on: Bool) -> Void in
+            guard let talker = voice, let link = capture else { return }
+            if on, !talker.isListening {
+                // A click just after the phone stopped by itself is the user ending that command, not starting another.
+                guard Date().timeIntervalSince(talker.stoppedItselfAt) > Voice.endClick else { return }
+                talker.start(stopsItself: true) { [weak link] (text: String) in link?.send(command: text) }
+            } else {
+                talker.stop()
             }
         }
     }
