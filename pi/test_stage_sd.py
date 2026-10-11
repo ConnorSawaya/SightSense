@@ -78,6 +78,7 @@ class Staging(unittest.TestCase):
         self.assertIn("--wheel-drive", (self.boot / "sightsense.env").read_text())
         self.assertEqual((self.boot / "cmdline.txt").read_text().count("\n"), 1)
         self.assertIn('systemd.run="/bin/bash ', (self.boot / "cmdline.txt").read_text())
+        self.assertIn("systemd.unit=kernel-command-line.target", (self.boot / "cmdline.txt").read_text())
         target = self.boot / "sightsense-update"
         for line in (target / "SHA256SUMS").read_text().splitlines():
             digest, name = line.split("  ", 1)
@@ -116,6 +117,6 @@ class Staging(unittest.TestCase):
                 stage(self.boot, self.root / "backup", "12345678-02", address)
 
     def test_old_boot_hook_is_replaced_without_duplication(self):
-        (self.boot / "cmdline.txt").write_text('root=PARTUUID=12345678-02 rootwait systemd.run="/bin/bash old.sh" systemd.run_success_action=reboot\n')
+        (self.boot / "cmdline.txt").write_text('root=PARTUUID=12345678-02 rootwait systemd.unit=kernel-command-line.target systemd.run="/bin/bash old.sh" systemd.run_success_action=reboot\n')
         clean = normal_cmdline(self.boot, "12345678-02")
         self.assertEqual(clean, "root=PARTUUID=12345678-02 rootwait\n")

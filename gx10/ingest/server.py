@@ -44,6 +44,10 @@ PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as
 TALK_HOLD_S = 0.6  # the cane's talk button held this long is a hold: letting go ends the command. Shorter is a click
 MANUAL_HZ = 10  # commands per second to the Pi in manual mode; also its heartbeat
 LOG_LINES = 20  # conversation lines kept for the dashboard
+# "sound check", by voice or typed on the dashboard: each tone the phone knows, with its name spoken, one at a time
+SOUND_CHECK = (("other", "Sound check. Four tones follow."), ("left", "Left."), ("right", "Right."),
+               ("unknown", "Can't see ahead."), ("stop", "Stop. Sound check done."))
+SOUND_CHECK_GAP_S = 2.5
 
 
 def locate(d, f, depth, conf):
@@ -143,6 +147,7 @@ class Pipeline:
         self.cue = DirectionCue()
         self.speech = deque()
         self.said = (None, -1e9)
+        self.checks, self.next_check = deque(), 0.0  # a sound check under way
         self.last_frame = -1e9
         self.status = {}
         self.view = None  # newest frame's picture and depth, for the dashboard
@@ -188,6 +193,8 @@ class Pipeline:
             self.speech.appendleft(self.said[0] or "I haven't said anything yet.")
         if g.speech:
             self.speech.append(g.speech)
+        if self.nav.take_sound_check():
+            self.checks, self.next_check = deque(SOUND_CHECK), now
         msg = {"seq": f.seq, "state": state, "direction": cue.direction}
         if cue.earcon:
             msg["earcon"] = cue.earcon
@@ -197,6 +204,9 @@ class Pipeline:
             msg["speech"] = cue.speech
         elif self.speech:
             msg["speech"] = self.speech.popleft()
+        if self.checks and now >= self.next_check and "earcon" not in msg and "speech" not in msg:
+            msg["earcon"], msg["speech"] = self.checks.popleft()  # real guidance always goes first
+            self.next_check = now + SOUND_CHECK_GAP_S
         if msg.get("speech"):
             self.said = (msg["speech"], time.monotonic())  # kept for the dashboard; speech is on one frame only
             self.log.append((time.strftime("%H:%M:%S"), "cane", msg["speech"]))

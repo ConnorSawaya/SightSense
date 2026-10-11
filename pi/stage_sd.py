@@ -125,7 +125,9 @@ def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profil
     write_text(boot / "config.txt", config)
     write_text(boot / "sightsense.env", environment)
     write_text(boot / "sightsense-install-status.txt", "STAGED: insert in Pi; installer runs once and reboots.\n")
-    hook = ' systemd.run="/bin/bash /boot/firmware/sightsense-update/install.sh" systemd.run_success_action=reboot systemd.run_failure_action=reboot'
+    # Pi OS sets /etc/systemd/system/default.target explicitly. Select the
+    # generated target so that local default cannot bypass the boot installer.
+    hook = ' systemd.unit=kernel-command-line.target systemd.run="/bin/bash /boot/firmware/sightsense-update/install.sh" systemd.run_success_action=reboot systemd.run_failure_action=reboot'
     write_text(boot / "cmdline.txt", clean.strip() + hook + "\n")
     if (boot / "cmdline.txt").read_text().count("\n") != 1:
         raise OSError("boot command line readback failed")

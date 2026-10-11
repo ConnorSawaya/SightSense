@@ -43,6 +43,10 @@ struct ContentView: View {
         .sensoryFeedback(trigger: capture.guidance?.state) { _, new in
             new == "STOP" ? .warning : nil
         }
+        // A turn can be felt as well as heard: a light tap for left, a heavy one for right.
+        .sensoryFeedback(trigger: capture.guidance?.direction) { _, new in
+            new == "LEFT" ? SensoryFeedback.impact(weight: .light) : (new == "RIGHT" ? SensoryFeedback.impact(weight: .heavy) : nil)
+        }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(capture: capture, host: $host, recentRaw: $recentRaw, connect: connect)
                 .presentationDetents([.medium, .large])

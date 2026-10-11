@@ -5,6 +5,7 @@ import Foundation
 struct GX10Message: Decodable, Equatable {
     var seq: Int?
     var state: String?
+    var direction: String?  // LEFT, STRAIGHT, RIGHT, STOP or UNKNOWN: which way to go, the same as the wheel
     var earcon: String?
     var speech: String?
     var lookup: String?

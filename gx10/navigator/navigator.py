@@ -73,6 +73,7 @@ class Navigator:
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
         self.repeat_asked = False  # "say that again": the frame service knows the last sentence sent
+        self.sound_check_asked = False  # "sound check": the frame service sends each tone with its name
         self._last_route = -1e9
         self._route_step = None
 
@@ -143,6 +144,8 @@ class Navigator:
             self._say(HELP)
         elif cmd.kind == "repeat":
             self.repeat_asked = True
+        elif cmd.kind == "soundcheck":
+            self.sound_check_asked = True
         elif cmd.kind == "time":
             self._say(time_words(self._now()))
         else:
@@ -241,6 +244,12 @@ class Navigator:
             print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} "
                   f"({getattr(a, 'seconds', 0):.2f} s)", flush=True)
             self._apply(cmd)
+
+    def take_sound_check(self) -> bool:
+        """True once after "sound check"; the frame service sends the tones."""
+        with self._lock:
+            asked, self.sound_check_asked = self.sound_check_asked, False
+            return asked
 
     def take_repeat(self) -> bool:
         """True once after "say that again"; the frame service repeats the last sentence it sent."""

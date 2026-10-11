@@ -31,3 +31,19 @@ Checked on October 11 on ray-cast scenes with depth noise added (about 1 cm plus
 - **Low things.** A thing 15 cm high or more is seen out to 3 m. 10 cm is seen at 1 m only. 5 cm is not seen. The cane does not handle kerbs, steps or drop-offs.
 - **The cane's own lower end.** The mount's own check of the camera's view covers only the top 360 mm of the tube. By the geometry, at the 60 degree step with the phone upright the motor, wheel and Pi clamp are at the very bottom edge of the depth picture, and at 75 degrees they are well inside it (an estimate; not looked at on the cane). Anything of the cane in view reads as an obstacle about 0.4 m ahead for ever. Look at the depth picture on the dashboard with open floor ahead: every bar should read 4.5. If the middle bars read under 1 m with nothing there, start the service with `SIGHTSENSE_OWN_CANE_M=0.65` (the distance along the floor from the phone to the cane's tip). That ignores a strip 24 cm wide and that long straight ahead, never as far as the 0.8 m stop distance. A wall, a wide box, or a post further off are still seen. It is off by default, because with nothing of the cane in view it would only hide a thin post nearer than the tip.
 - The dashboard and the once-a-second line now show how far the floor is below the phone (`floor 0.92m`, or `n` when no floor is seen). If that number jumps about, or is far from the phone's real height, the floor is being misjudged.
+
+## Steering round things
+
+Checked on October 11 with a simulated walker that follows the wheel (LEFT or RIGHT turns them 30 degrees a second), on ray-cast scenes with depth noise, on a laptop. `test_walk.py` repeats five of them. Not a test on the cane.
+
+| Scene | What happened |
+| --- | --- |
+| A box in the path, room either side | Steered round it, no stop |
+| A person-sized thing a little right of centre | Steered left of it, no stop |
+| A doorway 1.0 m wide straight ahead | Straight through, no turn |
+| The same doorway 0.6 m to the right | Steered right and through, no stop |
+| A corridor 1.6 m wide with a box on the left | Steered past it, no stop |
+| Two boxes staggered | Steered round both, no stop |
+| A wall right across | Turned and walked along the wall. Someone who ignores the wheel and keeps walking is stopped about 0.75 m from it |
+
+The same with the phone upright or on its side. The walker passed 0.28 to 0.33 m from the nearest edge, measured from the middle of the walker, which is close: the corridor the check keeps clear is 0.7 m wide. So when the cane stops a lot, look first at the phone's tilt and at whether the cane or a hand is in its view (the section above), not at the steering rules.

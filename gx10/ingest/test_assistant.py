@@ -41,6 +41,17 @@ class Assistant(unittest.TestCase):
         first = self.ask("help")
         self.assertEqual(self.ask("repeat that"), first)
 
+    def test_sound_check_sends_each_tone_with_its_name_one_at_a_time(self):
+        with patch.object(srv, "SOUND_CHECK_GAP_S", 0.02):
+            self.pipe.nav.on_voice("sound check")
+            got = []
+            for _ in range(30):
+                messages, _pi = self.pipe.process(next(self.frames), time.monotonic())
+                got += [(m["earcon"], m["speech"]) for m in map(json.loads, messages) if m.get("earcon") and m.get("speech")]
+                time.sleep(0.01)
+        self.assertEqual([tone for tone, _ in got], [tone for tone, _ in srv.SOUND_CHECK])
+        self.assertEqual(got[-1], ("stop", "Stop. Sound check done."))
+
     def test_a_question_about_the_picture_goes_to_the_model_and_its_answer_is_spoken(self):
         with patch.object(srv.vlm, "ask", return_value=srv.vlm.Answer(True, "A red chair.")) as model:
             answer = self.ask("what colour is the chair", frames=20)

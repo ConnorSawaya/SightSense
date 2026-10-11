@@ -54,6 +54,9 @@ def parse(text: str) -> Command:
     if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t):
         return Command("cancel")
 
+    # A check of the phone's tones and speech
+    if re.fullmatch(r"(?:sound|audio|speech|voice|speaker) (?:check|test)|(?:test|check) (?:the |my )?(?:sounds?|audio|speech|voice|speaker|tones?)", t):
+        return Command("soundcheck")
     # About the assistant itself: answered at once, without the model
     if re.fullmatch(r"help(?: me)?|what can (?:you|i) (?:do|say|ask)(?: you)?|what do you do|(?:who|what) are you"
                     r"|how do (?:you|i) (?:work|use (?:you|this|it))|commands|instructions", t):
