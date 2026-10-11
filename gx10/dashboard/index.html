@@ -14,8 +14,7 @@
   .pill.on { color: var(--clear); }
   main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  .pics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .pics img { width: 100%; background: #000; border-radius: 8px; display: block; min-height: 120px; }
+  .live { width: 100%; max-height: 72vh; object-fit: contain; background: #000; border-radius: 8px; display: block; min-height: 160px; }
   .panel { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
   .decision { font-size: 44px; font-weight: 700; letter-spacing: 1px; }
   .state { font-size: 16px; color: var(--dim); }
@@ -43,11 +42,8 @@
 </header>
 <main>
   <section>
-    <div class="pics">
-      <img id="frame" alt="Live picture with YOLO boxes">
-      <img id="depth" alt="LiDAR depth, red near, blue far, grey no reading">
-    </div>
-    <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading.</p>
+    <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
+    <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading. Live stream from the GX10, newest frame only (up to 8 a second).</p>
   </section>
   <section>
     <div class="panel">
@@ -78,11 +74,11 @@
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
-let lastSpeech = "";
+let lastSpeech = "", lastStatus = 0;
 function color(v) { return v === null ? "var(--unknown)" : v >= 2.5 ? "var(--clear)" : v >= 1.2 ? "var(--caution)" : "var(--stop)"; }
-async function tick() {
+function show(s) {
+  lastStatus = Date.now();
   try {
-    const s = await (await fetch("/status")).json();
     $("phone").textContent = s.phone ? "phone " + s.phone : "phone not connected"; $("phone").className = "pill" + (s.phone ? " on" : "");
     $("pi").textContent = s.pis ? "Pi connected" : "Pi not connected"; $("pi").className = "pill" + (s.pis ? " on" : "");
     $("time").textContent = new Date().toLocaleTimeString();
@@ -106,10 +102,18 @@ async function tick() {
     $("gpu").textContent = s.gpu && s.gpu.util_pct !== undefined ? s.gpu.util_pct + "% · " + s.gpu.power_w.toFixed(0) + " W · " + s.gpu.temp_c + " °C" : "-";
     $("model").textContent = s.model || "-";
     $("track").textContent = (f.tracking || "-") + " / " + (f.thermal || "-");
-    if (s.fps) { $("frame").src = "/frame.jpg?" + Date.now(); $("depth").src = "/depth.png?" + Date.now(); }
-  } catch (e) { $("state").textContent = "dashboard lost the GX10"; }
+  } catch (e) { console.error(e); }
 }
-setInterval(tick, 300); tick();
+// Status is pushed by the GX10 about 5 times a second; EventSource reconnects by itself
+const events = new EventSource("/events");
+events.onmessage = (e) => show(JSON.parse(e.data));
+// If the stream or status stops (GX10 restarted, link dropped), say so and reconnect the picture
+setInterval(() => {
+  if (Date.now() - lastStatus > 3000) {
+    $("state").textContent = "no contact with the GX10 - reconnecting";
+    $("live").src = "/stream.mjpg?" + Date.now();
+  }
+}, 3000);
 $("say").addEventListener("submit", async (e) => {
   e.preventDefault(); const text = $("text").value.trim(); if (!text) return;
   await fetch("/say", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
