@@ -51,13 +51,22 @@ class Check:
     floor_seen: bool
     points: int
     cam_h: Optional[float] = None  # how far the phone is above the floor it found; None when no floor was seen
+    maps: Optional[dict] = None  # per depth pixel, for the dashboard only; see MAP_* below
+
+
+# maps["kind"]: what each depth pixel is, as the check saw it (MAP_NONE: above the cane, or the cane itself)
+MAP_NONE, MAP_FLOOR, MAP_OBSTACLE, MAP_TOO_CLOSE, MAP_NO_READING, MAP_OUT = 0, 1, 2, 3, 4, 5
+# maps["heading"]: index into HEADINGS of the 10-degree wedge a pixel looks along, or -1
+# maps["corridor"]: bit i set if the pixel is an obstacle inside heading i's 0.7 m corridor
+# maps["along"]: metres from the phone along the floor, for obstacle pixels (0 elsewhere)
 
 
 def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired: float = 0.0, last: float = 0.0,
-          stopped: bool = False, own_cane_m: Optional[float] = None) -> Check:
+          stopped: bool = False, own_cane_m: Optional[float] = None, want_maps: bool = False) -> Check:
     """One frame. depth_mm and conf are (h, w) arrays; pose is 16 numbers, column by column.
     stopped: the smoothed command is STOP now (going again needs LEAVE_STOP_M).
-    own_cane_m: see OWN_CANE_M; None means use that setting."""
+    own_cane_m: see OWN_CANE_M; None means use that setting.
+    want_maps: also return per-pixel maps for the dashboard (about 0.5 ms more); the decision does not use them."""
     h, w = depth_mm.shape
     M = np.asarray(pose, dtype=np.float64).reshape(4, 4).T  # column by column -> matrix
     R, t = M[:3, :3], M[:3, 3]
@@ -70,7 +79,7 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
     fwd = -R[:, 2]
     f2 = np.array([fwd[0], fwd[2]])
     if np.linalg.norm(f2) < 1e-6:  # camera pointing straight up or down
-        return _nothing(raw_cmd="STOP")
+        return _nothing(raw_cmd="STOP")  # no maps: the dashboard shows depth only
     f2 /= np.linalg.norm(f2)
     r2 = np.array([-f2[1], f2[0]])  # forward turned 90 degrees clockwise seen from above
     ray_b = np.degrees(np.arctan2(rays[..., 0] * r2[0] + rays[..., 2] * r2[1], rays[..., 0] * f2[0] + rays[..., 2] * f2[1]))
@@ -92,7 +101,9 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
             guess = np.percentile(near[:, 1], 5)
             if cam_y - 1.6 <= guess <= cam_y - 0.3:
                 floor_y, floor_seen = guess, True
-    obst = p[(p[:, 1] > floor_y + FLOOR_MARGIN_M) & (p[:, 1] < cam_y + ABOVE_CAMERA_M)]
+    is_obst = (p[:, 1] > floor_y + FLOOR_MARGIN_M) & (p[:, 1] < cam_y + ABOVE_CAMERA_M)
+    obst = p[is_obst]
+    obst_px = np.flatnonzero(keep)[is_obst]  # depth pixel of each obstacle point, for the maps
 
     # Obstacle points in the user's floor frame: a = metres right, b = metres ahead
     d = obst[:, [0, 2]] - t[[0, 2]]
@@ -101,9 +112,11 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
     if own > 0:  # the cane itself, not something in the way
         mine = (np.abs(a) <= OWN_CANE_HALF_W_M) & (b <= min(own, STOP_AHEAD_M - 0.05))
         a, b = a[~mine], b[~mine]
+        obst_px = obst_px[~mine]
 
+    corridor = np.zeros(len(a), np.uint8)
     clearance, usable = {}, []
-    for hd in HEADINGS:
+    for i, hd in enumerate(HEADINGS):
         wedge = np.abs(ray_b - hd) <= 5.0
         n = int(wedge.sum())
         if n < MIN_WEDGE_PX or good[wedge].mean() < MIN_VALID:
@@ -115,6 +128,7 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
         s, c = np.sin(np.radians(hd)), np.cos(np.radians(hd))
         along, side = a * s + b * c, a * c - b * s
         inside = (np.abs(side) <= CORRIDOR_W_M / 2) & (along > 0)
+        corridor[inside] |= np.uint8(1 << i)
         clearance[hd] = float(np.percentile(along[inside], 5)) if inside.sum() >= MIN_POINTS else FAR_M
         if clearance[hd] >= USABLE_M:
             usable.append(hd)
@@ -126,7 +140,27 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
             hd = max(known, key=lambda k: (known[k], -abs(k - desired)))
             if known[hd] >= (LEAVE_STOP_M if stopped else STOP_AHEAD_M):
                 best = hd
-    return Check(clearance, usable, best, wheel(best), floor_seen, len(a), float(cam_y - floor_y) if floor_seen else None)
+    maps = _maps(h, w, good, keep, too_close, p, floor_y, ray_b, obst_px, corridor, a, b) if want_maps else None
+    return Check(clearance, usable, best, wheel(best), floor_seen, len(a), float(cam_y - floor_y) if floor_seen else None,
+                 maps)
+
+
+def _maps(h, w, good, keep, too_close, p, floor_y, ray_b, obst_px, corridor, a, b):
+    """What the check saw, pixel by pixel. Drawing only; the decision above does not use it."""
+    kind = np.full(h * w, MAP_OUT, np.uint8)  # good reading beyond range
+    kind[~good.ravel()] = MAP_NO_READING
+    kind[too_close.ravel()] = MAP_TOO_CLOSE
+    flat = np.flatnonzero(keep)
+    kind[flat] = np.where(p[:, 1] <= floor_y + FLOOR_MARGIN_M, MAP_FLOOR, MAP_NONE)
+    kind[obst_px] = MAP_OBSTACLE  # after the cane's own end is taken out
+    corr = np.zeros(h * w, np.uint8)
+    corr[obst_px] = corridor
+    along = np.zeros(h * w, np.float32)
+    along[obst_px] = np.hypot(a, b)
+    idx = np.rint((ray_b - HEADINGS[0]) / 10.0)
+    heading = np.where((idx >= 0) & (idx < len(HEADINGS)) & (np.abs(ray_b - (HEADINGS[0] + 10 * idx)) <= 5.0), idx, -1)
+    return {"kind": kind.reshape(h, w), "heading": heading.astype(np.int8), "corridor": corr.reshape(h, w),
+            "along": along.reshape(h, w)}
 
 
 def wheel(heading: Optional[float]) -> str:

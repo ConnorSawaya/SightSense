@@ -21,6 +21,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from . import obstacle_view
+
 PAGE = (Path(__file__).parent / "index.html").read_bytes()
 _CV = {1: cv2.ROTATE_90_CLOCKWISE, 2: cv2.ROTATE_180, 3: cv2.ROTATE_90_COUNTERCLOCKWISE}
 STREAM_FPS = 15  # cap per viewer; the phone sends up to 15
@@ -129,11 +131,15 @@ def _reticle(img, metres):
     return img
 
 
-def composite(view) -> bytes:
-    """Picture and depth side by side, same height, as one JPEG."""
-    pic, dep = _picture(view), _depth(view)
+def composite(view, manual=None) -> bytes:
+    """Picture and the obstacle view (or plain depth when there are no maps) side by side, as one JPEG.
+    manual: the command being held in manual steering, which the obstacle view highlights."""
+    pic = _picture(view)
     h = pic.shape[0]
-    dep = cv2.resize(dep, (round(dep.shape[1] * h / dep.shape[0]), h), interpolation=cv2.INTER_NEAREST)
+    dep = obstacle_view.draw(view, h, manual)
+    if dep is None:
+        dep = _depth(view)
+        dep = cv2.resize(dep, (round(dep.shape[1] * h / dep.shape[0]), h), interpolation=cv2.INTER_NEAREST)
     dep = _reticle(dep, centre_m(view))
     ok, out = cv2.imencode(".jpg", cv2.hconcat([pic, dep]), [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
     return out.tobytes() if ok else b""
@@ -154,11 +160,12 @@ class Renderer:
         while True:
             time.sleep(1 / STREAM_FPS)
             view = self.server.pipe.view
-            if not self.viewers or view is None or view is drawn:
+            manual = self.server.manual[0] if self.server.manual else None
+            if not self.viewers or view is None or (drawn and drawn[0] is view and drawn[1] == manual):
                 continue
-            drawn = view
+            drawn = (view, manual)  # redrawn when manual steering changes too, so the highlight follows the click
             try:
-                jpeg = composite(view)
+                jpeg = composite(view, manual)
             except Exception as e:
                 print("dashboard: draw failed:", repr(e), flush=True)
                 continue
@@ -182,6 +189,8 @@ def start(server, port: int):
         s["gpu"] = gpu.now
         view = server.pipe.view
         s["centre_m"] = centre_m(view) if view is not None and s.get("frame") else None
+        manual = server.manual[0] if server.manual else None
+        s["explain"] = obstacle_view.banner(view, manual) if view is not None and view.get("maps") is not None and s.get("frame") else None
         s["viewers"] = renderer.viewers
         return s
 
@@ -218,7 +227,7 @@ def start(server, port: int):
             if path == "/stream.mjpg":
                 return self._mjpeg()
             if path == "/frame.jpg" and server.pipe.view:  # one still, e.g. for a screenshot
-                return self._send(composite(server.pipe.view), "image/jpeg")
+                return self._send(composite(server.pipe.view, server.manual[0] if server.manual else None), "image/jpeg")
             self._send(b"not found", "text/plain", 404)
 
         def _events(self):
@@ -258,7 +267,7 @@ def start(server, port: int):
                 text = json.loads(self.rfile.read(n) or b"{}").get("text", "")
                 server.text_command(text)
                 return self._send(b'{"ok": true}', "application/json")
-            if self.path == "/manual":  # manual steering: LEFT CENTER RIGHT STOP FREE, or AUTO to hand back
+            if self.path == "/manual":  # manual spin: LEFT (counter-clockwise), RIGHT (clockwise), STOP, or AUTO to hand back
                 n = int(self.headers.get("Content-Length", 0))
                 cmd = json.loads(self.rfile.read(n) or b"{}").get("cmd", "")
                 ok = server.manual_command(cmd)

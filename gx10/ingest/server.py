@@ -38,7 +38,10 @@ from planner.state import StateSmoother
 from .upright import box_back, decode_upright, rotate_jpeg, turn_for
 
 TTL_MS = 400
-MANUAL_CMDS = ("LEFT", "CENTER", "RIGHT", "STOP", "FREE")
+# Manual spin from the dashboard: the Pi's direct-drive mode spins the motor one way for LEFT
+# (counter-clockwise on the dashboard) and the other for RIGHT (clockwise) while commands keep
+# coming, and switches it off for STOP. No positions: CENTER means nothing to a free-spinning motor.
+MANUAL_CMDS = ("LEFT", "RIGHT", "STOP")
 MANUAL_HOLD_S = 1.0  # back to automatic if the dashboard stops sending for this long (tab closed, link lost)
 PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as missing
 TALK_HOLD_S = 0.6  # the cane's talk button held this long is a hold: letting go ends the command. Shorter is a click
@@ -175,7 +178,7 @@ class Pipeline:
 
         g = self.nav.on_frame(f, dets)
         c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading,
-                  stopped=self.smoother.cmd == "STOP")
+                  stopped=self.smoother.cmd == "STOP", want_maps=True)  # maps: dashboard obstacle view only
         raw_cmd = c.raw_cmd
         if g.hold_center and raw_cmd != "STOP":
             raw_cmd = "CENTER"  # turning on the spot; depth still wins
@@ -216,7 +219,8 @@ class Pipeline:
             out.append(json.dumps({"lookup": g.lookup}))
         pi = json.dumps({"seq": f.seq, "cmd": cmd, "ttl_ms": TTL_MS})
         done = time.monotonic()
-        self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf}
+        self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf,
+                     "maps": c.maps, "clearance": c.clearance, "best": c.best, "cmd": cmd}
         self.status = {
             "seq": f.seq, "cmd": cmd, "state": state, "direction": cue.direction, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
@@ -251,7 +255,7 @@ class Server:
         self.phone_ws = None  # the newest phone connection: the dashboard shows it and the talk button tells it
         self.phones = []  # every open phone connection, oldest first
         self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
-        self.manual_sent = None  # what actually went to the Pi, after the depth check
+        self.manual_sent = None  # what went to the Pi
         self.manual_seq = 0
         self.pi_health = None  # (report, time received, address): temperature, input volts, settings
         self.talk_down = None  # when the cane's talk button went down, while it is held
@@ -295,7 +299,7 @@ class Server:
         self._text(json.dumps({"text": text}))
 
     def manual_command(self, cmd: str) -> bool:
-        """The dashboard's manual steering. "AUTO" hands the wheel back to the pipeline.
+        """The dashboard's manual spin. "AUTO" hands the wheel back to the pipeline.
         Sent again every 100-200 ms while manual mode is on; stops if that stops."""
         cmd = str(cmd).upper()
         if cmd == "AUTO":
@@ -310,13 +314,10 @@ class Server:
         self.manual = (cmd, time.monotonic())
         return True
 
-    def _manual_for_pi(self, now, cmd):
-        """The command the Pi gets in manual mode. Depth still wins: while phone frames
-        arrive and the obstacle check says STOP, a turn or CENTER becomes STOP."""
-        depth_live = now - self.pipe.last_frame < 0.5
-        if depth_live and cmd in ("LEFT", "CENTER", "RIGHT") and self.pipe.status.get("cmd") == "STOP":
-            return "STOP", True
-        return cmd, False
+    def _obstacle_ahead(self, now):
+        """The obstacle check says STOP on a live phone frame. Shown on the dashboard only:
+        a manual spin is sent as asked, whatever the free space."""
+        return now - self.pipe.last_frame < 0.5 and self.pipe.status.get("cmd") == "STOP"
 
     async def manual_loop(self):
         while True:
@@ -330,9 +331,9 @@ class Server:
                 if self.manual is manual:
                     self.manual = self.manual_sent = None
                 continue
-            cmd, overridden = self._manual_for_pi(now, manual[0])
+            cmd = manual[0]  # sent as asked: the obstacle check does not apply to a manual spin
             self.manual_seq += 1
-            self.manual_sent = {"asked": manual[0], "cmd": cmd, "depth_stop": overridden,
+            self.manual_sent = {"cmd": cmd, "obstacle_ahead": self._obstacle_ahead(now),
                                 "depth_live": now - self.pipe.last_frame < 0.5}
             msg = json.dumps({"seq": self.manual_seq, "cmd": cmd, "ttl_ms": TTL_MS})
             for p in list(self.pis):
