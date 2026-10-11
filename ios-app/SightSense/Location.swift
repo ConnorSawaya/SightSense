@@ -7,6 +7,12 @@ final class Location: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var extras = FrameEncoder.Extras()
 
+    /// Where the phone is, once known. Used to look places up nearby.
+    var coordinate: CLLocationCoordinate2D? {
+        guard let lat = extras.lat, let lon = extras.lon else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
     override init() {
         super.init()
         manager.delegate = self

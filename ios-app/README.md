@@ -51,6 +51,7 @@ In the Simulator there is no camera or LiDAR: Connect opens the link without sen
 | `Guidance.swift` | Parses guidance; beeps (at most once a second) and speaks (same sentence at most every 4 s). Stays quiet, except for a stop, while the user is talking |
 | `Voice.swift` | Hold-to-talk, on-device speech recognition; sends `{"text": ...}`. Also started and stopped by the cane's talk button |
 | `Location.swift` | GPS and compass heading for the frame header |
+| `Places.swift` | Looks a place up with Apple Maps and sends the walking route to it. Not compiled yet |
 
 ## The cane's talk button
 
@@ -65,7 +66,7 @@ A push button in the cane's handle does the same job as the talk button on the s
 
 ## Build order
 
-Steps 1–7 are written. Step 8 is not started.
+Steps 1–7 are written. Step 8 is written in `Places.swift` but has not been compiled or run: it was written on a Windows laptop with no Xcode.
 
 1. App shell: GX10 address field, Connect button, status line, screen kept awake.
 2. ARKit session with scene depth on; show the tracking state.
@@ -75,6 +76,8 @@ Steps 1–7 are written. Step 8 is not started.
 6. Push-to-talk with on-device speech recognition; send `{"text": "..."}`.
 7. Location and compass heading in every frame header.
 8. Place lookup with MapKit walking directions; send the route message.
+
+How step 8 works: the GX10 sends `{"lookup": "Safeway"}`. The phone searches Apple Maps within 5 km of where it is and takes the nearest result, so "a coffee shop" means the nearest one. It asks for walking directions and sends the route message. If it finds no place or no route it sends an empty route, and the GX10 says so. The GX10 then says the name, the distance and the time, and waits for "yes".
 
 Step 4 is the one everything else depends on.
 
