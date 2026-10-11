@@ -1,7 +1,7 @@
 import ARKit
 import UIKit
 
-/// Turns LiDAR depth into a colour picture for the screen: near red, far blue, low confidence dark.
+/// Turns LiDAR depth into a colour picture for the screen: Turbo colours, near orange, far deep purple.
 /// Only for people looking at the phone; the GX10 gets the raw depth.
 final class DepthPreview: ObservableObject {
     @MainActor @Published private(set) var image: UIImage?
@@ -28,9 +28,9 @@ final class DepthPreview: ObservableObject {
             return true
         }
         guard go else { return }
-        let depthMap = depth.depthMap, confidence = depth.confidenceMap
+        let depthMap = depth.depthMap
         queue.async {
-            let result = Self.render(depthMap, confidence)
+            let result = Self.render(depthMap)
             self.lock.withLock { self.busy = false }
             Task { @MainActor in
                 self.image = result?.image
@@ -60,7 +60,7 @@ final class DepthPreview: ObservableObject {
             }
         }
         CVPixelBufferUnlockBaseAddress(buf, [])
-        let result = Self.render(buf, nil)
+        let result = Self.render(buf)
         Task { @MainActor in
             self.image = result?.image
             self.centreMetres = result?.centre
@@ -73,32 +73,26 @@ final class DepthPreview: ObservableObject {
         centreMetres = nil
     }
 
-    private static func render(_ depth: CVPixelBuffer, _ confidence: CVPixelBuffer?) -> (image: UIImage, centre: Float?)? {
+    private static func render(_ depth: CVPixelBuffer) -> (image: UIImage, centre: Float?)? {
         guard CVPixelBufferGetPixelFormatType(depth) == kCVPixelFormatType_DepthFloat32 else { return nil }
         CVPixelBufferLockBaseAddress(depth, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(depth, .readOnly) }
-        if let confidence { CVPixelBufferLockBaseAddress(confidence, .readOnly) }
-        defer { if let confidence { CVPixelBufferUnlockBaseAddress(confidence, .readOnly) } }
         guard let dBase = CVPixelBufferGetBaseAddress(depth) else { return nil }
         let w = CVPixelBufferGetWidth(depth), h = CVPixelBufferGetHeight(depth)
         let dRow = CVPixelBufferGetBytesPerRow(depth)
-        let cBase = confidence.flatMap(CVPixelBufferGetBaseAddress)
-        let cRow = confidence.map(CVPixelBufferGetBytesPerRow) ?? 0
 
         var rgba = [UInt8](repeating: 0, count: w * h * 4)
         for y in 0..<h {
             let d = dBase.advanced(by: y * dRow).assumingMemoryBound(to: Float32.self)
-            let c = cBase?.advanced(by: y * cRow).assumingMemoryBound(to: UInt8.self)
             for x in 0..<w {
                 let z = d[x]
                 let i = (y * w + x) * 4
+                // Missing readings take the far colour, so the picture has no black holes
+                let k = z.isFinite && z > 0 ? Self.lutIndex(z) : 0
+                rgba[i] = Self.lut[k * 3]
+                rgba[i + 1] = Self.lut[k * 3 + 1]
+                rgba[i + 2] = Self.lut[k * 3 + 2]
                 rgba[i + 3] = 255
-                guard z.isFinite, z > 0 else { continue }  // missing: black
-                let (r, g, b) = colour(min(z / maxMetres, 1))
-                let dim: Float = (c?[x] ?? 2) == 0 ? 0.3 : 1  // low confidence: dark
-                rgba[i] = UInt8(r * dim * 255)
-                rgba[i + 1] = UInt8(g * dim * 255)
-                rgba[i + 2] = UInt8(b * dim * 255)
             }
         }
 
@@ -120,13 +114,28 @@ final class DepthPreview: ObservableObject {
         return (UIImage(cgImage: cg, scale: 1, orientation: .right), centre)
     }
 
-    /// 0 near → red, through yellow and green, → 1 far blue.
-    private static func colour(_ t: Float) -> (Float, Float, Float) {
-        let stops: [(Float, Float, Float)] = [(1, 0.1, 0.1), (1, 0.85, 0.1), (0.2, 0.85, 0.3), (0.1, 0.4, 1)]
-        let s = t * Float(stops.count - 1)
-        let i = min(Int(s), stops.count - 2)
-        let f = s - Float(i)
-        let a = stops[i], b = stops[i + 1]
-        return (a.0 + (b.0 - a.0) * f, a.1 + (b.1 - a.1) * f, a.2 + (b.2 - a.2) * f)
+    // Colour scale: Turbo, the usual LiDAR depth look. Near is orange, then yellow, green,
+    // cyan and blue, and far (or no reading) is deep purple. The nearest end stops short of
+    // Turbo's dark red so close things read as bright orange.
+    static let nearMetres: Float = 0.3
+    static let nearestTurbo: Float = 0.82
+
+    /// 256 entries, RGB: index 0 far, 255 near.
+    static let lut: [UInt8] = (0..<256).flatMap { i -> [UInt8] in
+        let (r, g, b) = turbo(Float(i) / 255 * nearestTurbo)
+        return [UInt8(r * 255), UInt8(g * 255), UInt8(b * 255)]
+    }
+
+    static func lutIndex(_ metres: Float) -> Int {
+        let t = 1 - (min(max(metres, nearMetres), maxMetres) - nearMetres) / (maxMetres - nearMetres)
+        return Int((t * 255).rounded())
+    }
+
+    /// Google's polynomial fit of the Turbo colour map, t in 0...1.
+    static func turbo(_ t: Float) -> (Float, Float, Float) {
+        let r = 0.13572138 + t * (4.61539260 + t * (-42.66032258 + t * (132.13108234 + t * (-152.94239396 + t * 59.28637943))))
+        let g = 0.09140261 + t * (2.19418839 + t * (4.84296658 + t * (-14.18503333 + t * (4.27729857 + t * 2.82956604))))
+        let b = 0.10667330 + t * (12.64194608 + t * (-60.58204836 + t * (110.36276771 + t * (-89.90310912 + t * 27.34824973))))
+        return (min(max(r, 0), 1), min(max(g, 0), 1), min(max(b, 0), 1))
     }
 }
