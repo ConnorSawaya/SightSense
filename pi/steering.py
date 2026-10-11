@@ -6,6 +6,7 @@ The behaviour is described in README.md.
 """
 
 import json
+import math
 
 LEFT, CENTER, RIGHT = "LEFT", "CENTER", "RIGHT"
 POSITIONS = (LEFT, CENTER, RIGHT)
@@ -18,6 +19,14 @@ PAUSE_S = 0.05  # motor rests this long between runs
 HOMING_PULSES = (-1, +1, +1, -1)  # directions tried when no switch is pressed
 MAX_RUNS = 6  # motor runs allowed without reaching the goal
 FAULT_REST_S = 3.0  # driver stays off this long after giving up
+
+
+def command_ttl(ttl_ms):
+    """Validate a TTL, then cap it before converting to seconds."""
+    if (isinstance(ttl_ms, bool) or not isinstance(ttl_ms, (int, float))
+            or ttl_ms <= 0 or (isinstance(ttl_ms, float) and not math.isfinite(ttl_ms))):
+        raise ValueError(f"bad ttl_ms {ttl_ms!r}")
+    return min(ttl_ms, MAX_TTL_S * 1000) / 1000
 
 
 def parse_command(text):
@@ -34,8 +43,7 @@ def parse_command(text):
         raise ValueError(f"not a command message: {e!r}") from e
     if cmd not in COMMANDS:
         raise ValueError(f"unknown cmd {cmd!r}")
-    if isinstance(ttl_ms, bool) or not isinstance(ttl_ms, (int, float)) or ttl_ms <= 0:
-        raise ValueError(f"bad ttl_ms {ttl_ms!r}")
+    command_ttl(ttl_ms)
     return cmd, ttl_ms, seq
 
 
@@ -60,6 +68,8 @@ class Steering:
         self._run = None  # (stop_on, until) while the motor is on
         self._tries = 0  # motor runs since the goal was last reached
         self._misses = 0  # runs that ended on the time limit
+        self._direction = 0
+        self._home_direction = None
         self.hw.off()
 
     def command(self, cmd, now, ttl_ms=MAX_TTL_S * 1000):
@@ -67,15 +77,30 @@ class Steering:
         if cmd not in COMMANDS:
             self.release(f"bad command {cmd!r}")
             return
+        try:
+            ttl_s = command_ttl(ttl_ms)
+            if not math.isfinite(now):
+                raise ValueError("bad command time")
+        except (TypeError, ValueError, OverflowError) as e:
+            self.release(str(e))
+            return
         if cmd == "FREE":
             self.release("FREE")
             return
         want = CENTER if cmd == "STOP" else cmd
+        if want == CENTER and self.want != CENTER and self._run:
+            # Stop the old pulse now. If leaving centre, return in the opposite
+            # direction; if coming from an end, continue towards centre.
+            home_direction = self._direction if self.position in (LEFT, RIGHT) else -self._direction
+            self._stop(now)
+            self.position = None
+            self.homing = True
+            self._home_direction = home_direction
         if want != self.want:
             self.log(f"command {cmd}")
         self.want = want
         self.starting = False
-        self.deadline = now + min(ttl_ms / 1000, MAX_TTL_S)
+        self.deadline = now + ttl_s
 
     def release(self, reason):
         """Driver off, wheel free. The next move starts by homing to centre."""
@@ -87,6 +112,7 @@ class Steering:
         self.position = None
         self.homing = True
         self._run = None
+        self._home_direction = None
         self._tries = self._misses = 0
 
     def tick(self, now):
@@ -148,7 +174,8 @@ class Steering:
             self._fault(now, f"could not reach {goal} in {MAX_RUNS} runs")
             return
         if self.position is None:
-            direction = HOMING_PULSES[self._misses % len(HOMING_PULSES)]
+            direction = self._home_direction or HOMING_PULSES[self._misses % len(HOMING_PULSES)]
+            self._home_direction = None
             stop_on = {CENTER, _end(direction)}
             self.log(f"homing pulse {'left' if direction < 0 else 'right'}")
         else:
@@ -159,6 +186,7 @@ class Steering:
             self.log(f"move {self.position} -> {step}")
         self._tries += 1
         self.hw.drive(direction, self.duty)
+        self._direction = direction
         self._run = (stop_on, now + MOVE_LIMIT_S)
 
     def _stop(self, now):

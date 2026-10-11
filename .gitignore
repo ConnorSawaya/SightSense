@@ -9,6 +9,7 @@ venv/
 .env
 .env.*
 !.env.example
+*.nmconnection
 
 # Recordings and model files (large; keep them off GitHub)
 recordings/
@@ -18,6 +19,7 @@ recordings/
 *.engine
 *.onnx
 *.pt
+mobileclip*.ts
 
 # Xcode
 DerivedData/

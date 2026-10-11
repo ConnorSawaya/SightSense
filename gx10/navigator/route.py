@@ -19,7 +19,7 @@ ARRIVE_M = 15.0
 OFF_ROUTE_MIN_M = 15.0
 OFF_ROUTE_FOR_S = 5.0
 BAD_GPS_M = 25.0
-REPEAT_TURN_S = 4.0  # added: how often to repeat "Turn left"
+REPEAT_TURN_S = 4.5  # added: how often to repeat "Turn left". Above the phone's hold on a repeated sentence (2 s; 4 s in older builds)
 REROUTE_EVERY_S = 15.0  # added: at most one new lookup this often
 
 EARTH_R = 6371000.0
@@ -59,6 +59,7 @@ class RouteFollower:
         self._last_turn = -1e9
         self._last_reroute = -1e9
         self._bad_gps_said = False
+        self._no_heading_said = False
         self.done = False
 
     def _to_xy(self, lat, lon):
@@ -129,7 +130,10 @@ class RouteFollower:
                 break
 
         if heading_deg is None:
+            if not self._no_heading_said:
+                self._no_heading_said, out.speech = True, out.speech or "No compass heading. Route guidance paused."
             return out
+        self._no_heading_said = False
         target = self._point_at(along + LOOKAHEAD_M)
         compass = math.degrees(math.atan2(target[0] - p[0], target[1] - p[1]))  # 0 north, 90 east
         desired = wrap180(compass - heading_deg)

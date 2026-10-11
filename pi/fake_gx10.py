@@ -23,8 +23,20 @@ WORDS = {
 current = {"cmd": "CENTER"}  # None while silent
 
 
+async def drain(link):
+    """Read what the Pi sends: a health report every 2 seconds, and the talk button. Left unread,
+    they fill the link, the Pi's keepalive goes unanswered and it drops the link every 38 seconds."""
+    try:
+        async for message in link:
+            if '"button"' in message:
+                print("from the Pi:", message, flush=True)
+    except websockets.ConnectionClosed:
+        pass
+
+
 async def feed(link):
     print("Pi connected", flush=True)
+    reader = asyncio.create_task(drain(link))
     seq = 0
     try:
         while True:
@@ -34,6 +46,8 @@ async def feed(link):
             await asyncio.sleep(1 / RATE_HZ)
     except websockets.ConnectionClosed:
         print("Pi disconnected", flush=True)
+    finally:
+        reader.cancel()
 
 
 async def serve(host, port):

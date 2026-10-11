@@ -1,4 +1,4 @@
-# Electronics mount (v2)
+# Electronics mount (v3)
 
 A two-piece clamp for the bottom of the cane that carries the Raspberry Pi 5 on one side and the 12 V battery pack on the other, just above the motor.
 
@@ -10,8 +10,10 @@ Experimental prototype. Nothing here has been printed, fitted or load tested.
 
 The two halves close around the 18 mm tube like a clamshell and are pulled together by four M3 × 20 screws. Nothing slides over the end of the tube, so the mount goes on with the handle and the wheel in place, and it can be slid along the tube and turned to any angle before tightening.
 
-- **Pi half:** a plate with four standoffs on the Raspberry Pi 5's hole pattern. The Pi sits with its USB and Ethernet ports up and its microSD slot at the bottom.
+- **Pi half:** a plate with four standoffs on the Raspberry Pi 5's hole pattern. A hole runs right through each standoff and the plate, so the Pi is held by four M2.5 × 12 screws with a nut on the inside. The Pi sits with its USB and Ethernet ports up and its microSD slot at the bottom.
 - **Battery half:** a plain flat plate, 74 × 92 mm, with nothing standing up from it. The pack is stuck on with foam tape and hook-and-loop. (v1 had a cradle with walls, a shelf and strap slots; the team asked for a flat plate instead.)
+
+v3 changed the Pi's fixing only. v2 had 2.2 mm pilot holes for self-tapping M2.5 × 6 screws; v3 has 2.8 mm holes right through for screws and nuts, and the Pi sits 8 mm higher on the plate so that all four nuts are clear of the clamp bars. The battery half is unchanged.
 
 ## Files
 
@@ -44,18 +46,21 @@ The two halves close around the 18 mm tube like a clamshell and are pulled toget
 | Clamp screws | Four, 64 mm apart across the mount, 3.6 mm holes for M3 |
 | Screw heads | Sunk into 6.5 mm counterbores, 0.75 mm outside the Pi's edge |
 | Nut slots | 5.8 × 3.2 mm, open at the sides of the battery half |
-| Pi standoffs | 6.5 mm diameter, 5 mm tall, 2.2 mm pilot holes |
-| Pi half | 19.5 × 74 × 92 mm, 34.5 cm³ |
+| Pi standoffs | 6.5 mm diameter, 5 mm tall, with 2.8 mm holes right through the standoff and the plate |
+| Pi on the plate | Its microSD end is 11 mm above the bottom of the mount, so its port end stands 4 mm above the top |
+| Pi half | 19.5 × 74 × 92 mm, 34.4 cm³ |
 | Battery half | 14.5 × 74 × 92 mm, 35.4 cm³ |
 
 On the cane the mount sits 40 mm above the top of the gearbox, 5 mm over the motor's terminals, with the battery over the motor and the Pi at the back. With the Pi over the motor there is no room to get the microSD card in or out. In the model it clears the motor by 9.2 mm and the motor receiver by 6.1 mm.
+
+Those figures are with the v4 motor receiver. With [motor mount 2](../motor-mount-2/), whose sleeve covers the tube up to 54 mm above the gearbox, the mount goes higher: 58 mm above the top of the gearbox, where the model shows it 4.0 mm clear.
 
 ## Hardware
 
 | Qty | Item | Where |
 | --- | --- | --- |
 | 4 | M3 × 20 socket-head screw + M3 nut | Clamp |
-| 4 | M2.5 × 6 screw | Raspberry Pi 5 to the standoffs. The Pi's holes are too small for M3; each screw cuts its own thread in a 2.2 mm pilot hole |
+| 4 | M2.5 × 12 screw + M2.5 nut | Raspberry Pi 5 to the standoffs. The Pi's holes are 2.7 mm, too small for M3. Each screw passes through 9.6 mm (Pi, standoff and plate), which leaves 2.4 mm of thread for the nut. M2 screws and nuts also fit the holes |
 | — | Foam tape and hook-and-loop | Battery to the flat plate |
 | — | Tape | One or two turns round the tube under the clamp, for grip |
 
@@ -69,10 +74,10 @@ On the cane the mount sits 40 mm above the top of the gearbox, 5 mm over the mot
 4. Push the four M3 × 20 screws in from the Pi half and start each in its nut.
 5. Slide the mount down until it is about 5 mm above the motor's terminals, battery side over the motor.
 6. Tighten the four screws a little at a time, corner to corner, until it will not slide or twist. A 2 mm gap stays between the halves. Stop at snug: the upper clamp is on bare tube with a 1 mm wall.
-7. Set the Pi 5 on the standoffs, ports up, and drive in the four M2.5 screws.
+7. Set the Pi 5 on the standoffs, ports up, push the four M2.5 × 12 screws through and fit a nut on each from the inside of the plate.
 8. Stick the battery to the flat plate.
 
-The clamp screws stay reachable with the Pi fitted.
+The clamp screws stay reachable with the Pi fitted, so the Pi can also be screwed to its half before the halves go on the tube, while the inside of the plate is easy to reach.
 
 ## Printing notes
 
@@ -86,6 +91,6 @@ These are suggestions, not tested settings.
 
 1. That the clamp holds on the carbon tube without slipping or twisting, and without crushing it.
 2. That the foam tape and hook-and-loop hold the pack when the cane is tapped and shaken. A zip tie round the pack and the plate is a simple backup.
-3. The Pi's fit on the standoffs.
+3. The Pi's fit on the standoffs, and that the four nuts can be reached and held on the inside of the plate once the mount is on the tube.
 
 There is no place on this mount for the motor driver board. `pi-plate/` in the hardware index is still to design for that.

@@ -83,7 +83,8 @@ def _picture(view):
         x1, y1, x2, y2 = (int(v * scale) for v in _turn_box(d.box, turn, w, h))
         dist = getattr(d, "dist_m", None)
         near = dist is not None and dist < 1.5
-        color = (60, 60, 255) if near else (0, 200, 255)  # red-ish when close, amber otherwise
+        hazard = getattr(d, "source", "yolo") == "open"
+        color = (60, 60, 255) if near else (255, 120, 200) if hazard else (0, 200, 255)  # red when close; violet hazards, amber objects
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
         label = d.label + (f" {dist:.1f} m" if dist is not None else "")
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -257,6 +258,11 @@ def start(server, port: int):
                 text = json.loads(self.rfile.read(n) or b"{}").get("text", "")
                 server.text_command(text)
                 return self._send(b'{"ok": true}', "application/json")
+            if self.path == "/manual":  # manual steering: LEFT CENTER RIGHT STOP FREE, or AUTO to hand back
+                n = int(self.headers.get("Content-Length", 0))
+                cmd = json.loads(self.rfile.read(n) or b"{}").get("cmd", "")
+                ok = server.manual_command(cmd)
+                return self._send(b'{"ok": true}' if ok else b'{"ok": false}', "application/json", 200 if ok else 400)
             self._send(b"not found", "text/plain", 404)
 
     httpd = ThreadingHTTPServer(("0.0.0.0", port), Handler)

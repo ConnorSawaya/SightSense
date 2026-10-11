@@ -81,9 +81,9 @@ The socket, tongue, grooves and cord hole are rebuilt from the values in the `.s
 
 | Feature | Value |
 | --- | --- |
-| Hole | 3.2 mm, for M3, through the receiver and the tongue |
+| Hole | 3.6 mm, for M3, through the receiver and the tongue. It was 3.2 mm until October 11: on the wheel adapter's first test print, M3 screws would not pass 3.2 mm holes |
 | Position | 11.7 mm below the receiver's mouth and the same distance up the tongue from its root, between two glue grooves |
-| Direction | Through the tongue's 8.5 mm side, leaving 3.4 mm of tongue each side of the hole |
+| Direction | Through the tongue's 8.5 mm side, leaving 3.2 mm of tongue each side of the hole |
 | Seats | 6.6 mm flat for the screw head on one side, 5.8 mm hex pocket for the nut on the other, each 1 mm deep |
 | Screw | M3 × 20, with an M3 nut (an M3 × 16 only just reaches through the nut) |
 
@@ -105,6 +105,7 @@ The receiver stands behind the motor can, parallel to it, with its closed end le
 - The motor slides up into the band from below until the gearbox stops against the shelf. Two M3 screws then go through the front wall into the gearbox's own threaded holes.
 - The motor can sits off-centre on the gearbox. The mount has cut-outs for the can on both sides, so it fits whichever way the can is offset.
 - The wheel adapter's collar and clamp screw pass 2 mm below the band.
+- [`../motor-mount-2/`](../motor-mount-2/) is a sturdier version of this receiver. It takes the same v4 main insert and the same cross bolt.
 
 **Motor dimensions come from a published JGY-370 outline drawing, not from measuring this motor:** gearbox 46 × 32 × 21 mm (25.2 mm over the bosses), four M3 holes on 18 × 33 mm, bosses 7.4 mm diameter and 2 mm tall, thread 12 mm deep, shaft 31 mm below the gearbox's top end, motor can 24.4 × 30.8 mm. Source: <https://innovatorsguru.com/jgy-370-dc-motor/>.
 
@@ -117,7 +118,7 @@ The receiver stands behind the motor can, parallel to it, with its closed end le
 
 ### Assembly
 
-1. Glue the main insert into the tube as for v3.
+1. Glue the main insert into the tube as for v3. Its barrel has to end level with the tube's end, to within about half a millimetre, or the cross-bolt holes will not line up. The sure way is to let the glue set with the receiver pushed on and the bolt through; keep glue off the tongue.
 2. Slide the motor up into the band and fit the two screws through the front wall.
 3. Fit the wheel adapter and wheel on the shaft. Do this after step 2, because the wheel covers the two motor screws.
 4. Push the receiver onto the tongue until it seats, then fit the cross bolt and nut.
@@ -128,6 +129,8 @@ These are suggestions, not tested settings.
 
 - **Orientation:** both parts are exported standing upright, which needs no supports. Layer lines then run across the receiver barrel and the tongue, their weakest direction, as noted for v3 above.
 - **Weakest point:** the tongue is still the thinnest section between the tube and the wheel, and the cross hole removes some of it.
+- **Main insert:** it stands 62 mm tall on a 16 mm base. Give it a brim so that a moving bed does not shake it loose, and sand the first layer's edge if it will not enter the tube.
+- **Time:** a slicer's estimate for the main insert on a Creality Ender-3 S1 (0.4 mm nozzle, generic PETG, 0.2 mm layers, printed solid) is 1 h 37 min and 11 g. Not a timed print.
 
 ### Still to check
 

@@ -9,7 +9,7 @@ Web page on port 8000, started by `ingest/server.py`. Open `http://<GX10 address
 
 Built to stay live over Tailscale, where a single request took 0.3-1 s:
 
-- `/stream.mjpg`: picture and depth side by side as one MJPEG stream on one connection, up to 8 frames a second. Each viewer always gets the newest frame; a slow viewer skips frames instead of falling behind.
+- `/stream.mjpg`: picture and depth side by side as one MJPEG stream on one connection, up to 15 frames a second. Each viewer always gets the newest frame; a slow viewer skips frames instead of falling behind.
 - `/events`: the status pushed 5 times a second (server-sent events), instead of the page asking.
 - Each frame is drawn once, shared by every viewer, and only while someone is watching.
 

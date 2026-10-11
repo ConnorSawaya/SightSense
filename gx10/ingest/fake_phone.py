@@ -1,7 +1,7 @@
 """Stand in for the phone (and the Pi) to test the frame service end to end.
 
-    ../../venv-yolo/bin/python -m ingest.fake_phone --port 8775 --pi-port 8776           # walk at a wall
-    ../../venv-yolo/bin/python -m ingest.fake_phone --port 8775 --replay ../../recordings/20261010-170000
+    ../../venv-yolo/bin/python -m ingest.fake_phone --port 18775 --pi-port 18776         # walk at a wall, against a test copy of the service
+    ../../venv-yolo/bin/python -m ingest.fake_phone --port 18775 --replay ../../recordings/20261010-170000
 
 Walk: the camera walks at 0.5 m/s toward a wall 4 m away; the service should
 turn to STOP before the wall. Also connects as the Pi and prints its commands.
@@ -16,15 +16,28 @@ from pathlib import Path
 
 from websockets.asyncio.client import connect
 
-from navigator import encode, fake
+from navigator import decode, encode, fake
 from planner.fake_scene import render
 
 WALL = ((-3, 0, -4.2), (3, 2.5, -4.0))
 PICTURE = Path(__file__).parent.parent / "vlm" / "test_images" / "empty_room.jpg"
 
 
+def picture():
+    """The test picture if it has been made (vlm/make_test_images.py), else a plain grey one.
+    A frame without a JPEG is not a frame the contract allows, and the navigator skips
+    picture questions on it."""
+    if PICTURE.exists():
+        return PICTURE.read_bytes()
+    import cv2
+    import numpy as np
+
+    ok, data = cv2.imencode(".jpg", np.full((480, 640, 3), 128, np.uint8))
+    return data.tobytes() if ok else b""
+
+
 def walk_frames(seconds=8.0, speed=0.5):
-    jpeg = PICTURE.read_bytes() if PICTURE.exists() else b""
+    jpeg = picture()
     for i in range(int(seconds * 15)):
         z = -speed * i / 15
         p = fake.pose(z=z, pitch_deg=-25, height=0.9)
@@ -71,7 +84,7 @@ async def main():
         sent = {}
         for i, (msg, wall_m) in enumerate(frames):
             await asyncio.sleep(max(0, t0 + i / 15 - time.monotonic()))
-            sent[i + 1] = (time.monotonic(), wall_m)
+            sent[decode(msg).seq] = (time.monotonic(), wall_m)  # the frame's own seq: a recording need not start at 1
             await ws.send(msg)
         await asyncio.sleep(1.0)
 

@@ -55,6 +55,22 @@ struct ContentView: View {
                 connect(args[i + 1])
             }
             if args.contains("-settings") { showSettings = true }
+            // The talk button on the cane: a press starts listening, as the button on the screen does.
+            // Letting go after a hold stops it; after a click it stops by itself, or on a second click.
+            let talker = voice, link = capture
+            link.onListen = { [weak talker, weak link] on in
+                guard let talker, let link else { return }
+                if on, !talker.isListening {
+                    // A click just after the phone stopped by itself is the user ending that command, not starting another.
+                    guard Date().timeIntervalSince(talker.stoppedItselfAt) > Voice.endClick else { return }
+                    talker.start(stopsItself: true) { [weak link] text in link?.send(command: text) }
+                } else {
+                    talker.stop()
+                }
+            }
+        }
+        .onChange(of: voice.isListening) { _, on in
+            capture.talking(on)  // no speech over the user while they talk
         }
         .onChange(of: scenePhase) { _, phase in
             // Streaming stops in the background (iOS stops the camera anyway) and picks up again on return.

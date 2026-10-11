@@ -1,17 +1,18 @@
 import AVFoundation
 import Foundation
 
-/// A message from the GX10. Guidance has `state`; a place lookup has `lookup` (contracts/MESSAGES.md).
+/// A message from the GX10. Guidance has `state`; a place lookup has `lookup`; the cane's talk button has `listen` (contracts/MESSAGES.md).
 struct GX10Message: Decodable, Equatable {
     var seq: Int?
     var state: String?
     var earcon: String?
     var speech: String?
     var lookup: String?
+    var listen: Bool?
 
     static func parse(_ text: String) -> GX10Message? {
         guard let m = try? JSONDecoder().decode(GX10Message.self, from: Data(text.utf8)),
-              m.state != nil || m.lookup != nil else { return nil }
+              m.state != nil || m.lookup != nil || m.listen != nil else { return nil }
         return m
     }
 }
@@ -20,12 +21,18 @@ struct GX10Message: Decodable, Equatable {
 @MainActor
 final class Speaker {
     static let earconRepeat: TimeInterval = 1.0  // the same earcon at most once a second
-    static let speechRepeat: TimeInterval = 4.0  // the same sentence at most every 4 seconds
+    static let speechRepeat: TimeInterval = 2.0  // the GX10 sends a sentence once; this only stops a flickering stop repeating itself
 
     private let synth = AVSpeechSynthesizer()
     private var players: [String: AVAudioPlayer] = [:]
     private var lastEarcon: (name: String, time: Date)?
     private var lastSpeech: (text: String, time: Date)?
+
+    /// Set while the user is talking to the phone. Speech under way is cut off and nothing new is spoken,
+    /// so the phone neither talks over the user nor hears itself. Tones still play, the stop tone among them.
+    var quiet = false {
+        didSet { if quiet && !oldValue { synth.stopSpeaking(at: .immediate) } }
+    }
 
     init() {
         let session = AVAudioSession.sharedInstance()
@@ -33,6 +40,7 @@ final class Speaker {
         try? session.setActive(true)
         for (name, tones) in Self.earcons {
             if let p = try? AVAudioPlayer(data: Self.wav(tones)) {
+                p.pan = name == "left" ? -1 : (name == "right" ? 1 : 0)  // in that ear, on headphones
                 p.prepareToPlay()
                 players[name] = p
             }
@@ -47,7 +55,7 @@ final class Speaker {
                 lastEarcon = (e, now)
             }
         }
-        if let s = m.speech, !s.isEmpty {
+        if let s = m.speech, !s.isEmpty, !quiet {  // a sentence dropped while the user talks does not count as said
             if lastSpeech?.text != s || now.timeIntervalSince(lastSpeech!.time) >= Self.speechRepeat {
                 say(s, interrupt: m.state == "STOP")
                 lastSpeech = (s, now)
@@ -62,6 +70,7 @@ final class Speaker {
     }
 
     func say(_ text: String, interrupt: Bool = false) {
+        guard !quiet else { return }  // a spoken stop would go into the open microphone and into the user's command
         if interrupt { synth.stopSpeaking(at: .immediate) }
         let u = AVSpeechUtterance(string: text)
         u.rate = 0.55
@@ -74,6 +83,10 @@ final class Speaker {
     static let earcons: [String: [(Double, Double)]] = [
         "stop": [(880, 0.12), (0, 0.05), (880, 0.12)],
         "caution": [(660, 0.10)],
+        // direction cues from the GX10 (gx10/planner/cue.py): low for left, high for right, so they differ on the phone's own speaker too
+        "left": [(440, 0.10)],
+        "right": [(740, 0.10)],
+        "unknown": [(220, 0.22)],
         "other": [(520, 0.08)],
     ]
 

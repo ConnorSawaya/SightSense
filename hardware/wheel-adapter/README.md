@@ -36,6 +36,8 @@ One seller's photo gives the flat as 5.5 mm across. The bore takes either; the c
 | `export/wheel_cap.stl` | Cap for the far side of the wheel; the nut tightens against it |
 | `export/wheel_adapter_fit_test.stl` | Short hex and pilot with the bore through the hex, to check the fits |
 | `export/*.step` | The same parts for CAD |
+| `wheel_adapter_viewer.html` | Interactive 3D view of the adapter, the cap, the shaft and the screws. One self-contained file: download it and open it in a browser, because GitHub does not display it |
+| `wheel_adapter_viewer.py` | Rebuilds that page. It uses `viewer.py` from `../handle-phone-mount/` |
 
 ## Dimensions (from the source)
 
@@ -97,4 +99,4 @@ With its M3 × 10 clamp screw fitted, the adapter passes 2.3 mm below the v4 mot
 
 ## Note on the wheel design
 
-`AGENTS.md` records the wheel decision as one motor steering a free-rolling wheel. This adapter mounts an omni wheel directly on the motor shaft instead. The decisions table has not been changed.
+On October 11 the user confirmed that the motor drives the wheel directly, with opposite rotations producing left/right guidance. The Pi's `--wheel-drive` mode follows that arrangement. `CENTER`, `STOP` and `FREE` switch the driver off. The physical left/right effect depends on the fitted wheel and motor wiring; use `--swap` if it is reversed.

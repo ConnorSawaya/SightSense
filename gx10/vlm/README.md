@@ -44,7 +44,7 @@ Environment variables; nothing is hard-coded.
 
 ## How it behaves
 
-- One request at a time. A call made while another is running returns at once with `error="busy..."`; it never queues. Ask again with a newer picture.
+- One request at a time. `find` never queues: called while another request is running it returns at once with `error="busy..."`, and the object guide asks again with a newer picture. Describe, read, a question and placing a voice command wait up to 3 s for a `find` that is running, so a spoken question during guidance is answered.
 - Thinking is off (`think: false`) and the model stays loaded (`keep_alive: -1`).
 - A reply that does not parse becomes "I couldn't tell".
 - `find` first asks "Is there a {name} in this image? Reply only yes or no." and asks for a box only on "yes". The box prompt alone always returned a box, even for things that were not there: it boxed an exit sign as an apple, and a floor shadow as a chair.

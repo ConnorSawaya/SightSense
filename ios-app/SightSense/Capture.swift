@@ -18,10 +18,14 @@ final class Capture: ObservableObject {
     @Published private(set) var guidance: GX10Message?
     @Published var problem: String?
 
+    /// The cane's talk button, passed on by the GX10: true when it goes down, false when it is let go after a hold.
+    var onListen: ((Bool) -> Void)?
+
     private let gx10 = GX10Link()
     private let sender: FrameSender
     private let speaker = Speaker()
     private let location = Location()
+    private let places = Places()
     private var wasOpen = false
     private let delegateQueue = DispatchQueue(label: "arkit.frames", qos: .userInitiated)
     private var timer: Timer?
@@ -75,6 +79,21 @@ final class Capture: ObservableObject {
             guidance = m
             speaker.handle(m)
         }
+        if let query = m.lookup {
+            // "take me to Safeway": find it with Apple Maps and send the walking route back
+            places.route(to: query, from: location.coordinate) { [weak self] route in
+                self?.gx10.sendText(route)
+            }
+        }
+        if let listen = m.listen {
+            if listen { speaker.play("other") }  // the hand is on the cane, not the phone: a tone says the press was taken
+            onListen?(listen)
+        }
+    }
+
+    /// Called when the phone starts or stops listening for a command, from its own talk button or the cane's.
+    func talking(_ on: Bool) {
+        speaker.quiet = on
     }
 
     var hasLiDAR: Bool {
