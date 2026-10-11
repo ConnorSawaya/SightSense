@@ -15,7 +15,7 @@ export YOLO_CONFIG_DIR=~/SightSense-work/.ultralytics
 ../../venv-yolo/bin/python -m ingest.server --no-yolo --phone-port 18775 --pi-port 18776   # a second copy for tests, beside the live one
 ```
 
-**Use the first line for the cane.** The app's presets connect to port 8775 and the Pi is set up for 8766, so one service started with `--phone-port 8775` serves both. On October 11 at 8:20 AM ports 8775, 8766, 8765 and 8000 answered on the GX10's Tailscale address and 8776 did not (connections only, from a laptop; which program holds each port was not checked).
+**Use the first line for the cane.** The app's presets connect to port 8775 and the Pi is set up for 8766, so one service started with `--phone-port 8775` serves both. Checked on the GX10 over Tailscale on October 11 at 8:50 AM, from a laptop: 8775, 8766 and the dashboard on 8000 are one running service (a silent test client on 8775 showed as the phone in the dashboard's status, and one on 8766 as a Pi). Port 8765 also accepts connections but is not that service, so do not point the phone at it. The service running then was older code than this branch.
 
 If Ollama is not running the service still starts, prints `vision-language model NOT loaded`, and guides from depth; describe, read and find fail until Ollama is up and the service is restarted.
 
