@@ -1,6 +1,7 @@
 """SD staging against temporary files, never a real disk."""
 
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -85,6 +86,28 @@ class Staging(unittest.TestCase):
     def test_wrong_disk_is_rejected_before_writing(self):
         with self.assertRaises(ValueError):
             stage(self.boot, self.root / "backup", "ffffffff-02", "100.108.5.67:8766")
+        self.assertFalse((self.boot / "sightsense-update").exists())
+
+    def test_private_wifi_profile_is_copied_and_hashed_without_logging_secret(self):
+        profile = self.root / "private.nmconnection"
+        text = "[connection]\nid=example\ntype=wifi\n[wifi]\nssid=example\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=example$only%\n"
+        profile.write_text(text)
+        result = stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766",
+                       wifi_profile=profile)
+        target = self.boot / "sightsense-update"
+        self.assertEqual((target / "wifi.nmconnection").read_text(), text)
+        self.assertIn(hashlib.sha256(text.encode()).hexdigest() + "  wifi.nmconnection",
+                      (target / "SHA256SUMS").read_text())
+        self.assertNotIn("example$only%", json.dumps(result))
+        self.assertNotIn("example$only%", (target / "release.json").read_text())
+        self.assertEqual((self.boot / "network-config").read_text(), "example-network-unchanged\n")
+
+    def test_missing_wifi_profile_fails_before_card_or_backup_changes(self):
+        backup = self.root / "backup"
+        with self.assertRaises(FileNotFoundError):
+            stage(self.boot, backup, "12345678-02", "100.108.5.67:8766",
+                  wifi_profile=self.root / "missing.nmconnection")
+        self.assertFalse(backup.exists())
         self.assertFalse((self.boot / "sightsense-update").exists())
 
     def test_invalid_address_is_rejected(self):

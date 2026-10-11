@@ -102,6 +102,7 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - Added tests using real local WebSockets, the GX10 depth pipeline, synthetic phone frames, the Pi control loop and mock GPIO. No physical motor or real AI model was exercised in those tests.
 - Prepared an SD update tool that backs up bootfs, restores an empty kernel command line from a matching backup, removes the old full-power bench startup, and installs the Pi files on its next boot. Network and login settings are preserved.
 - The laptop's Tailscale status showed the GX10 online at `100.108.5.67` and an existing Pi named `sightsense` offline at `100.75.181.48`. The GX10 accepted a command WebSocket on port 8766. Actual motor RPM and lateral direction remain physical measurements.
+- The user then requested the `Bono` Wi-Fi network; the PC's current SSID confirmed that spelling. Its private credentials were written only to the SD card. The updater can install a supplied NetworkManager profile on the next normal boot, including on an already configured Pi, while keeping the existing Tailscale identity. The Pi's Wi-Fi connection still needs a physical boot check.
 
 ## Ideas considered and dropped
 

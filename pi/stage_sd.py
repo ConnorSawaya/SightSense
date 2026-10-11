@@ -53,8 +53,11 @@ def remove_boot_spin(user_data):
     return user_data
 
 
-def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi"):
+def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profile=None):
     boot, backup, source = Path(boot).resolve(), Path(backup).resolve(), Path(source).resolve()
+    # A private, prebuilt NetworkManager keyfile stays outside the repository.
+    # Read before changing the card so a missing input fails without any writes.
+    wifi_text = Path(wifi_profile).read_text(encoding="utf-8-sig") if wifi_profile else None
     if not re.fullmatch(r"[A-Za-z0-9.-]+:[0-9]{1,5}", gx10):
         raise ValueError("GX10 must be host:port, without http:// or a path")
     if not 1 <= int(gx10.rsplit(":", 1)[1]) <= 65535:
@@ -91,6 +94,8 @@ def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi"):
     write_text(target / "normal-cmdline.txt", clean)
     environment = f"SIGHTSENSE_GX10={gx10}\nSIGHTSENSE_CANE_ARGS=--wheel-drive --duty 0.25 --rated-rpm 120\n"
     write_text(target / "sightsense.env", environment)
+    if wifi_text is not None:
+        write_text(target / "wifi.nmconnection", wifi_text)
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
     except (OSError, subprocess.CalledProcessError):
@@ -135,5 +140,7 @@ if __name__ == "__main__":
     parser.add_argument("--backup", required=True)
     parser.add_argument("--expected-root-partuuid", required=True)
     parser.add_argument("--gx10", required=True)
+    parser.add_argument("--wifi-profile", help="Private NetworkManager .nmconnection file; never commit it")
     args = parser.parse_args()
-    print(json.dumps(stage(args.boot, args.backup, args.expected_root_partuuid, args.gx10), indent=2))
+    print(json.dumps(stage(args.boot, args.backup, args.expected_root_partuuid, args.gx10,
+                           wifi_profile=args.wifi_profile), indent=2))

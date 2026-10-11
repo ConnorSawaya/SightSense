@@ -9,6 +9,7 @@ venv/
 .env
 .env.*
 !.env.example
+*.nmconnection
 
 # Recordings and model files (large; keep them off GitHub)
 recordings/

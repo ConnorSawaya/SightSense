@@ -49,6 +49,17 @@ install -m 644 payload/pi/sightsense-setup.service /etc/systemd/system/sightsens
 if [ ! -f "$BOOT/sightsense.env" ]; then
     install -m 644 sightsense.env "$BOOT/sightsense.env"
 fi
+# Cloud-init may have consumed network-config on an earlier boot. Install the
+# optional profile directly so NetworkManager reads it on the normal reboot.
+# Never source this file or print its contents: it can contain a Wi-Fi password.
+if [ -f "$STAGE/wifi.nmconnection" ]; then
+    WIFI_DEST=/etc/NetworkManager/system-connections/sightsense-wifi.nmconnection
+    if [ -f "$WIFI_DEST" ]; then
+        cp -a "$WIFI_DEST" "$BACKUP/wifi.nmconnection"
+    fi
+    install -D -m 600 -o root -g root "$STAGE/wifi.nmconnection" "$WIFI_DEST"
+    echo 'Wi-Fi profile installed for the next normal boot.'
+fi
 if getent group gpio >/dev/null; then
     usermod -a -G gpio sightsense
 fi
