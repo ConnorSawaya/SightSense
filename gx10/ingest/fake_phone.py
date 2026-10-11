@@ -23,8 +23,21 @@ WALL = ((-3, 0, -4.2), (3, 2.5, -4.0))
 PICTURE = Path(__file__).parent.parent / "vlm" / "test_images" / "empty_room.jpg"
 
 
+def picture():
+    """The test picture if it has been made (vlm/make_test_images.py), else a plain grey one.
+    A frame without a JPEG is not a frame the contract allows, and the navigator skips
+    picture questions on it."""
+    if PICTURE.exists():
+        return PICTURE.read_bytes()
+    import cv2
+    import numpy as np
+
+    ok, data = cv2.imencode(".jpg", np.full((480, 640, 3), 128, np.uint8))
+    return data.tobytes() if ok else b""
+
+
 def walk_frames(seconds=8.0, speed=0.5):
-    jpeg = PICTURE.read_bytes() if PICTURE.exists() else b""
+    jpeg = picture()
     for i in range(int(seconds * 15)):
         z = -speed * i / 15
         p = fake.pose(z=z, pitch_deg=-25, height=0.9)

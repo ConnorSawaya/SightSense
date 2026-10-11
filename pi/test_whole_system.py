@@ -8,11 +8,10 @@ Stood in for: the phone (the GX10 code's fake frames, typed voice text and a mad
 route), the motor (gpiozero's mock pins), the talk button and the vision-language
 model. YOLO is off. Neither model decides the wheel command: that comes from depth.
 
-Skipped where numpy, OpenCV, Pillow, websockets or gpiozero is missing.
+Skipped where numpy, OpenCV, websockets or gpiozero is missing.
 """
 
 import asyncio
-import io
 import json
 import socket
 import sys
@@ -32,11 +31,8 @@ try:
     from dashboard.dashboard import start as start_dashboard
     from gpiozero import Device
     from gpiozero.pins.mock import MockFactory, MockPWMPin
-    from ingest.fake_phone import WALL, walk_frames
+    from ingest.fake_phone import walk_frames
     from ingest.server import Pipeline, Server
-    from navigator import encode, fake
-    from PIL import Image
-    from planner.fake_scene import render
     from websockets.asyncio.client import connect
     from websockets.asyncio.server import serve
 except Exception as problem:  # the GX10 code or one of its requirements is not here
@@ -138,10 +134,8 @@ class WholeSystem(unittest.IsolatedAsyncioTestCase):
                         status = json.loads(body)
                         expect(status.get("pis") == 1 and status.get("pi_health"), "the dashboard does not show the Pi and its health")
 
-                        # 3. voice, a place and the talk button, standing still in the open with a real picture in each frame
-                        picture = io.BytesIO()
-                        Image.new("RGB", (640, 480), (120, 120, 120)).save(picture, "JPEG")
-                        still = encode(render(fake.pose(z=0.0, pitch_deg=-25, height=0.9), [WALL], jpeg=picture.getvalue(), seq=9000, t=600.0))
+                        # 3. voice, a place and the talk button, standing still in the open (the walk's first frame, sent again)
+                        still = next(iter(walk_frames()))[0]
 
                         async def frames(seconds):
                             end = time.monotonic() + seconds
