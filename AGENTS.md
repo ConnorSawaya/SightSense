@@ -27,7 +27,7 @@ What exists so far, by area:
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location); LiDAR-only Liquid Glass screen (iOS 26+). Real iPhone 15 Pro frames reached the GX10 frame service (`gx10/ingest`, port 8775) over Tailscale on October 10 around 5 PM: 4–18 frames/s; guidance, describe and read worked. Heat cut (30 fps camera, lower rate when hot) merged; not yet measured on the phone |
 | GX10 software (`gx10/`) | First versions of all pieces: `ingest/` (frame service), `planner/` (7-heading obstacle check, steady phone state), `dashboard/`, `vlm/` (`qwen3-vl:30b-a3b-instruct`), `navigator/` (rules, then the model for voice it does not understand; status and picture questions), `detector/` (YOLO26s). Run live with the iPhone on October 10 (describe 0.9 s, read 0.8 s, stop at about 2.2 m on a walk); model voice tested on a replayed phone recording, not yet live |
-| Pi motor controller (`pi/`) | Direct wheel mode added October 11: LEFT/RIGHT spin opposite ways, CENTER/STOP/FREE switch off, no homing or position switches. Real local WebSockets carry synthetic phone frames through GX10 depth planning to the Pi loop and mock GPIO. An SD update installer is prepared. GPIO opened on the Pi October 10; the updated code and actual RPM have not yet been checked on the physical motor. The SD installer disables the previous full-power boot bench test |
+| Pi motor controller (`pi/`) | Direct wheel mode installed October 11 over SSH: LEFT/RIGHT spin opposite ways, CENTER/STOP/FREE switch off, no homing or position switches. The Pi joined Bono Wi-Fi, connected to the live GX10 on port 8766 with Ethernet disabled, and automatically reconnected after reboot. Actual GPIO initialization and all four outputs low were checked while receiving STOP. 83 Pi tests passed on the PC with mock GPIO. Physical lateral direction and RPM remain unmeasured. The old full-power boot bench service is masked |
 | Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos (columns sure, rows less so); limit switches, fuse and kill switch not fitted; not tested under power |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
@@ -66,11 +66,11 @@ These come from the hackathon and from the team. Breaking one can get the projec
 | Machine | Where | Notes |
 | --- | --- | --- |
 | ASUS Ascent GX10 | Venue, on the team's router by Ethernet | NVIDIA GB10, 128 GB shared memory, ARM64 Linux (DGX OS). Stays at the venue; closes 10 PM Saturday. |
-| Raspberry Pi 5 | On the cane; on a phone hotspot since October 10 | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. Name `sightsense.local`, user `sightsense`, code in `~/SightSense/pi`. Details in [`pi/README.md`](pi/README.md). |
+| Raspberry Pi 5 | On the cane; currently on Bono Wi-Fi | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. Name `sightsense.local`, user `sightsense`, Tailscale `100.75.181.48`, code in `~/SightSense/pi`. Details in [`pi/README.md`](pi/README.md). |
 | iPhone 16 Pro | On the cane | App built on a teammate's Mac with Xcode, free Apple ID (7-day signing). |
 | Mac | Venue | Only for building the iPhone app. |
 | Team laptops | Venue | Development, SSH to the Pi and GX10. |
-| Home desktop | Not at the venue | i7-14700F, RTX 4060 (8 GB), 32 GB RAM, Windows 11. On October 11 its Tailscale connection reached the GX10 dashboard and command port. The existing Pi node was offline while its SD card was removed. |
+| Home desktop | Not at the venue | i7-14700F, RTX 4060 (8 GB), 32 GB RAM, Windows 11. On October 11 its Tailscale connection reached the GX10 dashboard and command port, then SSH reached the Pi after Ethernet was connected. Bono Wi-Fi and automatic Pi controller startup were verified. |
 
 Planned addresses (reserve in the router; the subnet depends on the router): GX10 `192.168.8.10`, Pi `192.168.8.20`, iPhone `192.168.8.30`. Ports on the GX10: 8765 frames in, 8766 commands out, 8000 dashboard, 11434 Ollama.
 
