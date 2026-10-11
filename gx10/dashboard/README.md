@@ -18,3 +18,8 @@ Measured from a laptop over Tailscale (October 10, fake phone at 15 fps): 6.3 fr
 `/frame.jpg` gives one still and `/status` one status, for scripts. The phone's own capture-to-send time is not measured yet, so the delays shown are only the GX10 and network part.
 
 `--dashboard-port 0` turns it off.
+
+The phone app shows only the LiDAR feed (October 10); what it used to show is here: the guidance banner
+tinted by state with the sentence spoken (kept 10 s, since speech is on one frame), the distance at the
+centre of the depth picture with a reticle, a red edge on STOP, Describe/Read/Status/Stop buttons, and
+"Heard": what the phone heard and whether the rules or the model placed it.

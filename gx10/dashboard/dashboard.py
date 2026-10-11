@@ -93,6 +93,15 @@ def _picture(view):
     return img
 
 
+def centre_m(view):
+    """Median good depth in the middle 8 x 8 pixels, metres: what the phone's reticle used to show."""
+    d, c = view["depth"], view["conf"]
+    h, w = d.shape
+    patch = d[h // 2 - 4 : h // 2 + 4, w // 2 - 4 : w // 2 + 4]
+    good = patch[(patch > 0) & (c[h // 2 - 4 : h // 2 + 4, w // 2 - 4 : w // 2 + 4] >= 1)]
+    return round(float(np.median(good)) / 1000, 2) if good.size else None
+
+
 def _depth(view):
     v = np.clip(view["depth"].astype(np.float32) / 5000.0 * 255, 0, 255).astype(np.uint8)  # 0 m dark to 5 m bright
     img = cv2.applyColorMap(255 - v, cv2.COLORMAP_TURBO)  # near = red, far = blue
@@ -100,11 +109,31 @@ def _depth(view):
     return _upright(img, view["turn"])
 
 
+def _reticle(img, metres):
+    """Centre square, corner brackets and the distance, drawn after scaling so they stay sharp."""
+    h, w = img.shape[:2]
+    cx, cy, s, b, k = w // 2, h // 2, max(10, w // 22), max(40, w // 5), max(10, w // 18)
+    white = (255, 255, 255)
+    cv2.rectangle(img, (cx - s, cy - s), (cx + s, cy + s), white, 2, cv2.LINE_AA)
+    for dx, dy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+        x, y = cx + dx * b, cy + dy * b
+        cv2.line(img, (x, y), (x - dx * k, y), white, 2, cv2.LINE_AA)
+        cv2.line(img, (x, y), (x, y - dy * k), white, 2, cv2.LINE_AA)
+    text = f"{metres:.2f} m" if metres is not None else "no reading"
+    scale = max(0.7, w / 300)
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
+    x0, y0 = cx - tw // 2, h - 24
+    cv2.rectangle(img, (x0 - 14, y0 - th - 12), (x0 + tw + 14, y0 + 12), (20, 20, 20), -1)
+    cv2.putText(img, text, (x0, y0), cv2.FONT_HERSHEY_SIMPLEX, scale, white, 2, cv2.LINE_AA)
+    return img
+
+
 def composite(view) -> bytes:
     """Picture and depth side by side, same height, as one JPEG."""
     pic, dep = _picture(view), _depth(view)
     h = pic.shape[0]
     dep = cv2.resize(dep, (round(dep.shape[1] * h / dep.shape[0]), h), interpolation=cv2.INTER_NEAREST)
+    dep = _reticle(dep, centre_m(view))
     ok, out = cv2.imencode(".jpg", cv2.hconcat([pic, dep]), [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
     return out.tobytes() if ok else b""
 
@@ -150,6 +179,8 @@ def start(server, port: int):
     def status():
         s = dict(server.status())
         s["gpu"] = gpu.now
+        view = server.pipe.view
+        s["centre_m"] = centre_m(view) if view is not None and s.get("frame") else None
         s["viewers"] = renderer.viewers
         return s
 
