@@ -122,7 +122,11 @@ def path_answer(cmd, ahead):
 
 class Pipeline:
     def __init__(self, use_yolo: bool):
-        print("vision-language model:", vlm.warm(), flush=True)
+        try:
+            print("vision-language model:", vlm.warm(), flush=True)
+        except Exception as e:  # the obstacle check runs from depth alone, so start without the model
+            print("vision-language model NOT loaded:", repr(e), flush=True)
+            print("describe, read and find will fail until Ollama is up; then restart this service", flush=True)
         self.vlm = UprightVLM()
         self.nav = Navigator(self.vlm)
         self.det = None
@@ -257,12 +261,16 @@ class Server:
                     if self.rec:
                         self.writer.submit(self._save, f"{self.received:06d}-{t:.3f}.bin", msg)
                 else:
-                    self._text(msg)
+                    try:
+                        self._text(msg)
+                    except Exception as e:  # a bad text message must not drop the phone
+                        print("text message error:", repr(e), flush=True)
         except ConnectionClosed:
             pass
-        print("phone disconnected:", ws.remote_address[0], flush=True)
-        if self.phone_ws is ws:
-            self.phone_ws = None
+        finally:
+            print("phone disconnected:", ws.remote_address[0], flush=True)
+            if self.phone_ws is ws:
+                self.phone_ws = None
 
     def text_command(self, text: str):
         """The dashboard's text box: the same as a voice command from the phone."""
@@ -284,10 +292,9 @@ class Server:
         self.manual = (cmd, time.monotonic())
         return True
 
-    def _manual_for_pi(self, now):
+    def _manual_for_pi(self, now, cmd):
         """The command the Pi gets in manual mode. Depth still wins: while phone frames
         arrive and the obstacle check says STOP, a turn or CENTER becomes STOP."""
-        cmd = self.manual[0]
         depth_live = now - self.pipe.last_frame < 0.5
         if depth_live and cmd in ("LEFT", "CENTER", "RIGHT") and self.pipe.status.get("cmd") == "STOP":
             return "STOP", True
@@ -296,16 +303,18 @@ class Server:
     async def manual_loop(self):
         while True:
             await asyncio.sleep(1 / MANUAL_HZ)
-            if not self.manual:
+            manual = self.manual  # read once: the dashboard's thread can clear it at any moment
+            if not manual:
                 continue
             now = time.monotonic()
-            if now - self.manual[1] > MANUAL_HOLD_S:
+            if now - manual[1] > MANUAL_HOLD_S:
                 print("manual steering off: the dashboard stopped sending", flush=True)
-                self.manual = self.manual_sent = None
+                if self.manual is manual:
+                    self.manual = self.manual_sent = None
                 continue
-            cmd, overridden = self._manual_for_pi(now)
+            cmd, overridden = self._manual_for_pi(now, manual[0])
             self.manual_seq += 1
-            self.manual_sent = {"asked": self.manual[0], "cmd": cmd, "depth_stop": overridden,
+            self.manual_sent = {"asked": manual[0], "cmd": cmd, "depth_stop": overridden,
                                 "depth_live": now - self.pipe.last_frame < 0.5}
             msg = json.dumps({"seq": self.manual_seq, "cmd": cmd, "ttl_ms": TTL_MS})
             for p in list(self.pis):
@@ -321,7 +330,7 @@ class Server:
         return {
             "phone": ws.remote_address[0] if ws else None,
             "pis": len(self.pis),
-            "fps": sum(1 for t in self.rx if now - t <= 1.0),
+            "fps": sum(1 for t in list(self.rx) if now - t <= 1.0),  # a copy: the phone's frames add to it from another thread
             "proc_ms": statistics.median(self.proc_ms) if self.proc_ms else None,
             "rtt_ms": rtt * 1000 if rtt else None,
             "dropped": self.dropped,
@@ -345,6 +354,8 @@ class Server:
         try:
             m = json.loads(msg)
         except json.JSONDecodeError:
+            return
+        if not isinstance(m, dict):
             return
         if self.rec:
             self.writer.submit(self._append, "text.jsonl", json.dumps({"t": time.monotonic(), "msg": m}) + "\n")

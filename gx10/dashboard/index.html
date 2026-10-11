@@ -156,7 +156,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let lastSpeech = "", lastStatus = 0;
-function color(v) { return v === null ? "var(--unknown)" : v >= 2.5 ? "var(--clear)" : v >= 1.2 ? "var(--caution)" : "var(--stop)"; }
+function color(v) { return v === null ? "var(--unknown)" : v >= 1.5 ? "var(--clear)" : v >= 0.8 ? "var(--caution)" : "var(--stop)"; }  // planner/obstacle.py: USABLE_M, STOP_AHEAD_M
 function show(s) {
   lastStatus = Date.now();
   try {
