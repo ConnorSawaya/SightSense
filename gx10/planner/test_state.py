@@ -13,7 +13,7 @@ def run(s, frames):
 
 class TestStateSmoother(unittest.TestCase):
     def test_noise_around_the_threshold_does_not_flicker(self):
-        # Phone held still 2.5 m from a wall: readings jitter +-5 cm.
+        # Phone held still USABLE_M from a wall: readings jitter +-5 cm.
         rng = random.Random(1)
         s = StateSmoother()
         states = run(s, [("CENTER", USABLE_M + rng.uniform(-0.05, 0.05)) for _ in range(300)])
@@ -34,12 +34,12 @@ class TestStateSmoother(unittest.TestCase):
     def test_caution_after_two_frames(self):
         s = StateSmoother()
         run(s, [("CENTER", 4.0)] * 10)
-        self.assertEqual(s.update("CENTER", 2.0), "CLEAR")
-        self.assertEqual(s.update("CENTER", 2.0), "CAUTION")
+        self.assertEqual(s.update("CENTER", USABLE_M - 0.5), "CLEAR")
+        self.assertEqual(s.update("CENTER", USABLE_M - 0.5), "CAUTION")
 
     def test_clear_needs_margin_and_frames(self):
         s = StateSmoother()
-        run(s, [("CENTER", 2.0)] * 5)
+        run(s, [("CENTER", USABLE_M - 0.5)] * 5)
         self.assertEqual(s.state, "CAUTION")
         run(s, [("CENTER", USABLE_M + 0.1)] * 20)  # past USABLE_M but inside the margin
         self.assertEqual(s.state, "CAUTION")
@@ -51,7 +51,7 @@ class TestStateSmoother(unittest.TestCase):
         # Safety first: a near reading is never ignored, and it holds instead of flickering.
         s = StateSmoother()
         run(s, [("CENTER", 4.0)] * 20)
-        out = run(s, [("CENTER", 1.8)] + [("CENTER", 4.0)] * 20)
+        out = run(s, [("CENTER", USABLE_M - 0.7)] + [("CENTER", 4.0)] * 20)
         self.assertEqual(out[1], "CAUTION")
         self.assertEqual(sum(a != b for a, b in zip(out, out[1:])), 1)
 
@@ -59,7 +59,7 @@ class TestStateSmoother(unittest.TestCase):
         # The October 10 walk: ahead jumped between about 2.2 and 4.5 m frame to frame.
         s = StateSmoother()
         run(s, [("CENTER", 4.5)] * 20)
-        out = run(s, [("CENTER", 2.2 if i % 3 == 0 else 4.5) for i in range(60)])
+        out = run(s, [("CENTER", USABLE_M - 0.3 if i % 3 == 0 else 4.5) for i in range(60)])
         self.assertEqual(sum(a != b for a, b in zip(out, out[1:])), 1)  # CLEAR -> CAUTION once, then holds
         self.assertEqual(out[-1], "CAUTION")
 

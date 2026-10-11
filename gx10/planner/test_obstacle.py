@@ -5,7 +5,7 @@ import unittest
 from navigator import fake
 
 from .fake_scene import arrays, render
-from .obstacle import FAR_M, Smoother, check
+from .obstacle import FAR_M, USABLE_M, Smoother, check
 
 
 def run(pose, boxes=(), glass=(), desired=0.0, last=0.0):
@@ -15,7 +15,8 @@ def run(pose, boxes=(), glass=(), desired=0.0, last=0.0):
 
 
 CANE = fake.pose(pitch_deg=-25, height=0.9)  # phone on a cane handle, looking down the path
-WALL_AHEAD = ((-3, 0, -1.7), (3, 2.5, -1.5))  # wall 1.5 m ahead, 6 m wide
+WALL_AHEAD = ((-3, 0, -1.2), (3, 2.5, -1.0))  # wall 1 m ahead, 6 m wide
+BOX = ((-0.1, 0, -1.5), (0.5, 1.2, -1.2))  # 1.2 m ahead, a little right of centre
 
 
 class Check(unittest.TestCase):
@@ -30,7 +31,12 @@ class Check(unittest.TestCase):
         c = run(CANE, [WALL_AHEAD])
         self.assertEqual(c.usable, [])
         self.assertEqual(c.raw_cmd, "STOP")
-        self.assertAlmostEqual(c.clearance[0], 1.5, delta=0.1)
+        self.assertAlmostEqual(c.clearance[0], 1.0, delta=0.1)
+
+    def test_wall_2_5_m_ahead_does_not_stop(self):
+        # The team found stopping about 2.2 m from things too cautious (October 10).
+        c = run(CANE, [((-3, 0, -2.7), (3, 2.5, -2.5))])
+        self.assertEqual(c.raw_cmd, "CENTER")
 
     def test_right_up_against_a_wall_is_not_clear(self):
         c = run(CANE, [((-3, 0, -0.25), (3, 2.5, -0.15))])  # nearer than the 0.3 m the check keeps
@@ -38,9 +44,8 @@ class Check(unittest.TestCase):
         self.assertEqual(c.usable, [])
 
     def test_steers_round_a_box(self):
-        box = ((-0.1, 0, -2.3), (0.5, 1.2, -2.0))  # 2 m ahead, a little right of centre
-        c = run(CANE, [box])
-        self.assertLess(c.clearance[0], 2.5)
+        c = run(CANE, [BOX])
+        self.assertLess(c.clearance[0], USABLE_M)
         self.assertLess(c.best, 0)  # goes left, the side with more room
         self.assertEqual(c.raw_cmd, "LEFT")
 
@@ -54,9 +59,8 @@ class Check(unittest.TestCase):
         self.assertEqual(c.raw_cmd, "STOP")
 
     def test_sideways_phone_same_answer(self):
-        box = ((-0.1, 0, -2.3), (0.5, 1.2, -2.0))
-        c = run(fake.pose(pitch_deg=-25, height=0.9, roll_deg=90), [box])
-        self.assertLess(c.clearance[0], 2.5)
+        c = run(fake.pose(pitch_deg=-25, height=0.9, roll_deg=90), [BOX])
+        self.assertLess(c.clearance[0], USABLE_M)
         self.assertTrue(c.best is None or c.best < 0)
 
     def test_low_floor_items_ignored(self):
