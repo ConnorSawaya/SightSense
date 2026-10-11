@@ -104,6 +104,10 @@ struct SettingsSheet: View {
             }
             Divider().opacity(0.3)
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+                row("Guidance", capture.guidance.map { g in
+                    [g.state, g.speech].compactMap { $0 }.joined(separator: " · ")
+                } ?? "—")
+                row("Ahead", capture.depthPreview.centreMetres.map { String(format: "%.2f m (LiDAR, centre)", $0) } ?? "—")
                 row("Sending", String(format: "%.1f frames/s", capture.sendRate))
                 row("Sent / skipped", "\(capture.stats.sent) / \(capture.stats.skipped)")
                 row("Encode / send", String(format: "%.0f ms / %.0f ms", capture.stats.lastEncodeMs, capture.stats.lastSendMs))
