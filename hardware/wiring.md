@@ -48,6 +48,22 @@ GPIO numbers are BCM numbers. The header pin is the position on the 40-pin heade
 | GND | 39 | The other leg of all three switches |
 
 - Leave R_IS and L_IS empty.
+
+### Wire colours on the team's cane
+
+Read from photos of the Pi on October 10, 2026. The driver end must follow the same colours.
+
+| Wire | Pi pin | IBT-2 pin |
+| --- | --- | --- |
+| Brown | 12 | R_EN |
+| Red | 16 | RPWM |
+| Black | 17 (3.3 V) | VCC |
+| Orange | 18 | LPWM |
+| Yellow | 20 (ground) | GND |
+| Green | 22 | L_EN |
+
+Black carries 3.3 V and yellow is ground here, which is not the usual convention. Go by this table, not by habit.
+
 - VCC goes to the Pi's 3.3 V pin, not 5 V. The board's user guide lists VCC as +5 V, for a 5 V Arduino, and its control inputs as 3.3 to 5 V. Its buffer chip is a 74HC244, which only reads a 3.3 V signal within its guaranteed range when the chip itself runs on 3.3 V. This has not been tried on the team's board yet.
 
 ### The IBT-2's pins
