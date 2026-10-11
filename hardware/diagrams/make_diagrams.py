@@ -2,8 +2,9 @@
 
     python make_diagrams.py
 
-The tables at the top are the one place to change a pin or a wire colour.
-They must match ../wiring.md and ../../pi/hardware.py.
+The tables at the top hold the pins and the wire colours, and must match
+../wiring.md and ../../pi/hardware.py. A colour can be changed there alone.
+Moving a wire to another pin also needs its path in pi_to_driver() redrawn.
 """
 
 from pathlib import Path

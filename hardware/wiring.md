@@ -2,7 +2,7 @@
 
 How the cane is wired, for the parts the team has. Power everything off before changing a wire.
 
-The diagrams are drawn by [`diagrams/make_diagrams.py`](diagrams/make_diagrams.py). Change a pin or a wire colour there and run it again.
+The diagrams are drawn by [`diagrams/make_diagrams.py`](diagrams/make_diagrams.py). To change a wire's colour, change it in the table at the top and run the script again. Moving a wire to a different pin also means redrawing its path in the script.
 
 ## Status
 
@@ -48,7 +48,7 @@ IBT-2 M+ and M− ──► motor
 ```
 
 - Two wires go under each screw of the green adapter: one to the converter, one toward the IBT-2.
-- Check which screw is positive with a multimeter before connecting the IBT-2. A reversed battery will destroy it.
+- Check which screw is positive with a multimeter before connecting anything else to the adapter (step 5 of the wiring order). A reversed battery will destroy the IBT-2.
 - The fuse and kill switch are in the motor's branch only, so stopping the motor does not switch the Pi off.
 - The kill switch must be within the user's reach. Until it is fitted, pulling the battery's barrel plug is the stop, and that switches the Pi off too.
 - The IBT-2 has its own capacitor. No extra one is needed.
@@ -111,7 +111,7 @@ Three ways to check the Pi end by eye:
 
 ## Limit switches
 
-Not fitted yet. Without them the controller cannot find left, centre or right: it pulses the motor, gives up, and switches the driver off.
+Not fitted yet. Without them the controller cannot find left, centre or right. At start-up it gives six 0.4 second pulses, left and right, then switches the driver off. While commands keep arriving it rests 3 seconds and does the same again, about every 6 seconds.
 
 | Pi header pin | What that pin is | Connects to |
 | --- | --- | --- |
@@ -129,8 +129,9 @@ Not fitted yet. Without them the controller cannot find left, centre or right: i
 2. The six wires from the Pi's header to the IBT-2's pins.
 3. The three switches.
 4. Motor to M+ and M−.
-5. Battery side: adapter to the converter, and adapter through the fuse and kill switch to B+ and B−.
-6. Check the polarity at B+ and B− with a multimeter, then plug the battery in last, with the kill switch off.
+5. Find the adapter's positive screw. With only the battery plugged into the green adapter and no wires under its screws, set a multimeter to DC volts and put one probe on each screw. It should read about 12 V. If there is no minus sign, the red probe is on the positive screw. Mark that screw, then unplug the battery.
+6. Battery still unplugged: the converter's positive wire to the marked screw and its negative wire to the other screw. Then the marked screw through the fuse and kill switch to B+, and the other screw to B−. Follow the wire from the marked screw by eye and check it ends at B+.
+7. Plug the battery in last, with the kill switch off.
 
 ## Before the first power-on
 
@@ -144,7 +145,9 @@ Do these with everything unplugged.
 
 ## First tests from the Pi
 
-Run these from `~/SightSense/pi` on the Pi. Start with the battery unplugged from the driver, so nothing can move.
+Run these from `~/SightSense/pi` on the Pi.
+
+Start with no 12 V at the driver, so nothing can move: kill switch off. Until the kill switch is fitted, one barrel plug feeds both the Pi and the driver, so leave it out and run the Pi from its own USB-C supply for steps 1 and 2. If the Pi runs from the converter with no kill switch, the driver has 12 V the whole time the Pi is on, including while it starts.
 
 1. Check the Pi's power. `throttled=0x0` is good.
 
@@ -158,13 +161,13 @@ Run these from `~/SightSense/pi` on the Pi. Start with the battery unplugged fro
    python3 cane.py --bench switches
    ```
 
-3. Plug the battery in, with the motor free to turn and a hand on the stop. This gives one 0.3 second pulse each way at 25% power:
+3. Give the driver 12 V: kill switch on, or plug the battery in if the kill switch is not fitted yet. Have the motor free to turn and a hand on the stop before you do, because the Pi does not hold the driver off until `cane.py` starts. This gives one 0.3 second pulse each way at 25% power:
 
    ```bash
    python3 cane.py --bench motor
    ```
 
-4. Type commands and watch the wheel go to each switch:
+4. Keep hands clear of the wheel. The motor moves as soon as the program starts, before anything is typed: it homes to centre. Then type commands and watch the wheel go to each switch. Type `free` to switch the driver off, or `quit` to finish:
 
    ```bash
    python3 cane.py --typed
