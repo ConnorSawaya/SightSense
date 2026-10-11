@@ -8,7 +8,10 @@ final class DepthPreview: ObservableObject {
     @MainActor @Published private(set) var centreMetres: Float?
 
     static let maxMetres: Float = 5
-    static let interval: TimeInterval = 0.1  // about 10 pictures a second
+    /// Pictures a second on screen: 5 normally, 2 when the phone is hot. Only for people looking at the phone.
+    static func interval(for thermal: ProcessInfo.ThermalState) -> TimeInterval {
+        thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue ? 0.5 : 0.2
+    }
 
     private let lock = NSLock()
     private var last: TimeInterval = 0
@@ -19,7 +22,7 @@ final class DepthPreview: ObservableObject {
     func update(_ frame: ARFrame) {
         guard let depth = frame.sceneDepth else { return }
         let go: Bool = lock.withLock {
-            guard !busy, frame.timestamp - last >= Self.interval else { return false }
+            guard !busy, frame.timestamp - last >= Self.interval(for: ProcessInfo.processInfo.thermalState) else { return false }
             busy = true
             last = frame.timestamp
             return true
