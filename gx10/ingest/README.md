@@ -19,6 +19,10 @@ export YOLO_CONFIG_DIR=~/SightSense-work/.ultralytics
 
 If Ollama is not running the service still starts, prints `vision-language model NOT loaded`, and guides from depth; describe, read and find fail until Ollama is up and the service is restarted.
 
+Set `SIGHTSENSE_OWN_CANE_M=0.65` before starting if the cane's own lower end shows in the depth picture and holds the cane at STOP; see "The ground, and where the phone has to point" in `../planner/README.md`. The service prints whether it is on when it starts.
+
+Each press of the cane's talk button shows in the dashboard's conversation as `(talk button down: phone told to listen)`, or `no phone connected`, so the button and its wiring can be checked from the dashboard without the phone.
+
 It needs the project virtual environment (numpy, OpenCV, YOLO, `websockets`); see `../detector/README.md`. Ports can also be set with `SIGHTSENSE_PHONE_PORT` and `SIGHTSENSE_PI_PORT`. Nothing is hard-coded to an address: the phone and the Pi connect to whatever address the GX10 has.
 
 In the app, enter the GX10's address on the network the phone is on, e.g. `169.233.72.156:8775` on the venue Wi-Fi (the GX10's address there on October 10). Keep the phone on the same Wi-Fi: over a hotspot the first test got 0.3–0.7 frames a second.

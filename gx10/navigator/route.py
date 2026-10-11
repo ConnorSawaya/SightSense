@@ -130,8 +130,8 @@ class RouteFollower:
                 break
 
         if heading_deg is None:
-            if not self._no_heading_said:
-                self._no_heading_said, out.speech = True, out.speech or "No compass heading. Route guidance paused."
+            if not self._no_heading_said and not out.speech:  # said on the first update with nothing else to say
+                self._no_heading_said, out.speech = True, "No compass heading. Route guidance paused."
             return out
         self._no_heading_said = False
         target = self._point_at(along + LOOKAHEAD_M)

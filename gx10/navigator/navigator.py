@@ -19,6 +19,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Callable, Optional
 
 from . import commands
@@ -41,16 +42,28 @@ class Guidance:
     distance_m: Optional[float] = None
 
 
+HELP = ("I can tell you what is in front of you, read signs, answer a question about what the camera sees, "
+        "guide you to an object, or take you to a place. Say stop to cancel.")
+
+
+def time_words(now) -> str:
+    """The time and date as a sentence, from the GX10's own clock."""
+    hour = now.hour % 12 or 12
+    return f"It's {hour}:{now.minute:02d} {'AM' if now.hour < 12 else 'PM'}, {now.strftime('%A, %B')} {now.day}."
+
+
 class Navigator:
-    def __init__(self, vlm, clock: Callable[[], float] = time.monotonic):
+    def __init__(self, vlm, clock: Callable[[], float] = time.monotonic, now=datetime.now):
         self._vlm = vlm
         self._clock = clock
+        self._now = now  # wall clock, for "what time is it"
         self._lock = threading.Lock()
         self.objects = ObjectGuide(vlm.find, clock)
         self.route: Optional[RouteFollower] = None
         self.mode = "idle"
         self._route_confirm = None  # route waiting for "yes"
         self._place = None
+        self._replaced = None  # a place whose lookup was still out when the user asked for another
         self._speech = deque()
         self._lookup = None
         self._ask = None  # ("describe" | "read" | "ask", question), waiting for the next frame
@@ -59,6 +72,7 @@ class Navigator:
         self.heard = None  # last voice command, for the dashboard: {"text", "kind", "target", "by"}
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
+        self.repeat_asked = False  # "say that again": the frame service knows the last sentence sent
         self._last_route = -1e9
         self._route_step = None
 
@@ -89,6 +103,7 @@ class Navigator:
             self._say(self.objects.start(cmd.target))
         elif cmd.kind == "place":
             self.objects.cancel()
+            self._replaced = self._place if self.route is None and self._route_confirm is None else None
             self._stop_route()
             self.mode = "route"
             self._place = cmd.target
@@ -124,6 +139,12 @@ class Navigator:
             self._say(self._status())
         elif cmd.kind == "path":
             self.path_asked = True
+        elif cmd.kind == "help":
+            self._say(HELP)
+        elif cmd.kind == "repeat":
+            self.repeat_asked = True
+        elif cmd.kind == "time":
+            self._say(time_words(self._now()))
         else:
             self._say("Sorry, I didn't catch that. You can say: what's in front of me, read the sign, "
                       "or guide me to the apple.")
@@ -135,6 +156,9 @@ class Navigator:
             try:
                 follower = RouteFollower(route, self._clock)
             except (ValueError, KeyError, TypeError):
+                if self.route is None and self._replaced and route.get("dest") == self._replaced != self._place:
+                    self._replaced = None
+                    return  # the earlier lookup failing; the newer one is still out
                 self._say("I couldn't find a walking route.")
                 if self.route is None:  # a first lookup, not a reroute: nothing is left to wait for
                     self._stop_route()
@@ -217,6 +241,12 @@ class Navigator:
             print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} "
                   f"({getattr(a, 'seconds', 0):.2f} s)", flush=True)
             self._apply(cmd)
+
+    def take_repeat(self) -> bool:
+        """True once after "say that again"; the frame service repeats the last sentence it sent."""
+        with self._lock:
+            asked, self.repeat_asked = self.repeat_asked, False
+            return asked
 
     def take_path_question(self) -> bool:
         """True once after "is the path clear?"; the frame service answers it from depth."""

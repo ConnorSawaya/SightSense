@@ -3,6 +3,7 @@
 import math
 import time
 import unittest
+from datetime import datetime
 
 from . import fake
 from .commands import parse
@@ -240,6 +241,12 @@ class Commands(unittest.TestCase):
             "is there a chair here?": ("ask", "is there a chair here?"),
             "What color is the door": ("ask", "What color is the door"),
             "how many people are there": ("ask", "how many people are there"),
+            "help": ("help", None),
+            "what can you do": ("help", None),
+            "What can I ask you?": ("help", None),
+            "help me to the door": ("object", "door"),
+            "say that again": ("repeat", None),
+            "what time is it": ("time", None),
             "banana bread recipe": ("unknown", None),
             "": ("unknown", None),
         }
@@ -304,6 +311,11 @@ class Route(unittest.TestCase):
         self.assertIsNone(s.desired_bearing)
         self.assertEqual(s.speech, "No compass heading. Route guidance paused.")
         self.assertIsNone(self.r.update(37.0, -122.0, 5.0, None).speech)
+
+    def test_no_compass_heading_is_still_said_after_another_sentence(self):
+        r = RouteFollower(dict(ROUTE, steps=[{"lat": 37.0, "lon": -122.0, "text": "Head north"}]), self.clock)
+        self.assertEqual(r.update(37.0, -122.0, 5.0, None).speech, "Head north")
+        self.assertEqual(r.update(37.0, -122.0, 5.0, None).speech, "No compass heading. Route guidance paused.")
 
     def test_arrives(self):
         s = self.r.update(37.0019, -122.0, 5.0, 0.0)
@@ -425,6 +437,27 @@ class WholeNavigator(unittest.TestCase):
         steps = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.3)
         self.assertEqual(said(steps), [])
         self.assertEqual(steps[-1].mode, "idle")
+
+    def test_an_earlier_lookup_failing_does_not_end_the_newer_one(self):
+        self.nav.on_voice("take me to Safeway")
+        self.nav.on_voice("take me to Target")
+        self.nav.on_route({"dest": "Safeway", "polyline": []})  # the answer to the first, which found nothing
+        self.nav.on_route(dict(ROUTE, dest="Target"))
+        steps = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.5)
+        self.assertIn("Target, 220 metres, about 3 minutes. Say yes to go.", said(steps))
+        self.assertNotIn("I couldn't find a walking route.", said(steps))
+
+    def test_help_and_the_time(self):
+        self.assertTrue(self.say_now("what can you do").startswith("I can tell you what is in front of you"))
+        nav = Navigator(FakeVLM(), self.clock, now=lambda: datetime(2026, 10, 11, 9, 5))
+        nav.on_voice("what time is it")
+        steps = run(nav, self.clock, lambda: fake.frame(fake.pose()), 0.2)
+        self.assertEqual(said(steps), ["It's 9:05 AM, Sunday, October 11."])
+
+    def test_say_that_again_is_left_for_the_frame_service(self):
+        self.nav.on_voice("say that again")
+        self.assertTrue(self.nav.take_repeat())
+        self.assertFalse(self.nav.take_repeat())  # answered once
 
     def test_path_question_left_for_the_frame_service(self):
         self.nav.on_voice("is the path clear")

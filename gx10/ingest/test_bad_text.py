@@ -45,11 +45,12 @@ class BadText(unittest.IsolatedAsyncioTestCase):
 
     async def test_odd_messages_do_not_end_the_link(self):
         odd = ["5", "null", "true", '"text"', "[1, 2]", "{",
+               {"text": "take me to Safeway"},  # a lookup is waiting, so the routes below are read, not ignored
                {"polyline": [[1, 2], [3, 4]], "distance_m": "950"},
                {"polyline": [[1, 2], [3, 4]], "dest": 7}]
         await self.s.phone(FakePhone(*odd, {"text": "is the path clear"}))
         heard = [entry[2] for entry in self.s.pipe.log if entry[1] == "you"]
-        self.assertEqual(heard, ["is the path clear"])  # the message after the odd ones still arrived
+        self.assertEqual(heard, ["take me to Safeway", "is the path clear"])  # the message after the odd ones still arrived
         self.assertIsNone(self.s.phone_ws)
 
     async def test_the_phone_is_forgotten_when_its_link_fails(self):

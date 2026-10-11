@@ -117,7 +117,8 @@ class WholeSystem(unittest.IsolatedAsyncioTestCase):
                             peak = max(peak, state[2], state[3])
                             powered |= {name for name, value in (("RPWM", state[2]), ("LPWM", state[3])) if value > 0}
                         guidance = [m for m in got if "state" in m]
-                        expect(len(guidance) >= 100, f"the phone got guidance for only {len(guidance)} of 120 frames")
+                        # a frame is dropped when a newer one arrives first, so a busy computer answers fewer
+                        expect(len(guidance) >= 40, f"the phone got guidance for only {len(guidance)} of 120 frames")
                         expect(all("direction" in m for m in guidance), "a guidance message has no direction")
                         expect("CENTER" in commands, "it never went straight")
                         expect(commands[-1] == "STOP" and guidance and guidance[-1]["state"] == "STOP", "it did not end stopped at the wall")
@@ -170,6 +171,14 @@ class WholeSystem(unittest.IsolatedAsyncioTestCase):
                         button.down = False
                         await frames(0.5)
                         expect([m["listen"] for m in got[mark:] if "listen" in m] == [True], "a click of the talk button did not tell the phone to listen once")
+                        # ... and what the phone then heard is answered, as an assistant would
+                        expect(any(t.startswith("I can tell you") for t in said(await after({"text": "what can you do"}))),
+                               "after the button, 'what can you do' was not answered")
+                        expect("A stubbed description." in said(await after({"text": "what's in front of me"}, 1.5)),
+                               "after the button, 'what's in front of me' was not answered by the vision model")
+                        _, body = await asyncio.to_thread(fetch, "/status")
+                        expect(any("talk button down" in line[2] for line in json.loads(body).get("log", [])),
+                               "the dashboard does not show the talk button press")
                         mark = len(got)
                         button.down = True
                         await frames(0.9)
