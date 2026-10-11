@@ -71,7 +71,7 @@ def _turn_box(box, turn, w, h):
 def _picture(view):
     img = view.get("upright")  # decoded and turned once by the frame service
     if img is None:
-        img = cv2.imdecode(np.frombuffer(view["jpeg"], np.uint8), cv2.IMREAD_COLOR)
+        img = cv2.imdecode(np.frombuffer(view["jpeg"], np.uint8), cv2.IMREAD_COLOR) if view["jpeg"] else None
         img = _upright(img, view["turn"]) if img is not None else np.zeros((480, 640, 3), np.uint8)
     turn = view["turn"]
     h, w = (img.shape[1], img.shape[0]) if turn in (1, 3) else img.shape[:2]  # the original picture's size
