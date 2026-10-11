@@ -10,7 +10,7 @@ What in this project we did not make ourselves, and what existed before the even
 | Apple MapKit | Walking directions for "take me to a place" (uses Apple's servers) |
 | Apple Speech framework | On-device speech recognition |
 | Ollama | Running the vision-language model on the GX10 |
-| Qwen3-VL (Alibaba) | Describing scenes, reading signs, finding named objects (`qwen3-vl:8b-instruct` tested; `qwen3-vl:30b-a3b-instruct` downloading) |
+| Qwen3-VL (Alibaba) | Describing scenes, reading signs, finding named objects (`qwen3-vl:30b-a3b-instruct` is the default; `qwen3-vl:8b-instruct` tested as the fallback) |
 | Ultralytics YOLO (YOLO26s, COCO-trained weights) | Detecting common objects |
 | PyTorch, OpenCV | Running YOLO on the GX10 (`gx10/detector/`) |
 | NumPy, websockets | Obstacle check and the frame service on the GX10 (`gx10/planner/`, `gx10/ingest/`) |

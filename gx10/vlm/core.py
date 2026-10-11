@@ -6,7 +6,7 @@ the LiDAR depth inside it.
 
 Settings (environment variables):
     SIGHTSENSE_OLLAMA_URL      default http://127.0.0.1:11434
-    SIGHTSENSE_VLM_MODEL       default qwen3.6:35b (preloaded; Qwen3-VL is still downloading)
+    SIGHTSENSE_VLM_MODEL       default qwen3-vl:30b-a3b-instruct (fastest in check.py and bench.py)
     SIGHTSENSE_VLM_FALLBACK    default qwen3-vl:8b-instruct (used if the main model is not installed)
     SIGHTSENSE_VLM_TIMEOUT     seconds per request, default 6
     SIGHTSENSE_VLM_CTX         context length in tokens, default 8192 (one picture and a prompt)
@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 OLLAMA_URL = os.environ.get("SIGHTSENSE_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-MODEL = os.environ.get("SIGHTSENSE_VLM_MODEL", "qwen3.6:35b")
+MODEL = os.environ.get("SIGHTSENSE_VLM_MODEL", "qwen3-vl:30b-a3b-instruct")
 FALLBACK = os.environ.get("SIGHTSENSE_VLM_FALLBACK", "qwen3-vl:8b-instruct")
 TIMEOUT_S = float(os.environ.get("SIGHTSENSE_VLM_TIMEOUT", "6"))
 # Ollama's default context for these models is 262144 tokens, which made qwen3-vl:8b
@@ -46,7 +46,7 @@ PROMPTS = {
 }
 
 # Box scale checked with check.py on test pictures with a known apple position.
-KNOWN_BOX_SCALES = {"qwen3.6": "1000", "nemotron3": "1000"}
+KNOWN_BOX_SCALES = {"qwen3-vl": "1000", "qwen3.6": "1000", "nemotron3": "1000"}
 
 _lock = threading.Lock()  # one model request at a time
 _active_model = None
