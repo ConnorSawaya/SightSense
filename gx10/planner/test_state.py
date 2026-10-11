@@ -4,7 +4,7 @@ import random
 import unittest
 
 from planner.obstacle import USABLE_M
-from planner.state import CLEAR_FRAMES, CLEAR_MARGIN_M, StateSmoother
+from planner.state import CLEAR_FRAMES, CLEAR_MARGIN_M, WINDOW, StateSmoother
 
 
 def run(s, frames):
@@ -43,14 +43,25 @@ class TestStateSmoother(unittest.TestCase):
         self.assertEqual(s.state, "CAUTION")
         run(s, [("CENTER", USABLE_M + 0.1)] * 20)  # past USABLE_M but inside the margin
         self.assertEqual(s.state, "CAUTION")
-        out = run(s, [("CENTER", USABLE_M + CLEAR_MARGIN_M + 0.1)] * CLEAR_FRAMES)
-        self.assertEqual(out[-2], "CAUTION")
+        out = run(s, [("CENTER", USABLE_M + CLEAR_MARGIN_M + 0.1)] * (WINDOW - 1 + CLEAR_FRAMES))
+        self.assertEqual(out[-2], "CAUTION")  # the near readings leave the window, then 1 s of clear
         self.assertEqual(out[-1], "CLEAR")
 
-    def test_one_odd_frame_is_ignored(self):
+    def test_one_near_frame_turns_caution_and_holds(self):
+        # Safety first: a near reading is never ignored, and it holds instead of flickering.
         s = StateSmoother()
-        run(s, [("CENTER", 4.0)] * 10)
-        self.assertEqual(run(s, [("CENTER", 1.8), ("CENTER", 4.0), ("CENTER", 4.0)]), ["CLEAR"] * 3)
+        run(s, [("CENTER", 4.0)] * 20)
+        out = run(s, [("CENTER", 1.8)] + [("CENTER", 4.0)] * 20)
+        self.assertEqual(out[1], "CAUTION")
+        self.assertEqual(sum(a != b for a, b in zip(out, out[1:])), 1)
+
+    def test_jumping_readings_on_a_walk_hold_caution(self):
+        # The October 10 walk: ahead jumped between about 2.2 and 4.5 m frame to frame.
+        s = StateSmoother()
+        run(s, [("CENTER", 4.5)] * 20)
+        out = run(s, [("CENTER", 2.2 if i % 3 == 0 else 4.5) for i in range(60)])
+        self.assertEqual(sum(a != b for a, b in zip(out, out[1:])), 1)  # CLEAR -> CAUTION once, then holds
+        self.assertEqual(out[-1], "CAUTION")
 
     def test_turning_wheel_is_caution(self):
         s = StateSmoother()
@@ -65,7 +76,7 @@ class TestStateSmoother(unittest.TestCase):
     def test_leaving_stop_goes_through_caution(self):
         s = StateSmoother()
         s.update("STOP", 0.5)
-        out = run(s, [("CENTER", 4.0)] * (CLEAR_FRAMES + 3))
+        out = run(s, [("CENTER", 4.0)] * (WINDOW + CLEAR_FRAMES + 3))
         self.assertNotIn("STOP", out)
         self.assertEqual(out[-1], "CLEAR")
 

@@ -9,20 +9,25 @@ flip into CAUTION played the caution earcon.
   Leaving STOP goes to CAUTION first.
 - Into CAUTION: clearance ahead under USABLE_M, or the wheel is turning, for 2 frames.
 - Back to CLEAR: clearance ahead at least USABLE_M + CLEAR_MARGIN_M and the wheel
-  centred, for CLEAR_FRAMES frames in a row.
+  centred, for CLEAR_FRAMES frames (about 1 s) in a row.
+- Clearance ahead is the nearest reading of the last WINDOW frames (about half a second):
+  on a walk the reading jumped between about 2.2 and 4.5 m from frame to frame, and
+  judged one frame at a time it still flipped CLEAR/CAUTION.
 - UNCERTAIN (no reading ahead) needs 2 frames, and leaving it needs 2 frames.
 
 Every number is a starting value to tune, not a measured result.
 """
 
-from dataclasses import dataclass
+from collections import deque
+from dataclasses import dataclass, field
 from typing import Optional
 
 from .obstacle import USABLE_M
 
 CLEAR_MARGIN_M = 0.3  # leave CAUTION only once the way ahead is this much past USABLE_M
-CLEAR_FRAMES = 5  # about a third of a second at 15 frames a second
+CLEAR_FRAMES = 15  # about 1 s at 15 frames a second (5 still flipped on a walk, October 10)
 CHANGE_FRAMES = 2  # any other change
+WINDOW = 8  # judge by the nearest reading ahead in about the last half second
 
 
 def raw_state(cmd: str, ahead: Optional[float], current: Optional[str]) -> str:
@@ -42,8 +47,12 @@ class StateSmoother:
     state: Optional[str] = None  # None until the first frame
     _cand: str = ""
     _count: int = 0
+    _recent: deque = field(default_factory=lambda: deque(maxlen=WINDOW))
 
     def update(self, cmd: str, ahead: Optional[float]) -> str:
+        if ahead is not None:
+            self._recent.append(ahead)
+            ahead = min(self._recent)  # never slower to see something near
         raw = raw_state(cmd, ahead, self.state)
         if raw == "STOP" or self.state is None:
             self.state, self._cand, self._count = raw, "", 0
