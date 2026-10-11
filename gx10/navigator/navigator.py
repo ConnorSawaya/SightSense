@@ -56,6 +56,7 @@ class Navigator:
         self._ask = None  # ("describe" | "read" | "ask", question), waiting for the next frame
         self._asking = False
         self._interpreting = False  # the model is working out a sentence the rules could not place
+        self.heard = None  # last voice command, for the dashboard: {"text", "kind", "target", "by"}
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
         self._last_route = -1e9
@@ -69,6 +70,7 @@ class Navigator:
         (vlm.interpret), which only picks one of the same commands."""
         cmd = commands.parse(text)
         with self._lock:
+            self.heard = {"text": text, "kind": cmd.kind, "target": cmd.target, "by": "rules"}
             if hasattr(self._vlm, "interpret") and (cmd.kind == "unknown" or (cmd.kind == "ask" and _request(text))):
                 if self._interpreting:
                     self._say("One moment.")
@@ -198,6 +200,7 @@ class Navigator:
             if a is None or not a.ok:
                 error = getattr(a, "error", None) or ("exception" if a is None else "failed")
                 print(f"navigator: model could not place {text!r}: {error}", flush=True)
+                self.heard = {"text": text, "kind": "unknown", "target": None, "by": "model"}
                 self._apply(commands.Command("unknown"))
                 return
             cmd = commands.Command(a.label, a.text or None)
@@ -205,6 +208,7 @@ class Navigator:
                 cmd = commands.Command("unknown")
             if cmd.kind == "ask":
                 cmd.target = text  # ask with the whole sentence; the model shortens it ("colour")
+            self.heard = {"text": text, "kind": cmd.kind, "target": cmd.target, "by": "model"}
             print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} "
                   f"({getattr(a, 'seconds', 0):.2f} s)", flush=True)
             self._apply(cmd)
