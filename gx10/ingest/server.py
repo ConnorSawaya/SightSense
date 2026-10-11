@@ -34,6 +34,7 @@ from navigator import Navigator, decode
 from planner.obstacle import FAR_M, HEADINGS, Smoother, check
 from planner.cue import DirectionCue
 from planner.obstacle_talk import ObstacleTalk
+from planner.recovery import Recovery
 from planner.speech import ANSWER, GUIDE, SAFETY, SpeechPlan
 from planner.state import StateSmoother
 
@@ -155,6 +156,7 @@ class Pipeline:
         self.cue = DirectionCue()
         self.voice = SpeechPlan()  # every sentence goes through it: one at a time, most important first
         self.talk = ObstacleTalk()  # obstacles in words: what, how far, which way is open
+        self.recovery = Recovery()  # after a stop: which way to turn, a tone to keep turning, "Go ahead."
         self.said = (None, -1e9)
         self.checks, self.next_check = deque(), 0.0  # a sound check under way
         self.last_frame = -1e9
@@ -167,6 +169,7 @@ class Pipeline:
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
             self.smoother, self.states, self.cue, self.talk = Smoother(), StateSmoother(), DirectionCue(), ObstacleTalk()
+            self.recovery = Recovery()
             if self.det is not None:
                 self.stable.reset()
         self.last_frame = now
@@ -191,6 +194,7 @@ class Pipeline:
         cmd, obstacle_speech = self.smoother.update(raw_cmd, c.best, now)
         around = self.talk.update(cmd, c.clearance, dets)  # the obstacle check's own command, before an arrival stop
         hazard = self.talk.hazard(cmd, c.clearance, dets)
+        escape = self.recovery.update(cmd, c.clearance, f.pose, now)
         if g.stop:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
 
@@ -205,10 +209,15 @@ class Pipeline:
         if g.speech:
             self.voice.add(g.speech, g.speech_kind, now)
         if obstacle_speech:  # the stop, in words: "Stop. Chair ahead, about 1 metre. Open to your left."
-            if obstacle_speech.startswith("Obstacle"):
-                self.voice.add(self.talk.stop_sentence(c.clearance, dets), SAFETY, now)
-            else:  # "Path blocked. Turn slowly to scan."
+            if obstacle_speech.startswith("Obstacle") and self.recovery.active:
+                pass  # stopped again within a second of the way opening: the same stop, its steps carry on
+            elif obstacle_speech.startswith("Obstacle"):  # "Stop. Chair ahead, about 1 metre. Turn left."
+                self.voice.add(self.talk.stop_sentence(c.clearance, dets, self.recovery.start_words(c.clearance)),
+                               SAFETY, now)
+            elif not self.recovery.active:  # "Path blocked. Turn slowly to scan." unless the steps below are running
                 self.voice.add(obstacle_speech, GUIDE, now)
+        if escape.get("speech"):  # "Keep turning left." / "Nothing open that way. Turn right." / "Go ahead."
+            self.voice.add(escape["speech"], SAFETY if escape["speech"].startswith("Nothing open") else GUIDE, now)
         for key in ("around", "past"):  # "Chair ahead. Bear left around it." / "You're past it. Carry on."
             if key in around:
                 self.voice.add(around[key], GUIDE, now)
@@ -219,6 +228,8 @@ class Pipeline:
         msg = {"seq": f.seq, "state": state, "direction": cue.direction}
         if cue.earcon:
             msg["earcon"] = cue.earcon
+        elif escape.get("earcon"):
+            msg["earcon"] = escape["earcon"]  # while stopped: the tone of the side to turn to, in that ear
         speech = self.voice.next(now, thinking=self.nav.thinking, hazard=hazard)  # see planner/speech.py
         if speech:
             msg["speech"] = speech
@@ -235,9 +246,9 @@ class Pipeline:
         pi = json.dumps({"seq": f.seq, "cmd": cmd, "ttl_ms": TTL_MS})
         done = time.monotonic()
         self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf,
-                     "maps": c.maps, "clearance": c.clearance, "best": c.best, "cmd": cmd}
+                     "maps": c.maps, "clearance": c.clearance, "best": c.best, "cmd": cmd, "escape": self.recovery.step}
         self.status = {
-            "seq": f.seq, "cmd": cmd, "state": state, "direction": cue.direction, "turn": turn * 90, "best": c.best,
+            "seq": f.seq, "cmd": cmd, "state": state, "escape": self.recovery.step, "direction": cue.direction, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
             "floor_seen": c.floor_seen, "cam_h": None if c.cam_h is None else round(c.cam_h, 2),
             "nav": f"{g.mode}/{g.state}",

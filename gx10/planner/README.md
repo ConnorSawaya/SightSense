@@ -66,3 +66,15 @@ low confidence, which is dropped. `USABLE_M` and `STOP_AHEAD_M`, which steer, ar
 
 Replayed on the October 11 cane session (15 min, detectors on, model stubbed): 49 sentences, 6 sent over
 another, all of them a stop cutting in.
+
+## After a stop: which way to turn (October 11)
+
+`recovery.py` turns a stop into steps. The stop says what to do ("Stop. Chair ahead, about 1 metre. Turn
+left.", the side with more room). While the stop lasts, that side's tone plays in that ear every 1.5 s as the
+indicator. Not turning: "Keep turning left." (twice at most). Turned 100 degrees with nothing open: "Nothing
+open that way. Turn right." Way open for 1 s: "Go ahead." Still stopped after 20 s: "Step back, then turn
+slowly.", and the tones stop. A stop within a second of the way opening is the same stop. A heading jump of
+over 30 degrees between frames is the phone's tracking, not a turn. The wheel stays stopped throughout; the
+dashboard banner shows the step ("-> TURN LEFT").
+
+Replayed on the October 11 cane session (15 min): 54 sentences, 59 turn tones.

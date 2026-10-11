@@ -89,13 +89,16 @@ class ObstacleTalk:
         """"left" or "right" while steering round something (its sentence replaces a bare "Bear left")."""
         return self._around[0] if self._around else None
 
-    def stop_sentence(self, clearance: dict, dets) -> str:
+    def stop_sentence(self, clearance: dict, dets, action: Optional[str] = None) -> str:
+        """action: what to do next, from planner/recovery.py ("Turn left."); else which side is open, if one is."""
         ahead = clearance.get(0)
         if ahead is None:
-            return "Stop. I can't see clearly ahead."
+            return "Stop. I can't see clearly ahead." + (f" {action}" if action else "")
         name = thing_ahead(dets, ahead) or "something"
         what = f"{name.capitalize()} ahead, {_metres(ahead)}."
-        side = open_side(clearance)  # with nothing open, the stop alone; "Path blocked. Turn slowly to scan." follows if it lasts
+        if action:
+            return f"Stop. {what} {action}"
+        side = open_side(clearance)
         return f"Stop. {what}" + (f" Open to your {side}." if side else "")
 
     def hazard(self, cmd: str, clearance: dict, dets) -> Optional[str]:

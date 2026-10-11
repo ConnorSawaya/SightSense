@@ -62,7 +62,8 @@ def banner(view, manual):
         return f"{ARROW[what]} {what} (manual)"
     if what == "STOP":
         ahead = cl.get(0)
-        return f"X STOP: no heading clear for {USABLE_M:g} m  (ahead {_metres(ahead)})"
+        step = f"  ->  {view['escape'].upper()}" if view.get("escape") else ""
+        return f"X STOP: no heading clear for {USABLE_M:g} m  (ahead {_metres(ahead)}){step}"
     parts = [f"{h:+d}: {_metres(cl.get(h))}" for h in heads]
     open_ = [h for h in heads if cl.get(h) is not None and cl[h] >= USABLE_M]
     verdict = ("open" if open_ else "blocked") if by_hand else ""
