@@ -78,3 +78,19 @@ over 30 degrees between frames is the phone's tracking, not a turn. The wheel st
 dashboard banner shows the step ("-> TURN LEFT").
 
 Replayed on the October 11 cane session (15 min): 54 sentences, 59 turn tones.
+
+## Left and right near an obstacle (October 11)
+
+Close to something (under about 0.6 m), it sits in all seven paths at once, because they start together at
+the phone. Every clearance then reads the same, and the side to turn to after a stop was a coin toss: on the
+October 11 cane session it matched the roomier side of the picture 50% of the time. `check()` now also gives
+`near_side` (which side most obstacle points within 1.2 m are on) and `room` (median distance of the obstacle
+points in each heading's wedge). The side to turn to is away from `near_side`, else the one with more room;
+the wheel's fallback, when nothing is usable, breaks ties the same way. What counts as usable or a stop is
+unchanged.
+
+`check_directions.py` checks left and right against the upright picture on real recordings: the LiDAR wedges
+(1157/1157 frames), object bearings (1465/1468) and turning (232/234) all agreed. The side to turn to, against
+the roomier side of the picture: house 96% (was 70%), evening walk 97% (was 86%), cane session 73% (was 50%;
+there the phone mostly faced laps and laptops, and the frames that still disagree looked right by eye).
+`test_directions.py` checks the same on ray-cast scenes for the phone upright, on either side and upside down.

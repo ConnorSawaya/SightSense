@@ -212,7 +212,7 @@ class Pipeline:
             if obstacle_speech.startswith("Obstacle") and self.recovery.active:
                 pass  # stopped again within a second of the way opening: the same stop, its steps carry on
             elif obstacle_speech.startswith("Obstacle"):  # "Stop. Chair ahead, about 1 metre. Turn left."
-                self.voice.add(self.talk.stop_sentence(c.clearance, dets, self.recovery.start_words(c.clearance)),
+                self.voice.add(self.talk.stop_sentence(c.clearance, dets, self.recovery.start_words(c.clearance, c.room, c.near_side)),
                                SAFETY, now)
             elif not self.recovery.active:  # "Path blocked. Turn slowly to scan." unless the steps below are running
                 self.voice.add(obstacle_speech, GUIDE, now)

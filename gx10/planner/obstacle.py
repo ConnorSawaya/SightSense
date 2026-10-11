@@ -45,6 +45,8 @@ CHANGE_FRAMES, STOP_FRAMES = 3, 2
 OWN_CANE_M = float(os.environ.get("SIGHTSENSE_OWN_CANE_M", "0"))
 OWN_CANE_HALF_W_M = 0.12
 STUCK_S = 5.0
+NEAR_SIDE_M = 1.2  # obstacle points this close decide which side "near" is
+NEAR_SIDE_RATIO = 1.5  # one side needs this many times the other's points (and MIN_POINTS) to count
 
 
 @dataclass
@@ -57,6 +59,14 @@ class Check:
     points: int
     cam_h: Optional[float] = None  # how far the phone is above the floor it found; None when no floor was seen
     maps: Optional[dict] = None  # per depth pixel, for the dashboard only; see MAP_* below
+    # heading -> metres: how far away things in that direction are overall (median of the obstacle points in its
+    # 10-degree wedge; FAR_M with none; None when unknown). Clearance is the nearest point in a 0.7 m path;
+    # close to something, every path is cut at about the same distance, and room tells which way opens up.
+    room: dict = field(default_factory=dict)
+    # "left" or "right": the side most of the obstacle points within NEAR_SIDE_M are on; None if even or none.
+    # Close to something, it sits in all seven paths at once (they start together at the phone), so the
+    # clearances cannot say which way is away from it; this can.
+    near_side: Optional[str] = None
 
 
 # maps["kind"]: what each depth pixel is, as the check saw it (MAP_NONE: above the cane, or the cane itself)
@@ -120,16 +130,25 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
         obst_px = obst_px[~mine]
 
     corridor = np.zeros(len(a), np.uint8)
-    clearance, usable = {}, []
+    point_b = np.degrees(np.arctan2(a, b))  # each obstacle point's own heading
+    point_d = np.hypot(a, b)
+    near = point_d < NEAR_SIDE_M
+    n_left, n_right = int((near & (a < -0.05)).sum()), int((near & (a > 0.05)).sum())
+    near_side = ("left" if n_left >= MIN_POINTS and n_left > NEAR_SIDE_RATIO * n_right else
+                 "right" if n_right >= MIN_POINTS and n_right > NEAR_SIDE_RATIO * n_left else None)
+    away = {"left": 1, "right": -1}.get(near_side, 0)  # sign of the headings that lead away from it
+    clearance, usable, room = {}, [], {}
     for i, hd in enumerate(HEADINGS):
         wedge = np.abs(ray_b - hd) <= 5.0
         n = int(wedge.sum())
         if n < MIN_WEDGE_PX or good[wedge].mean() < MIN_VALID:
-            clearance[hd] = None  # unknown counts as blocked
+            clearance[hd] = room[hd] = None  # unknown counts as blocked
             continue
         if too_close[wedge].mean() > TOO_CLOSE_SHARE:
-            clearance[hd] = 0.0  # right up against something
+            clearance[hd] = room[hd] = 0.0  # right up against something
             continue
+        in_wedge = np.abs(point_b - hd) <= 5.0
+        room[hd] = float(np.median(point_d[in_wedge])) if in_wedge.sum() >= MIN_POINTS else FAR_M
         s, c = np.sin(np.radians(hd)), np.cos(np.radians(hd))
         along, side = a * s + b * c, a * c - b * s
         inside = (np.abs(side) <= CORRIDOR_W_M / 2) & (along > 0)
@@ -142,12 +161,14 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
     if best is None:  # nothing usable: the most open heading, if it is open far enough
         known = {hd: v for hd, v in clearance.items() if v is not None}
         if known:
-            hd = max(known, key=lambda k: (known[k], -abs(k - desired)))
+            # most open path; within 0.25 m of each other (close to something, they all are), away from the
+            # near side, then the most room
+            hd = max(known, key=lambda k: (round(known[k] * 4) / 4, away * k > 0, room.get(k) or 0.0, -abs(k - desired)))
             if known[hd] >= (LEAVE_STOP_M if stopped else STOP_AHEAD_M):
                 best = hd
     maps = _maps(h, w, good, keep, too_close, p, floor_y, ray_b, obst_px, corridor, a, b) if want_maps else None
     return Check(clearance, usable, best, wheel(best), floor_seen, len(a), float(cam_y - floor_y) if floor_seen else None,
-                 maps)
+                 maps, room, near_side)
 
 
 def _maps(h, w, good, keep, too_close, p, floor_y, ray_b, obst_px, corridor, a, b):

@@ -38,12 +38,18 @@ def yaw_deg(pose) -> Optional[float]:
     return math.degrees(math.atan2(fx, -fz))
 
 
-def turn_side(clearance: dict) -> str:
-    """The side to turn to: the one with the most room; unknown counts as none. Left on a tie."""
-    def room(side):
-        known = [clearance.get(h) for h in side if clearance.get(h) is not None]
+def turn_side(clearance: dict, room: Optional[dict] = None, near_side: Optional[str] = None) -> str:
+    """The side to turn to: away from what is close (check().near_side), else the one with the most room
+    (check().room, else the clearances; unknown counts as none), left on a tie. On recorded cane frames the
+    clearances alone picked the wrong side about half the time near an obstacle: a close thing sits in every
+    path at once, so they all read the same."""
+    if near_side in ("left", "right"):
+        return "right" if near_side == "left" else "left"
+    by = room or clearance
+    def most(side):
+        known = [by.get(h) for h in side if by.get(h) is not None]
         return max(known) if known else -1.0
-    return "left" if room(LEFT_SIDE) >= room(RIGHT_SIDE) else "right"
+    return "left" if most(LEFT_SIDE) >= most(RIGHT_SIDE) else "right"
 
 
 class Recovery:
@@ -57,9 +63,9 @@ class Recovery:
         self._reminders = 0
         self._stuck_said = False
 
-    def start_words(self, clearance: dict) -> str:
+    def start_words(self, clearance: dict, room: Optional[dict] = None, near_side: Optional[str] = None) -> str:
         """The action to add to the stop sentence: "Turn left." Picks the side for the steps that follow."""
-        self.side = turn_side(clearance)
+        self.side = turn_side(clearance, room, near_side)
         return f"Turn {self.side}."
 
     def update(self, cmd: str, clearance: dict, pose, now: float) -> dict:
