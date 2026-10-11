@@ -11,7 +11,7 @@ As of the evening of October 10, 2026.
 | Part of the wiring | State |
 | --- | --- |
 | Six wires, Pi end | Fitted. Read from photos; all six are on the pins on this page. |
-| Six wires, driver end | Fitted. Read from photos by several independent readers, who all placed every wire on its planned pin. They were sure of the columns and less sure of the rows, so check black and yellow by eye before the first power-on. |
+| Six wires, driver end | Fitted. Read from photos by five independent readers, who all placed every wire on its planned pin, with the second column empty. Three checkers then tried to disprove that and could not. No photo shows a housing on a named pin: the columns are seen, the rows are worked out from the camera angle. Check black and yellow by eye before the first power-on. |
 | Limit switches | Not fitted |
 | Fuse and kill switch | Not fitted |
 | Battery, converter, motor | Not checked |
@@ -142,6 +142,7 @@ Do these with everything unplugged.
 3. No wire is on Pi pin 2 or pin 4.
 4. Nothing metal is touching the Pi's header or the underside of the driver. The driver's heatsink is metal.
 5. With a multimeter on continuity, if there is one: Pi pin 17 to driver VCC, and Pi pin 20 to driver GND. Then check there is no continuity between VCC and GND.
+6. If the housings cover the driver's pins, use the screw terminals instead. Pi pin 6 (ground) to the driver's B− screw should beep. Pi pin 1 (3.3 V) to B− should not beep steadily; a short chirp that stops is fine. This relies on the driver's GND pin being joined to B− on the board, which is usual for an IBT-2 and has not been measured on this one.
 
 ## First tests from the Pi
 
