@@ -19,7 +19,7 @@ ARRIVE_M = 15.0
 OFF_ROUTE_MIN_M = 15.0
 OFF_ROUTE_FOR_S = 5.0
 BAD_GPS_M = 25.0
-REPEAT_TURN_S = 4.0  # added: how often to repeat "Turn left"
+REPEAT_TURN_S = 4.5  # added: how often to repeat "Turn left". Above the phone's 4.0 s hold on a repeated sentence
 REROUTE_EVERY_S = 15.0  # added: at most one new lookup this often
 
 EARTH_R = 6371000.0

@@ -40,6 +40,7 @@ final class Speaker {
         try? session.setActive(true)
         for (name, tones) in Self.earcons {
             if let p = try? AVAudioPlayer(data: Self.wav(tones)) {
+                p.pan = name == "left" ? -1 : (name == "right" ? 1 : 0)  // in that ear, on headphones
                 p.prepareToPlay()
                 players[name] = p
             }
@@ -82,6 +83,10 @@ final class Speaker {
     static let earcons: [String: [(Double, Double)]] = [
         "stop": [(880, 0.12), (0, 0.05), (880, 0.12)],
         "caution": [(660, 0.10)],
+        // direction cues from the GX10 (gx10/planner/cue.py): low for left, high for right, so they differ on the phone's own speaker too
+        "left": [(440, 0.10)],
+        "right": [(740, 0.10)],
+        "unknown": [(220, 0.22)],
         "other": [(520, 0.08)],
     ]
 

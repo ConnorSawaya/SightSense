@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 GAP_S = 2.0  # at most one spoken direction this often (STOP is never held back)
-REPEAT_S = 4.0  # the same direction again only after this long
+REPEAT_S = 4.5  # the same direction again only after this long. Keep it above the phone's own 4.0 s hold on a repeated sentence (Speaker.speechRepeat), or the phone drops the repeat
 UNKNOWN_FRAMES = 3
 
 WORDS = {"LEFT": "Bear left", "RIGHT": "Bear right", "UNKNOWN": "Can't see ahead"}
