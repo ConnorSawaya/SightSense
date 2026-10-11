@@ -103,6 +103,9 @@ class UprightVLM:
     def ask(self, jpeg, question):
         return vlm.ask(rotate_jpeg(jpeg, self.turn), question)
 
+    def objects(self, jpeg):
+        return vlm.objects(rotate_jpeg(jpeg, self.turn))
+
     def interpret(self, text):
         return vlm.interpret(text)  # text only, no picture
 

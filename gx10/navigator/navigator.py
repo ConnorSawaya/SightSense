@@ -46,6 +46,20 @@ HELP = ("I can tell you what is in front of you, read signs, answer a question a
         "guide you to an object, or take you to a place. Say stop to cancel.")
 
 
+def chat_words(text: str, status: Optional[str]) -> str:
+    """A short, friendly answer to a greeting or thanks. status: the trip so far, when there is one."""
+    t = (text or "").lower()
+    if re.search(r"\bthank|\bcheers\b", t):
+        return "You're welcome."
+    if re.search(r"\b(?:good|nice|great|well done|awesome|perfect|cool|the best)\b", t) and not re.search(r"\bmorning|afternoon|evening\b", t):
+        return "Thank you."
+    if re.search(r"\bhow\b|\bwhat's up\b|\bwhats up\b", t):
+        return "I'm working well." + (f" {status}" if status else " Ask me what's in front of you, or where to go.")
+    greeting = "Good morning." if "morning" in t else "Good afternoon." if "afternoon" in t else \
+        "Good evening." if "evening" in t else "Hello."
+    return greeting + (f" {status}" if status else " I'm ready. Ask me what's in front of you, or where to go.")
+
+
 def time_words(now) -> str:
     """The time and date as a sentence, from the GX10's own clock."""
     hour = now.hour % 12 or 12
@@ -70,6 +84,7 @@ class Navigator:
         self._asking = False
         self._interpreting = False  # the model is working out a sentence the rules could not place
         self.heard = None  # last voice command, for the dashboard: {"text", "kind", "target", "by"}
+        self.heard_text = ""  # the words of the last voice command, for chat replies
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
         self.repeat_asked = False  # "say that again": the frame service knows the last sentence sent
@@ -86,6 +101,7 @@ class Navigator:
         cmd = commands.parse(text)
         with self._lock:
             self.heard = {"text": text, "kind": cmd.kind, "target": cmd.target, "by": "rules"}
+            self.heard_text = text
             if hasattr(self._vlm, "interpret") and (cmd.kind == "unknown" or (cmd.kind == "ask" and _request(text))):
                 if self._interpreting:
                     self._say("One moment.")
@@ -101,7 +117,7 @@ class Navigator:
         if cmd.kind == "object":
             self._stop_route()
             self.mode = "object"
-            self._say(self.objects.start(cmd.target))
+            self._say(self.objects.start(cmd.target, getattr(cmd, "side", None)))
         elif cmd.kind == "place":
             self.objects.cancel()
             self._replaced = self._place if self.route is None and self._route_confirm is None else None
@@ -132,7 +148,7 @@ class Navigator:
             self._stop_route()
             self.mode = "idle"
             self._say(said or ("Cancelled." if had_route else "Stopped."))
-        elif cmd.kind in ("describe", "read"):
+        elif cmd.kind in ("describe", "read", "objects"):
             self._ask = (cmd.kind, None)
         elif cmd.kind == "ask":
             self._ask = ("ask", cmd.target)
@@ -142,6 +158,8 @@ class Navigator:
             self.path_asked = True
         elif cmd.kind == "help":
             self._say(HELP)
+        elif cmd.kind == "chat":
+            self._say(chat_words(cmd.target or self.heard_text, self._status() if self.mode != "idle" else None))
         elif cmd.kind == "repeat":
             self.repeat_asked = True
         elif cmd.kind == "soundcheck":
@@ -240,6 +258,10 @@ class Navigator:
                 cmd = commands.Command("unknown")
             if cmd.kind == "ask":
                 cmd.target = text  # ask with the whole sentence; the model shortens it ("colour")
+            if cmd.kind == "chat":
+                cmd.target = text  # the reply depends on the words: hello, thanks, how are you
+            if cmd.kind == "object" and cmd.target:
+                cmd.target, cmd.side = commands._qualified(cmd.target)
             self.heard = {"text": text, "kind": cmd.kind, "target": cmd.target, "by": "model"}
             print(f"navigator: model read {text!r} as {cmd.kind} {cmd.target or ''} "
                   f"({getattr(a, 'seconds', 0):.2f} s)", flush=True)
@@ -309,11 +331,13 @@ class Navigator:
 
     def _ask_worker(self, kind, question, jpeg):
         try:
+            if kind == "objects" and not hasattr(self._vlm, "objects"):
+                kind = "describe"  # an older or fake model client
             a = self._vlm.ask(jpeg, question) if kind == "ask" else getattr(self._vlm, kind)(jpeg)
             if not a.ok:
                 text = a.text
             elif kind == "read":
-                text = a.text.replace("\n", ". ") if a.text else "I don't see any text."
+                text = f"It says: {a.text.replace(chr(10), '. ').rstrip('.')}." if a.text else "I don't see any text to read."
             else:
                 text = a.text
         except Exception as e:

@@ -37,36 +37,62 @@ BOX_SCALE = os.environ.get("SIGHTSENSE_VLM_BOX_SCALE", "")
 
 COULDNT_TELL = "I couldn't tell"
 
+# Every spoken answer starts from this. Measured with vlm/eval_voice.py on recorded cane frames: without
+# it, most answers said "in the image" or "ahead of the camera", and object lists came in no order.
+VOICE = ("You are the voice of a smart guide cane, talking to a blind person who is holding it. "
+         "Speak to them as \"you\" in plain, short words. Never mention an image, photo, picture or camera. "
+         "Never give distances, and never say whether it is safe to walk or whether the way is clear. ")
+
 PROMPTS = {
-    "describe": "In under 20 words, say what is directly ahead of the camera. Do not estimate distances.",
-    "read": "Read any text or signs in this image. If there is none, reply NONE.",
+    "describe": VOICE + "In one sentence of under 20 words, tell them what is in front of them. "
+    "Put what matters for walking first: people, doors, steps, and furniture or things in the way.",
+    "objects": VOICE + "Name the main things in front of them, grouped by where they are. Reply in exactly this form, "
+    "leaving out any group with nothing in it: \"On your left: ... Ahead: ... On your right: ...\" "
+    "Use one or two words for each thing, never the same thing twice, at most 3 things in each group, "
+    "most noticeable first. Leave out walls, floors and ceilings.",
+    # Asked before "read": without it the model read jacket logos and made up words from blurry letters
+    "has_text": "Is there a sign, label, notice or screen in this picture with text large and clear enough to read? "
+    "Writing on clothing, bags or logos does not count. Reply only yes or no.",
+    "read": "Read out the text in this picture that is large and clear enough to read with confidence: signs, labels, "
+    "screens, posters. Ignore small, blurry, cut-off or partly hidden text, and writing on clothing. "
+    "Reply with only that text, most prominent first, one item per line. If there is none, reply NONE.",
     "find": "Locate the {name}. Reply only as JSON with bbox_2d as [x1, y1, x2, y2] and a label, or bbox_2d as null.",
     # Asked before "find": the box prompt alone always returns a box, even for things
     # that are not there (it boxed an exit sign as an apple). See README.md.
     "present": "Is there a {name} in this image? Reply only yes or no.",
     # Voice that navigator/commands.py could not place. Text only, no picture. Same command names.
+    # Speech recognition makes mistakes, so the examples include some.
     "interpret": (
         'A blind person said this to their smart guide cane: "{text}"\n'
-        "Pick the one command they mean:\n"
-        '- object: go to or find a thing nearby (target: the thing, like "door" or "red cup")\n'
-        "- place: go to a named place, shop or address (target: the place)\n"
-        "- describe: a general request to describe what is around or ahead, nothing specific asked\n"
+        "The words came from speech recognition and may have small mistakes. Pick the one command they mean:\n"
+        '- object: go to or find a thing nearby (target: just the thing, like "door" or "red cup", without "on the left")\n'
+        "- place: go to a named place, shop or address outside (target: the place). A room or thing inside "
+        "the building, such as a bathroom, kitchen, exit or lift, is an object, not a place\n"
+        "- describe: a general request to describe what is around or ahead\n"
+        "- objects: a request to list the things that are around\n"
         "- read: read signs or text\n"
-        "- status: how the trip is going (am I going the right way, how far is it)\n"
+        "- status: how the trip is going, or where they are being taken\n"
         "- path: whether the way ahead is clear or safe to walk\n"
         "- ask: a specific question about what is in front of them, such as a colour, a count "
         "or whether something is there\n"
+        "- chat: a greeting, thanks, or small talk such as how are you\n"
+        "- help: what the cane can do\n"
         "- yes: agreeing, or saying go ahead\n"
         "- no: refusing\n"
         "- cancel: stop guiding\n"
         "- unknown: none of these\n"
+        "Examples: \"lead me out the door\" -> object door; \"hiya\" -> chat; \"wat do u see\" -> describe; "
+        "\"get me to target\" -> place Target; \"whats all around\" -> objects; \"is the floor wet\" -> ask; "
+        "\"somewhere to sit\" -> object chair; \"I need the bathroom\" -> object bathroom.\n"
         'Reply only as JSON: {{"command": "...", "target": "..." or null}}'
     ),
-    "ask": 'Answer this question about the image in under 20 words: "{question}" '
-    "Do not estimate distances. Do not say whether it is safe to walk or whether the way is clear.",
+    "ask": VOICE + 'They asked: "{question}" Answer in one sentence of under 20 words. If it is a yes-or-no '
+    "question, start with Yes or No. Answer only what they asked: if they ask about one side, talk about that side only. "
+    "If you cannot see what they ask about, say you can't see it.",
 }
 
-INTENTS = ("object", "place", "describe", "read", "status", "path", "ask", "yes", "no", "cancel", "unknown")
+INTENTS = ("object", "place", "describe", "objects", "read", "status", "path", "ask", "chat", "help", "yes", "no",
+           "cancel", "unknown")
 
 # A distance in an answer is thrown away: distances come from the LiDAR only
 _DISTANCE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:m|cm|metres?|meters?|feet|foot|ft|inch(?:es)?|yards?|steps?|paces?)\b", re.I)
@@ -98,27 +124,52 @@ def describe(jpeg: bytes) -> Answer:
     a = _one(jpeg, PROMPTS["describe"])
     if not a.ok:
         return a
-    text = _clean(a.raw)
+    text = tidy(_clean(a.raw), max_words=25)
     if not text:
         return _fail(a, "empty reply")
-    words = text.split()
-    if len(words) > 25:  # the prompt asks for under 20; cut runaway answers
-        text = " ".join(words[:25])
+    a.text = text
+    return a
+
+
+def objects(jpeg: bytes) -> Answer:
+    """The main things in view, grouped by side: "On your left: a chair. Ahead: a table." Text only."""
+    a = _one(jpeg, PROMPTS["objects"])
+    if not a.ok:
+        return a
+    text = _sides(_clean(a.raw))
+    if not text:
+        return _fail(a, "empty reply")
     a.text = text
     return a
 
 
 def read(jpeg: bytes) -> Answer:
     """Read text and signs. text is "" when there is none."""
-    a = _one(jpeg, PROMPTS["read"])
+    if not _lock.acquire(timeout=BUSY_WAIT_S):
+        return _busy()
+    try:
+        deadline = time.monotonic() + TIMEOUT_S  # both questions share one timeout
+        gate = _ask(jpeg, PROMPTS["has_text"], deadline)
+        if not gate.ok:
+            return gate
+        if _clean(gate.raw).lower().strip(".! ") == "no":
+            gate.text = ""
+            return gate
+        a = _ask(jpeg, PROMPTS["read"], deadline)
+        a.seconds += gate.seconds
+    finally:
+        _lock.release()
     if not a.ok:
         return a
     text = _clean(a.raw)
     if not text:
         return _fail(a, "empty reply")
-    if re.fullmatch(r"[\s\"'`*.]*NONE[\s\"'`*.]*", text, re.IGNORECASE):
-        text = ""
-    a.text = text
+    lines = [re.sub(r"^[\s\"'`*\-\u2022]+|[\s\"'`*]+$", "", s) for s in text.splitlines()]
+    lines = [s for s in lines if s and not re.fullmatch(r"NONE\.?", s, re.IGNORECASE)]
+    # Fragments with no real word in them ("HE SK CLE") are misreads, not text
+    lines = [s for s in lines if re.search(r"[A-Za-z]{3,}|\d{2,}", s)]
+    text = ". ".join(s.rstrip(".") for s in list(dict.fromkeys(lines))[:3])  # the 3 most prominent, once each
+    a.text = " ".join(text.split()[:20])  # a bus covered in adverts is not read out in full
     return a
 
 
@@ -136,7 +187,7 @@ def ask(jpeg: bytes, question: str) -> Answer:
     kept = [s for s in re.split(r"(?<=[.!?])\s+", text) if s and not _DISTANCE.search(s)]
     if not kept:
         return _fail(a, "empty reply" if not text else "reply only gave a distance")
-    a.text = " ".join(" ".join(kept).split()[:30])
+    a.text = tidy(" ".join(kept), max_words=30)
     return a
 
 
@@ -298,6 +349,55 @@ def _first_json(raw: str):
             except json.JSONDecodeError:
                 continue
     return None
+
+
+_ABOUT_PICTURE = [  # the model talking about the picture instead of the room; fixed after the prompt fails
+    (re.compile(r"\s*,?\s*\b(?:visible |seen |shown )?(?:in|from|on|within) (?:the|this) (?:image|picture|photo|frame|scene|view)\b", re.I), ""),
+    (re.compile(r"\b(?:the|this) (?:image|picture|photo|scene) (?:shows|depicts|contains|has|features)\s+", re.I), ""),
+    (re.compile(r"\b(?:directly )?(?:ahead of|in front of) the camera\b", re.I), "in front of you"),
+    (re.compile(r"\bthe camera\b", re.I), "you"),
+    (re.compile(r"\b(?:there (?:is|are) )?no ([a-z ]+?) visible\b", re.I), r"no \1"),
+]
+
+
+def tidy(text: str, max_words: int = 25) -> str:
+    """One or two clean sentences, ready to speak: no talk of the picture, a capital, a full stop."""
+    text = re.sub(r"[*_#`]+", "", text)  # markdown
+    for pattern, repl in _ABOUT_PICTURE:
+        text = pattern.sub(repl, text)
+    text = re.sub(r"\s+([,.!?])", r"\1", re.sub(r"\s+", " ", text)).strip(" ,")
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    text = " ".join(sentences[:2])
+    words = text.split()
+    if len(words) > max_words:  # cut runaway answers at a word, then end the sentence there
+        text = " ".join(words[:max_words]).rstrip(",;:")
+    if text and text[0].islower():
+        text = text[0].upper() + text[1:]
+    if text and text[-1] not in ".!?":
+        text += "."
+    return text
+
+
+def _sides(text: str) -> str:
+    """An objects reply as spoken sentences: "On your left: a chair. Ahead: a table and a door." """
+    text = tidy(text, max_words=40)
+    parts = re.split(r"\s*(?=\b(?:On your left|Ahead|On your right|In front of you)\s*:)", text, flags=re.I)
+    out = []
+    seen = set()
+    for part in parts:
+        m = re.match(r"(On your left|Ahead|On your right|In front of you)\s*:\s*(.+)", part.strip(), re.I)
+        if not m:
+            continue
+        things = []
+        for thing in re.split(r"\s*(?:,|;|\band\b)\s*", m.group(2).strip(" .;")):
+            thing = re.sub(r"^(?:a|an|the|some|two|three|several)\s+", "", thing.strip(" ."), flags=re.I).lower()
+            if not thing or re.fullmatch(r"(?:nothing|none|n/a|walls?|floor|ceiling)", thing) or thing in seen:
+                continue
+            seen.add(thing)  # the same thing is said once, on the side it was named first
+            things.append(thing)
+        if things:
+            out.append(f"{m.group(1).capitalize()}: {', '.join(things[:3])}.")
+    return " ".join(out) if out else text
 
 
 def _clean(raw: str) -> str:
