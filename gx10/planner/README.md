@@ -47,3 +47,22 @@ Checked on October 11 with a simulated walker that follows the wheel (LEFT or RI
 | A wall right across | Turned and walked along the wall. Someone who ignores the wheel and keeps walking is stopped about 0.75 m from it |
 
 The same with the phone upright or on its side. The walker passed 0.28 to 0.33 m from the nearest edge, measured from the middle of the walker, which is close: the corridor the check keeps clear is 0.7 m wide. So when the cane stops a lot, look first at the phone's tilt and at whether the cane or a hand is in its view (the section above), not at the steering rules.
+
+## Speaking: obstacles in words, one sentence at a time (October 11)
+
+`obstacle_talk.py` puts the obstacle check into words, naming the thing from the detectors when one is
+straight ahead at the blocking distance: "Stop. Chair ahead, about 1 metre. Open to your left." on a stop,
+"Laptop ahead. Bear right around it." when steering round something, "You're past it. Carry on." after.
+Distances are the LiDAR clearance. The wheel is unchanged: still decided by `obstacle.py` from depth.
+
+`speech.py` decides what is said and when: SAFETY, then ANSWER, then GUIDE, then INFO; one sentence at a time,
+paced by an estimate of how long the phone takes to say it. A spoken stop cuts into anything; an answer it
+cuts off early is said again after it ("As I was saying: ..."). While something is within 1.5 m, a short
+warning ("Careful: chair ahead, about 1 metre.") goes before the next answer, at most every 20 s.
+
+`FAR_M` is now 10 m (was 4.5). The LiDAR reaches about 5 m; ARKit fills in beyond that from the camera, and in
+the October 10 house recording 5% of pixels read 5-8 m at medium or high confidence. Beyond 8 m nearly all were
+low confidence, which is dropped. `USABLE_M` and `STOP_AHEAD_M`, which steer, are unchanged.
+
+Replayed on the October 11 cane session (15 min, detectors on, model stubbed): 49 sentences, 6 sent over
+another, all of them a stop cutting in.

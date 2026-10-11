@@ -21,6 +21,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from planner.obstacle import FAR_M
+
 from . import obstacle_view
 
 PAGE = (Path(__file__).parent / "index.html").read_bytes()
@@ -106,7 +108,7 @@ def centre_m(view):
 
 
 def _depth(view):
-    v = np.clip(view["depth"].astype(np.float32) / 5000.0 * 255, 0, 255).astype(np.uint8)  # 0 m dark to 5 m bright
+    v = np.clip(view["depth"].astype(np.float32) / (FAR_M * 1000) * 255, 0, 255).astype(np.uint8)  # 0 m dark to FAR_M bright
     img = cv2.applyColorMap(255 - v, cv2.COLORMAP_TURBO)  # near = red, far = blue
     img[(view["depth"] == 0) | (view["conf"] < 1)] = (40, 40, 40)  # no good reading: grey
     return _upright(img, view["turn"])

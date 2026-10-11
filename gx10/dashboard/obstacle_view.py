@@ -92,7 +92,7 @@ def draw(view, out_h: int, manual=None):
     idx = [HEADINGS.index(h) for h in heads]
 
     # Colour at depth resolution: dim grey depth underneath, classes on top
-    base = (215 - np.clip(depth.astype(np.float32) / 5000.0, 0, 1) * 115).astype(np.uint8)
+    base = (215 - np.clip(depth.astype(np.float32) / (FAR_M * 1000), 0, 1) * 115).astype(np.uint8)
     img = np.repeat(base[..., None], 3, 2)
     img[kind == MAP_NO_READING] = NONE_C
     floor = kind == MAP_FLOOR

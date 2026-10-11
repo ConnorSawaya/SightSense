@@ -36,15 +36,31 @@ class Order(unittest.TestCase):
             self.assertGreaterEqual(t2 - t1, speaking_time(s1))
         self.assertNotIn("Bear left", texts)  # waited past 2 s: old news, not said late
 
-    def test_safety_cuts_into_a_direction_but_not_an_answer(self):
+    def test_safety_cuts_in_and_the_answer_is_said_again(self):
         p = SpeechPlan()
-        sent = run(p, 1, adds=[(0, "Bear left", GUIDE), (0.3, "Obstacle ahead. Stop.", SAFETY)])
-        self.assertEqual(sent, [(0.0, "Bear left"), (0.33, "Obstacle ahead. Stop.")])
+        sent = run(p, 1, adds=[(0, "Bear left", GUIDE), (0.3, "Stop. Chair ahead, about 1 metre.", SAFETY)])
+        self.assertEqual(sent, [(0.0, "Bear left"), (0.33, "Stop. Chair ahead, about 1 metre.")])
         p = SpeechPlan()
         answer = "You are at a table with three people, a laptop and a box."
-        sent = run(p, 6, adds=[(0, answer, ANSWER), (0.3, "Obstacle ahead. Stop.", SAFETY)])
-        self.assertEqual([s for _, s in sent], [answer, "Obstacle ahead. Stop."])
-        self.assertGreaterEqual(sent[1][0], speaking_time(answer))  # after the answer, not over it
+        sent = run(p, 12, adds=[(0, answer, ANSWER), (0.3, "Stop. Chair ahead, about 1 metre.", SAFETY)])
+        self.assertEqual([s for _, s in sent], [answer, "Stop. Chair ahead, about 1 metre.", "As I was saying: " + answer])
+        self.assertLess(sent[1][0], 1.0)  # at once, over the answer
+
+    def test_a_warning_comes_before_an_answer_while_something_is_close(self):
+        p = SpeechPlan()
+        warn = "Careful: chair ahead, about 1 metre."
+        p.add("It says: EXIT.", ANSWER, 0.0)
+        sent = []
+        for i in range(int(6 * FPS)):
+            s = p.next(i / FPS, hazard=warn)
+            if s:
+                sent.append((round(i / FPS, 2), s))
+        self.assertEqual([s for _, s in sent], [warn, "It says: EXIT."])
+        self.assertGreaterEqual(sent[1][0], speaking_time(warn))  # the answer after the warning, not over it
+        p.add("Hello.", ANSWER, 6.0)  # a warning went out 6 s ago: not again yet
+        self.assertEqual(p.next(6.0, hazard=warn), "Hello.")
+        p.add("Thanks.", ANSWER, 9.0)
+        self.assertEqual(p.next(9.0), "Thanks.")  # nothing close: no warning
 
     def test_the_same_stop_is_not_said_over_and_over(self):
         p = SpeechPlan()

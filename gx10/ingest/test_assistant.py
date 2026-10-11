@@ -18,6 +18,10 @@ class Assistant(unittest.TestCase):
     def setUp(self):
         with patch.object(srv.vlm, "warm", return_value="stubbed"):
             self.pipe = srv.Pipeline(False)
+        # These tests are about what is said, not when: speech takes no time here (planner/speech.py paces it live)
+        pacing = patch.multiple("planner.speech", LEAD_S=0.0, GAP_S=0.0, WORDS_PER_S=1e9)
+        pacing.start()
+        self.addCleanup(pacing.stop)
         self.frames = itertools.cycle([raw for raw, _wall in itertools.islice(walk_frames(), 20)])
 
     def ask(self, text, frames=8):

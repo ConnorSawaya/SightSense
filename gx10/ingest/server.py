@@ -31,8 +31,9 @@ from websockets.exceptions import ConnectionClosed
 
 import vlm
 from navigator import Navigator, decode
-from planner.obstacle import HEADINGS, Smoother, check
+from planner.obstacle import FAR_M, HEADINGS, Smoother, check
 from planner.cue import DirectionCue
+from planner.obstacle_talk import ObstacleTalk
 from planner.speech import ANSWER, GUIDE, SAFETY, SpeechPlan
 from planner.state import StateSmoother
 
@@ -69,7 +70,7 @@ def locate(d, f, depth, conf):
     r0, r1 = max(0, int(v - hh)), min(f.depth_h, int(v + hh) + 1)
     c0, c1 = max(0, int(u - hw)), min(f.depth_w, int(u + hw) + 1)
     z, c = depth[r0:r1, c0:c1], conf[r0:r1, c0:c1]
-    good = z[(c >= 1) & (z >= 200) & (z <= 5000)]
+    good = z[(c >= 1) & (z >= 200) & (z <= FAR_M * 1000)]
     d.dist_m = float(np.median(good)) / 1000 if good.size >= 5 else None
     p = camera_to_world(f.pose, pixel_to_camera(f, u, v, d.dist_m or 2.0))
     d.bearing = ground_bearing(f.pose, p)
@@ -153,6 +154,7 @@ class Pipeline:
         self.states = StateSmoother()
         self.cue = DirectionCue()
         self.voice = SpeechPlan()  # every sentence goes through it: one at a time, most important first
+        self.talk = ObstacleTalk()  # obstacles in words: what, how far, which way is open
         self.said = (None, -1e9)
         self.checks, self.next_check = deque(), 0.0  # a sound check under way
         self.last_frame = -1e9
@@ -164,7 +166,7 @@ class Pipeline:
         f = decode(raw)
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
-            self.smoother, self.states, self.cue = Smoother(), StateSmoother(), DirectionCue()
+            self.smoother, self.states, self.cue, self.talk = Smoother(), StateSmoother(), DirectionCue(), ObstacleTalk()
             if self.det is not None:
                 self.stable.reset()
         self.last_frame = now
@@ -187,6 +189,8 @@ class Pipeline:
         if g.hold_center and raw_cmd != "STOP":
             raw_cmd = "CENTER"  # turning on the spot; depth still wins
         cmd, obstacle_speech = self.smoother.update(raw_cmd, c.best, now)
+        around = self.talk.update(cmd, c.clearance, dets)  # the obstacle check's own command, before an arrival stop
+        hazard = self.talk.hazard(cmd, c.clearance, dets)
         if g.stop:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
 
@@ -200,16 +204,22 @@ class Pipeline:
             self.voice.add(self.said[0] or "I haven't said anything yet.", ANSWER, now)
         if g.speech:
             self.voice.add(g.speech, g.speech_kind, now)
-        if obstacle_speech:  # "Obstacle ahead. Stop." is safety; "Path blocked. Turn slowly to scan." is guidance
-            self.voice.add(obstacle_speech, SAFETY if obstacle_speech.startswith("Obstacle") else GUIDE, now)
-        if cue.speech:
-            self.voice.add(cue.speech, GUIDE, now)
+        if obstacle_speech:  # the stop, in words: "Stop. Chair ahead, about 1 metre. Open to your left."
+            if obstacle_speech.startswith("Obstacle"):
+                self.voice.add(self.talk.stop_sentence(c.clearance, dets), SAFETY, now)
+            else:  # "Path blocked. Turn slowly to scan."
+                self.voice.add(obstacle_speech, GUIDE, now)
+        for key in ("around", "past"):  # "Chair ahead. Bear left around it." / "You're past it. Carry on."
+            if key in around:
+                self.voice.add(around[key], GUIDE, now)
+        if cue.speech and not (self.talk.around_side and cue.speech == f"Bear {self.talk.around_side}"):
+            self.voice.add(cue.speech, GUIDE, now)  # a bare "Bear left" only when not already steering round something
         if self.nav.take_sound_check():
             self.checks, self.next_check = deque(SOUND_CHECK), now
         msg = {"seq": f.seq, "state": state, "direction": cue.direction}
         if cue.earcon:
             msg["earcon"] = cue.earcon
-        speech = self.voice.next(now, thinking=self.nav.thinking)  # see planner/speech.py
+        speech = self.voice.next(now, thinking=self.nav.thinking, hazard=hazard)  # see planner/speech.py
         if speech:
             msg["speech"] = speech
         if self.checks and now >= self.next_check and "earcon" not in msg and "speech" not in msg and self.voice.idle(now):

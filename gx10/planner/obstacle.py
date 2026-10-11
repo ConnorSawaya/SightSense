@@ -13,7 +13,12 @@ from typing import Optional
 import numpy as np
 
 HEADINGS = (-30, -20, -10, 0, 10, 20, 30)
-NEAR_M, FAR_M = 0.3, 4.5  # keep depth readings in this range
+# Keep depth readings in this range. FAR_M was 4.5. The LiDAR itself reaches about 5 m, but ARKit fills in
+# farther depth from the camera: in the house recording of October 10, 5% of pixels read 5-8 m at medium or
+# high confidence; beyond 8 m nearly all were low confidence, which is dropped below. So 10 m lets big rooms
+# show their real far side; it does not change USABLE_M or STOP_AHEAD_M, which steer the wheel.
+NEAR_M = 0.3
+FAR_M = float(os.environ.get("SIGHTSENSE_FAR_M", "10"))
 FLOOR_MARGIN_M = 0.15  # points lower than this above the floor are floor
 ABOVE_CAMERA_M = 0.6  # points higher than this above the camera are ignored
 CORRIDOR_W_M = 0.7

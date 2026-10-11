@@ -96,7 +96,7 @@
       <div class="decision" id="cmd">-</div>
       <div class="state" id="state">waiting for frames</div>
       <div class="bars" id="bars"></div>
-      <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
+      <div class="dim">Clearance per heading, metres (10 = clear as far as it can see, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
     </div>
     <div class="panel manual-off" id="manualPanel">
       <h2>Spin the motor (on the Pi)</h2>
@@ -168,7 +168,7 @@ function show(s) {
     const bars = $("bars"); bars.innerHTML = "";
     for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
       const b = document.createElement("div"); b.className = "bar" + (String(f.best) === h ? " chosen" : "");
-      const fill = document.createElement("div"); fill.style.height = (v === null ? 100 : Math.max(4, v / 4.5 * 100)) + "%"; fill.style.background = color(v);
+      const fill = document.createElement("div"); fill.style.height = (v === null ? 100 : Math.max(4, Math.min(v, 10) / 10 * 100)) + "%"; fill.style.background = color(v);
       const lab = document.createElement("span"); lab.textContent = (h > 0 ? "+" : "") + h + "° " + (v === null ? "?" : v.toFixed(1));
       b.append(fill, lab); bars.append(b);
     }
