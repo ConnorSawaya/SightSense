@@ -18,27 +18,26 @@ struct ContentView: View {
 
             VStack(spacing: 12) {
                 topBar
-                GuidancePill(message: capture.guidance, running: capture.isRunning, linkState: capture.linkState)
+                GuidanceCard(message: capture.guidance, running: capture.isRunning,
+                             linkState: capture.linkState, depth: capture.depthPreview)
                 if let problem = capture.problem ?? voice.problem {
                     Label(problem, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote.weight(.semibold))
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .glassEffect(.regular.tint(.red.opacity(0.3)), in: .capsule)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 DepthStage(depth: capture.depthPreview, running: capture.isRunning,
-                           linkState: capture.linkState, host: host) { idleCard }
-                if capture.isRunning {
-                    if capture.stats.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue { heatNotice }
-                    stats
-                }
-                transcript
+                           linkState: capture.linkState, host: host, stats: capture.stats) { idleCard }
                 dock
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.bottom, 4)
+            .animation(.snappy, value: capture.problem ?? voice.problem)
 
-            if isStop { StopGlow() }
+            if isStop { StopGlow().transition(.opacity) }
         }
+        .animation(.easeInOut(duration: 0.25), value: isStop)
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
         .sensoryFeedback(trigger: capture.guidance?.state) { _, new in
@@ -84,13 +83,19 @@ struct ContentView: View {
 
             Spacer()
 
-            VStack(spacing: 0) {
+            VStack(spacing: 1) {
                 Text("SIGHTSENSE")
                     .font(.system(size: 13, weight: .heavy))
                     .fontWidth(.expanded)
-                    .kerning(3)
-                Text("LiDAR").font(.caption2).foregroundStyle(.secondary)
+                    .kerning(2)
+                Text("LiDAR GUIDE")
+                    .font(.system(size: 9, weight: .semibold))
+                    .fontWidth(.expanded)
+                    .kerning(1.5)
+                    .foregroundStyle(Theme.accent)
             }
+            .lineLimit(1)
+            .fixedSize()
             .accessibilityHidden(true)
 
             Spacer()
@@ -104,82 +109,80 @@ struct ContentView: View {
     }
 
     private var idleCard: some View {
-        VStack(spacing: 18) {
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(Theme.accent)
-                .symbolEffect(.pulse)
+        VStack(spacing: 20) {
+            RadarPulse()
             VStack(spacing: 6) {
-                Text("Not connected").font(.title3.weight(.semibold)).fontWidth(.expanded)
-                Text(Hosts.name(for: host) ?? "GX10")
+                Text("Ready to connect").font(.title2.weight(.semibold)).fontWidth(.expanded)
+                Text("Streams LiDAR depth to the GX10 for guidance")
                     .font(.subheadline).foregroundStyle(.secondary)
-                Text(host).font(.footnote.monospaced()).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
             HStack(spacing: 12) {
-                Button { connect(host) } label: {
-                    Label("Connect", systemImage: "bolt.fill").frame(minWidth: 110)
+                Image(systemName: Hosts.presets.first { $0.address == host }?.symbol ?? "server.rack")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .frame(width: 36, height: 36)
+                    .background(Theme.accent.opacity(0.14), in: .circle)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Hosts.name(for: host) ?? "GX10").font(.subheadline.weight(.semibold))
+                    Text(host).font(.caption.monospaced()).foregroundStyle(.secondary)
                 }
-                .buttonStyle(.glassProminent)
+                Spacer(minLength: 0)
                 Button { showSettings = true } label: {
-                    Label("Change", systemImage: "slider.horizontal.3")
+                    Text("Change").font(.footnote.weight(.semibold))
                 }
                 .buttonStyle(.glass)
             }
-            .controlSize(.large)
-        }
-        .padding(28)
-        .glassEffect(.regular, in: .rect(cornerRadius: 32))
-    }
+            .padding(12)
+            .glassEffect(.regular, in: .rect(cornerRadius: 20))
 
-    private var stats: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                StatChip(label: "Tracking", value: shortTracking,
-                         tint: capture.stats.tracking == "Normal" ? nil : Theme.color(forState: "CAUTION"))
-                StatChip(label: "Depth", value: capture.stats.depthSize?.replacingOccurrences(of: " ", with: "") ?? "—")
-                StatChip(label: "Send", value: linkOpen ? String(format: "%.0f ms", capture.stats.lastSendMs) : "—")
+            Button { connect(host) } label: {
+                Label("Connect", systemImage: "bolt.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.glassProminent)
+            .controlSize(.extraLarge)
         }
+        .padding(24)
+        .frame(maxWidth: 420)
+        .glassEffect(.regular, in: .rect(cornerRadius: 34))
     }
 
-    private var heatNotice: some View {
-        Label(String(format: "Phone is hot: sending %.0f frames a second", capture.stats.targetRate),
-              systemImage: "thermometer.high")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(Theme.color(forState: "CAUTION"))
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .glassEffect(.regular.tint(Theme.color(forState: "CAUTION").opacity(0.2)), in: .capsule)
-    }
-
-    private var shortTracking: String {
-        let t = capture.stats.tracking
-        return t.hasPrefix("Limited") ? "Limited" : t
-    }
-
-    @ViewBuilder private var transcript: some View {
-        if voice.isListening || !voice.heard.isEmpty {
-            Text(voice.isListening && voice.heard.isEmpty ? "Listening…" : "“\(voice.heard)”")
-                .font(.callout.weight(.medium))
-                .multilineTextAlignment(.center)
+    /// Describe, talk and read, like the controls under a camera's shutter. What was heard floats above it while talking.
+    private var dock: some View {
+        VStack(spacing: 10) {
+            if voice.isListening || !voice.heard.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: voice.isListening ? "waveform" : "quote.opening")
+                        .symbolEffect(.variableColor.iterative, isActive: voice.isListening)
+                        .foregroundStyle(voice.isListening ? .red : Theme.accent)
+                    Text(voice.isListening && voice.heard.isEmpty ? "Listening…" : voice.heard)
+                        .font(.callout.weight(.medium))
+                        .lineLimit(2)
+                        .contentTransition(.interpolate)
+                }
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 .glassEffect(.regular, in: .capsule)
-                .transition(.blurReplace)
-        }
-    }
-
-    private var dock: some View {
-        GlassEffectContainer(spacing: 24) {
-            HStack(spacing: 24) {
+                .transition(.move(edge: .bottom).combined(with: .blurReplace))
+            }
+            GlassEffectContainer(spacing: 20) {
+            HStack(spacing: 0) {
                 QuickAction(title: "Describe", symbol: "text.viewfinder", enabled: linkOpen) {
                     capture.send(command: "what's in front of me")
                 }
+                .frame(maxWidth: .infinity)
                 TalkButton(voice: voice, enabled: linkOpen) { capture.send(command: $0) }
+                    .offset(y: -6)
                 QuickAction(title: "Read", symbol: "doc.text.viewfinder", enabled: linkOpen) {
                     capture.send(command: "read the sign")
                 }
+                .frame(maxWidth: .infinity)
+            }
             }
         }
         .animation(.snappy, value: voice.isListening)
+        .animation(.snappy, value: voice.heard.isEmpty)
     }
 
     private func connect(_ address: String) {

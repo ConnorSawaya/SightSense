@@ -16,6 +16,27 @@ enum Theme {
         }
     }
 
+    /// Guidance state → SF Symbol.
+    static func symbol(forState state: String?) -> String {
+        switch state {
+        case "CLEAR": return "figure.walk"
+        case "CAUTION": return "exclamationmark.triangle.fill"
+        case "STOP": return "hand.raised.fill"
+        case "UNCERTAIN": return "questionmark"
+        case "NO_DATA": return "antenna.radiowaves.left.and.right"
+        default: return "pause.fill"
+        }
+    }
+
+    /// Guidance state → the word on screen.
+    static func title(forState state: String?) -> String {
+        switch state {
+        case nil: return "Standby"
+        case "NO_DATA": return "Waiting"
+        default: return state!.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
+
     static func color(forLink state: GX10Link.State) -> Color {
         switch state {
         case .open: return Color(red: 0.25, green: 0.95, blue: 0.55)
