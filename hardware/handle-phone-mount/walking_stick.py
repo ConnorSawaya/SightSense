@@ -70,7 +70,7 @@ GRIP_H = 26.0
 # Rear to nose, before tilting. The pole joins near the front, so all four
 # fingers wrap the grip behind it; the third point sits on the pole axis. The
 # nose runs on level ahead of the pole to carry the thumb button.
-GRIP_PATH = [(-102, 0, 9), (-66, 0, 15), (0, 0, 16), (24, 0, 16), (52, 0, 14.5)]
+GRIP_PATH = [(-102, 0, 9), (-66, 0, 15), (0, 0, 16), (22, 0, 16), (47, 0, 14.8)]
 STICK_LEAN_DEG = 30.0  # how far the pole leans back in use (top towards the user)
 GRIP_TILT_DEG = STICK_LEAN_DEG  # grip is turned nose-down by this, so it is level in use
 SOCKET_OD = 28.0
@@ -79,16 +79,28 @@ PLUG_RECESS = 2.0  # plug stops short of the mouth so the tube starts easily
 BLEND_R = 6.0  # fillet where the socket meets the grip
 SET_SCREW_D = 2.6  # M3 screw cuts its own thread and pinches the tube against the plug
 
-# --- thumb button in the nose ---  UNCONFIRMED: sized for a 12 mm panel-mount push button
-BUTTON_HOLE_D = 12.3  # mounting hole for the button's threaded body
-BUTTON_FROM_POLE = 34.0  # along the grip, ahead of the pole axis; any closer and its pocket cuts into the socket
-BUTTON_SEAT_D = 17.0  # flat cut into the top of the grip for the button's head to sit on
-BUTTON_SEAT_DROP = 2.0  # how far that flat sits below the crown of the grip
-BUTTON_PANEL_T = 4.0  # plastic clamped between the button's head and its nut
-BUTTON_POCKET_D = 17.5  # pocket under the nose for the nut (14 mm across flats) and the wires
-BUTTON_HEAD_D = 15.0  # reference model only
-BUTTON_HEAD_H = 2.5
-BUTTON_BODY_LEN = 21.0  # below the head, reference model only
+# --- thumb button in the nose: 7 mm prewired mini push button (PBS-110 type) ---
+# The pole socket is too close under the nose for the switch to come straight up
+# from below, so the nose is open at the front: the switch slides in from the
+# front, lifts so its threaded neck comes up through the hole, and the nut goes
+# on from the top. The 7 mm thread is from the listing; the other switch sizes
+# are typical for this type and UNCONFIRMED.
+BUTTON_THREAD_D = 7.0  # listing: 7 mm mounting thread
+BUTTON_THREAD_LEN = 6.0  # UNCONFIRMED: threaded neck above the switch body
+BUTTON_BODY_D = 10.0  # UNCONFIRMED: the black body under the plate
+BUTTON_BODY_LEN = 11.0  # UNCONFIRMED
+BUTTON_CAP_D = 6.5  # UNCONFIRMED: coloured cap; it has to pass up through the hole
+BUTTON_CAP_H = 6.0
+BUTTON_NUT_AF = 10.0  # UNCONFIRMED: hex nut across flats
+BUTTON_NUT_T = 2.0
+BUTTON_HOLE_D = 7.5  # for the 7 mm thread; the hole prints on its side, so it comes out a little small
+BUTTON_FROM_POLE = 34.0  # along the grip, ahead of the pole axis; any closer and the pocket cuts into the socket
+BUTTON_CUT_BELOW = 3.0  # the pocket and slot run this far below the nose, through the blend to the socket, so the switch can sit low while it slides in
+BUTTON_SEAT_D = 14.0  # flat cut into the top of the grip for the nut to tighten on
+BUTTON_SEAT_DROP = 1.5  # how far that flat sits below the crown of the grip
+BUTTON_PANEL_T = 2.5  # plastic clamped between the switch body and the nut; thin enough to leave thread for the nut
+BUTTON_POCKET_D = 13.0  # pocket under the nose for the switch body and its wires
+BUTTON_SLOT_W = 10.8  # slot from the pocket out through the front of the nose, for the switch body to slide in
 
 # --- motor: 37 mm DC gearmotor (JGB37 style) ---
 MOTOR_D = 37.0
@@ -213,18 +225,21 @@ def button_location():
 
 
 def button_cut():
-    """Hole for the button's thread, a flat for its head, and a pocket for its nut and wires."""
+    """Hole for the switch's threaded neck, a flat on top for its nut, a pocket underneath
+    for its body and wires, and a slot out through the front of the nose to get it in."""
     seat_z = GRIP_H / 2 - BUTTON_SEAT_DROP
+    pocket_top = seat_z - BUTTON_PANEL_T
     # the thread hole only spans the clamped plastic; any longer and it would run on into the pole socket
     cut = Pos(0, 0, seat_z - BUTTON_PANEL_T / 2) * Cylinder(BUTTON_HOLE_D / 2, BUTTON_PANEL_T + 1)
     cut += Pos(0, 0, seat_z + GRIP_H / 2) * Cylinder(BUTTON_SEAT_D / 2, GRIP_H)
+    cut += box(0, 40, -BUTTON_SLOT_W / 2, BUTTON_SLOT_W / 2, -GRIP_H / 2 - BUTTON_CUT_BELOW, pocket_top)  # +X here points to the nose tip
     return cut + button_pocket()
 
 
 def button_pocket():
-    """The nut pocket alone, in the button frame: from under the clamped plastic down through the nose."""
+    """The pocket alone, in the button frame: from under the clamped plastic down through the nose."""
     pocket_top = GRIP_H / 2 - BUTTON_SEAT_DROP - BUTTON_PANEL_T
-    depth = pocket_top + GRIP_H / 2 + 1
+    depth = pocket_top + GRIP_H / 2 + BUTTON_CUT_BELOW
     return Pos(0, 0, pocket_top - depth / 2) * Cylinder(BUTTON_POCKET_D / 2, depth)
 
 
@@ -499,13 +514,29 @@ def ref_hand():
     return grip_location() * sweep(section, sub)
 
 
-def ref_button():
-    """12 mm panel-mount push button in the nose: head on the flat, threaded body through the hole."""
+def ref_button_parts():
+    """The 7 mm mini push button in the button frame, as (switch, its two leads, nut).
+
+    Body under the plate, threaded neck up through the hole, cap on top; the
+    nut sits on the flat."""
     seat_z = GRIP_H / 2 - BUTTON_SEAT_DROP
-    head = Pos(0, 0, seat_z + BUTTON_HEAD_H / 2) * Cylinder(BUTTON_HEAD_D / 2, BUTTON_HEAD_H)
-    body = Pos(0, 0, seat_z - BUTTON_BODY_LEN / 2) * Cylinder(BUTTON_HOLE_D / 2 - 0.3, BUTTON_BODY_LEN)
-    nut = Pos(0, 0, seat_z - BUTTON_PANEL_T - 1.5) * (Cylinder(8.0, 3.0) - Cylinder(BUTTON_HOLE_D / 2 - 0.2, 4.0))
-    return button_location() * (head + body + nut)
+    under = seat_z - BUTTON_PANEL_T  # the switch body's shoulder sits against the underside of the plate
+    switch = Pos(0, 0, under - BUTTON_BODY_LEN / 2) * Cylinder(BUTTON_BODY_D / 2, BUTTON_BODY_LEN)
+    switch += Pos(0, 0, under + BUTTON_THREAD_LEN / 2) * Cylinder(BUTTON_THREAD_D / 2, BUTTON_THREAD_LEN)
+    switch += Pos(0, 0, under + BUTTON_THREAD_LEN + BUTTON_CAP_H / 2) * Cylinder(BUTTON_CAP_D / 2, BUTTON_CAP_H)
+    leads = Pos(0, -2.2, under - BUTTON_BODY_LEN - 5) * Cylinder(1.3, 10) + Pos(0, 2.2, under - BUTTON_BODY_LEN - 5) * Cylinder(1.3, 10)
+    nut = extrude(RegularPolygon(BUTTON_NUT_AF / 3**0.5, 6), BUTTON_NUT_T) - Cylinder(BUTTON_THREAD_D / 2 + 0.05, 3 * BUTTON_NUT_T)
+    return switch, leads, Pos(0, 0, seat_z) * nut
+
+
+def button_drop():
+    """How far the switch sits below its final height while it slides in from the front."""
+    return BUTTON_THREAD_LEN + BUTTON_CAP_H + 0.5
+
+
+def ref_button():
+    switch, leads, nut = ref_button_parts()
+    return button_location() * (switch + leads + nut)
 
 
 def ref_strap():
@@ -661,9 +692,19 @@ def run_checks(parts):
     blank_socket = cut_tube_socket(socket, SOCKET_DEPTH, set_screw_z=-SOCKET_DEPTH / 2)
     lost = overlap(blank_socket, socket) - overlap(handle, socket)
     report(abs(lost) < 0.5, f"the socket in the finished handle has all its plastic ({lost:+.2f} mm3 against a plain socket)")
-    button = ref_button()
-    report(overlap(button, handle) < 1e-6, "a 12 mm button with its nut sits in the hole, flat and pocket without collision")
-    top = (button_location() * Pos(0, 0, GRIP_H / 2)).position
+    switch, leads, nut = ref_button_parts()
+    place = button_location()
+    report(overlap(place * switch, handle) < 1e-6 and overlap(place * leads, handle) < 1e-6 and overlap(place * nut, handle) < 1e-6,
+           f"the 7 mm switch sits in the handle: body in the pocket, {BUTTON_THREAD_D:.0f} mm thread through the {BUTTON_HOLE_D} mm hole, nut on the flat")
+    low = button_drop()
+    path = [(x, -low) for x in range(34, -1, -2)] + [(0, -z) for z in range(int(low), -1, -1)] + [(0, 0)]
+    stuck = [step for step in path if overlap(place * Pos(step[0], 0, step[1]) * switch, handle) > 1e-6]
+    report(not stuck, f"the switch slides in through the front of the nose and lifts {low:.1f} mm into place without touching the handle or the pole socket")
+    proud = BUTTON_THREAD_LEN - BUTTON_PANEL_T
+    report(proud >= BUTTON_NUT_T + 1, f"{proud:.1f} mm of thread stands above the plate for the {BUTTON_NUT_T:.0f} mm nut")
+    report(BUTTON_SEAT_D >= BUTTON_NUT_AF * 2 / 3**0.5 + 1.5, f"the {BUTTON_SEAT_D:.0f} mm flat takes the nut, which is {BUTTON_NUT_AF * 2 / 3**0.5:.1f} mm across its corners")
+    report(BUTTON_POCKET_D >= BUTTON_BODY_D + 2, f"the {BUTTON_POCKET_D:.0f} mm pocket takes the {BUTTON_BODY_D:.0f} mm switch body with {(BUTTON_POCKET_D - BUTTON_BODY_D) / 2:.1f} mm to spare each side")
+    top = (place * Pos(0, 0, GRIP_H / 2)).position
     print(f"  button is {BUTTON_FROM_POLE:.0f} mm ahead of the pole axis along the grip; its top is at x={top.X:.0f}, z={top.Z:.0f} in the stick frame")
 
     print("keep-outs (from the parameters)")

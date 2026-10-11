@@ -37,7 +37,7 @@ def build():
     scene = [
         ("Handle", (0.20, 0.47, 0.80), True, parts["stick_handle"]),
         ("Camera collar", (0.95, 0.55, 0.15), True, ws.collar_location() * parts["camera_collar"]),
-        ("Thumb button (reference, UNCONFIRMED size)", (0.80, 0.25, 0.30), True, ws.ref_button()),
+        ("Thumb button, 7 mm switch (reference)", (0.80, 0.25, 0.30), True, ws.ref_button()),
         ("Phone cradle", (0.25, 0.68, 0.45), True, at * parts["phone_cradle"]),
         ("Screws and nuts (reference)", (0.82, 0.80, 0.72), True, ws.ref_hardware(T)),
         ("Pole (reference)", (0.55, 0.56, 0.60), True, ws.ref_stick()),
