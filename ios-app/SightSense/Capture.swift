@@ -11,6 +11,7 @@ final class Capture: ObservableObject {
     @Published private(set) var link = GX10Link.State.idle.rawValue
     @Published private(set) var linkState = GX10Link.State.idle
     @Published private(set) var linkDetail: String?
+    @Published private(set) var cameraFormat: String?
     @Published private(set) var stats = FrameSender.Stats()
     @Published private(set) var sendRate = 0.0
     @Published private(set) var lastMessage: String?
@@ -106,6 +107,9 @@ final class Capture: ObservableObject {
         } else {
             let config = ARWorldTrackingConfiguration()
             config.frameSemantics = .sceneDepth
+            if let format = Self.coolestVideoFormat() { config.videoFormat = format }
+            let f = config.videoFormat
+            cameraFormat = "\(Int(f.imageResolution.width)) × \(Int(f.imageResolution.height)) at \(f.framesPerSecond) fps"
             session.run(config, options: [.resetTracking, .removeExistingAnchors])
         }
         sender.reset()
@@ -135,6 +139,15 @@ final class Capture: ObservableObject {
         UIApplication.shared.isIdleTimerDisabled = false
         isRunning = false
         sendRate = 0
+    }
+
+    /// ARKit defaults to 60 frames a second, but only 15 are sent. A 30 a second format
+    /// halves the camera, LiDAR and tracking work. Keep 4:3 so the picture lines up with the 4:3 depth.
+    static func coolestVideoFormat() -> ARConfiguration.VideoFormat? {
+        ARWorldTrackingConfiguration.supportedVideoFormats
+            .filter { abs($0.imageResolution.width / $0.imageResolution.height - 4.0 / 3.0) < 0.01 }
+            .filter { $0.framesPerSecond >= 30 }
+            .min { ($0.framesPerSecond, $0.imageResolution.width) < ($1.framesPerSecond, $1.imageResolution.width) }
     }
 
     /// "192.168.8.10" → ws://192.168.8.10:8765. "host:port" keeps its port (handy for the fake GX10 on a laptop).

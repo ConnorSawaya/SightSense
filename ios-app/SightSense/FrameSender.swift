@@ -13,9 +13,20 @@ final class FrameSender: NSObject, ARSessionDelegate {
         var depthSize: String?
         var tracking = "—"
         var lastError: String?
+        var targetRate = FrameSender.rate(for: .nominal)
+        var thermal = ProcessInfo.ThermalState.nominal
     }
 
-    static let framesPerSecond = 15.0
+    /// Frames a second to send. Lower when the phone is hot, so the camera, LiDAR and
+    /// encoder do less work and iOS does not throttle or stop the camera.
+    static func rate(for thermal: ProcessInfo.ThermalState) -> Double {
+        switch thermal {
+        case .nominal, .fair: return 15
+        case .serious: return 8
+        case .critical: return 4
+        @unknown default: return 8
+        }
+    }
 
     private let link: GX10Link
     private let encoder = FrameEncoder()
@@ -54,10 +65,14 @@ final class FrameSender: NSObject, ARSessionDelegate {
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         onFrame?(frame)
-        let interval = 1 / Self.framesPerSecond
+        let thermal = ProcessInfo.processInfo.thermalState
+        let rate = Self.rate(for: thermal)
+        let interval = 1 / rate
         let tracking = Self.describe(frame.camera.trackingState)
         lock.lock()
         stats.tracking = tracking
+        stats.thermal = thermal
+        stats.targetRate = rate
         let due = frame.timestamp - lastSent >= interval * 0.9
         guard due, link.isOpen else {
             lock.unlock()

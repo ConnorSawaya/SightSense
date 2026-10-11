@@ -109,6 +109,9 @@ struct SettingsSheet: View {
                 row("Encode / send", String(format: "%.0f ms / %.0f ms", capture.stats.lastEncodeMs, capture.stats.lastSendMs))
                 row("Depth", capture.stats.depthSize ?? "—")
                 row("Tracking", capture.stats.tracking)
+                row("Camera", capture.cameraFormat ?? "—")
+                row("Phone heat", FrameMessage.thermalName(capture.stats.thermal).capitalized
+                    + String(format: " · target %.0f fps", capture.stats.targetRate))
                 if capture.stats.failed > 0 {
                     row("Failed", "\(capture.stats.failed) · \(capture.stats.lastError ?? "")")
                 }

@@ -2,30 +2,20 @@ import SwiftUI
 
 // Pieces of the main screen. Glass is iOS 26 Liquid Glass.
 
-/// The depth picture blurred to fill the screen, so colour glows behind the glass.
-struct DepthBackdrop: View {
-    @ObservedObject var depth: DepthPreview
+/// Dark background with a soft glow in the guidance colour. Static: a live full-screen blur
+/// of the depth picture cost GPU time on a phone that is already hot from the LiDAR.
+struct Backdrop: View {
+    let state: String?
 
     var body: some View {
-        // The image sits in an overlay so its fill size never widens the screen's layout.
+        let glow = state == nil ? Theme.accent.opacity(0.18) : Theme.color(forState: state).opacity(0.28)
         Theme.backdrop
             .overlay {
-                if let image = depth.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .blur(radius: 50)
-                        .opacity(0.55)
-                        .animation(.easeOut(duration: 0.3), value: image)
-                }
+                RadialGradient(colors: [glow, .clear], center: .center, startRadius: 20, endRadius: 520)
             }
-            .overlay {
-                LinearGradient(colors: [.black.opacity(0.5), .clear, .black.opacity(0.6)],
-                               startPoint: .top, endPoint: .bottom)
-            }
-            .clipped()
+            .animation(.easeInOut(duration: 0.4), value: state)
             .ignoresSafeArea()
-        .accessibilityHidden(true)
+            .accessibilityHidden(true)
     }
 }
 

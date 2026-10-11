@@ -13,7 +13,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            DepthBackdrop(depth: capture.depthPreview)
+            Backdrop(state: capture.guidance?.state)
 
             VStack(spacing: 12) {
                 topBar
@@ -26,7 +26,10 @@ struct ContentView: View {
                 }
                 DepthStage(depth: capture.depthPreview, running: capture.isRunning,
                            linkState: capture.linkState, host: host) { idleCard }
-                if capture.isRunning { stats }
+                if capture.isRunning {
+                    if capture.stats.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue { heatNotice }
+                    stats
+                }
                 transcript
                 dock
             }
@@ -129,6 +132,15 @@ struct ContentView: View {
                 StatChip(label: "Send", value: linkOpen ? String(format: "%.0f ms", capture.stats.lastSendMs) : "—")
             }
         }
+    }
+
+    private var heatNotice: some View {
+        Label(String(format: "Phone is hot: sending %.0f frames a second", capture.stats.targetRate),
+              systemImage: "thermometer.high")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Theme.color(forState: "CAUTION"))
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .glassEffect(.regular.tint(Theme.color(forState: "CAUTION").opacity(0.2)), in: .capsule)
     }
 
     private var shortTracking: String {

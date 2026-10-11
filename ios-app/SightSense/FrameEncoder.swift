@@ -6,7 +6,7 @@ import ImageIO
 /// Picture and depth are sent in the sensor's landscape direction, exactly as ARKit gives them.
 final class FrameEncoder {
     static let rgbWidth = 640
-    var jpegQuality: CGFloat = 0.6
+    var jpegQuality: CGFloat = 0.4  // 0.6 gave ~67 KB pictures; smaller is less work and less network
 
     private let ciContext = CIContext(options: [.cacheIntermediates: false])
     private let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
