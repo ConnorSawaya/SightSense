@@ -39,10 +39,26 @@ class Step:
     distance_m: Optional[float] = None  # to the stored target, floor distance
 
 
+# What people call things vs the detectors' labels (YOLO's 80 objects, YOLOE's hazards)
+SAME = {
+    "computer": ("laptop", "tv", "keyboard"), "monitor": ("tv",), "screen": ("tv", "laptop"), "television": ("tv",),
+    "sofa": ("couch",), "table": ("dining table",), "desk": ("dining table",), "phone": ("cell phone",),
+    "mobile": ("cell phone",), "bin": ("trash can",), "trash": ("trash can",), "garbage can": ("trash can",),
+    "doorway": ("door",), "exit": ("door",), "staircase": ("stairs",), "steps": ("stairs",), "man": ("person",),
+    "woman": ("person",), "someone": ("person",), "people": ("person",), "bag": ("backpack", "handbag", "suitcase"),
+    "mug": ("cup",), "plant": ("potted plant",), "seat": ("chair", "couch", "bench"), "post": ("pole",),
+    "kerb": ("curb",), "cone": ("traffic cone",), "fridge": ("refrigerator",),
+}
+
+
 def _same_thing(label: str, name: str) -> bool:
-    """YOLO label vs what the user asked for: "apple" matches "apple" and "red apple"."""
+    """Detector label vs what the user asked for: "apple" matches "apple" and "red apple";
+    "computer" matches "laptop" (SAME)."""
     label, name = label.lower(), name.lower()
-    return name == label or name.endswith(" " + label)
+    if name == label or name.endswith(" " + label):
+        return True
+    noun = name.split()[-1] if name.split() else name
+    return label in SAME.get(name, ()) or label in SAME.get(noun, ())
 
 
 def direction_words(bearing: float) -> str:
@@ -75,12 +91,14 @@ class ObjectGuide:
 
     # ------------------------------------------------------------ commands
 
-    def start(self, name: str) -> str:
+    def start(self, name: str, side: Optional[str] = None) -> str:
+        """side: "left" or "right" when the user said ("the door on the left"): a detection on that side wins."""
         with self._lock:
             self._reset(SEARCHING)
             self.name = name
+            self.side = side
             self._started = self._clock()
-            return f"Looking for the {name}."
+            return f"Looking for the {name}" + (f" on your {side}." if side else ".")
 
     def confirm(self, yes: bool) -> Optional[str]:
         with self._lock:
@@ -114,6 +132,10 @@ class ObjectGuide:
             speech = self._take_result(now)
             if detections and self.state in (SEARCHING, GUIDING):
                 match = [d for d in detections if _same_thing(d.label, self.name)]
+                if match and getattr(self, "side", None):
+                    sign = 1 if self.side == "right" else -1
+                    on_side = [d for d in match if (getattr(d, "bearing", None) or 0) * sign > 0]
+                    match = on_side or match
                 if match:
                     speech = self._use_box(f, max(match, key=lambda d: d.conf).box, now) or speech
             if self.state in (SEARCHING, GUIDING):
@@ -156,6 +178,7 @@ class ObjectGuide:
     def _reset(self, state):
         self.state = state
         self.name = getattr(self, "name", "")
+        self.side = None  # set by start() after the reset
         self.target = None  # (x, y, z) in the ARKit world
         self._started = self._last_seen = self._last_find = self._confirm_asked = -1e9
         self._last_hint = self._clock()
