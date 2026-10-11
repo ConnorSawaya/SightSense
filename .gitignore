@@ -37,3 +37,7 @@ xcuserdata/
 Thumbs.db
 .vscode/
 .idea/
+
+# Devpost submission drafts: kept on the laptop, never in the repository
+devpost/
+DEVPOST.md
