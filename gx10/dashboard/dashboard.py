@@ -23,9 +23,10 @@ import numpy as np
 
 PAGE = (Path(__file__).parent / "index.html").read_bytes()
 _CV = {1: cv2.ROTATE_90_CLOCKWISE, 2: cv2.ROTATE_180, 3: cv2.ROTATE_90_COUNTERCLOCKWISE}
-STREAM_FPS = 8  # cap per viewer; the phone sends up to 15
+STREAM_FPS = 15  # cap per viewer; the phone sends up to 15
+STREAM_H = 400  # composite height in pixels: smaller frames keep up over Tailscale
 STATUS_HZ = 5
-JPEG_QUALITY = 70
+JPEG_QUALITY = 60
 BOUNDARY = b"frame"
 
 
@@ -68,15 +69,18 @@ def _turn_box(box, turn, w, h):
 
 
 def _picture(view):
-    img = cv2.imdecode(np.frombuffer(view["jpeg"], np.uint8), cv2.IMREAD_COLOR)
+    img = view.get("upright")  # decoded and turned once by the frame service
     if img is None:
-        img = np.zeros((480, 640, 3), np.uint8)
-    h, w = img.shape[:2]
-    img = _upright(img, view["turn"])
+        img = cv2.imdecode(np.frombuffer(view["jpeg"], np.uint8), cv2.IMREAD_COLOR) if view["jpeg"] else None
+        img = _upright(img, view["turn"]) if img is not None else np.zeros((480, 640, 3), np.uint8)
+    turn = view["turn"]
+    h, w = (img.shape[1], img.shape[0]) if turn in (1, 3) else img.shape[:2]  # the original picture's size
+    scale = STREAM_H / img.shape[0]
+    img = cv2.resize(img, (round(img.shape[1] * scale), STREAM_H), interpolation=cv2.INTER_AREA)
     # nearest first, so near labels are drawn last and stay on top
     dets = sorted(view["dets"] or [], key=lambda d: -(getattr(d, "dist_m", None) or 99))
     for d in dets:
-        x1, y1, x2, y2 = (int(v) for v in _turn_box(d.box, view["turn"], w, h))
+        x1, y1, x2, y2 = (int(v * scale) for v in _turn_box(d.box, turn, w, h))
         dist = getattr(d, "dist_m", None)
         near = dist is not None and dist < 1.5
         color = (60, 60, 255) if near else (0, 200, 255)  # red-ish when close, amber otherwise

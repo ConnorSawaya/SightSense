@@ -33,7 +33,7 @@ from navigator import Navigator, decode
 from planner.obstacle import HEADINGS, Smoother, check
 from planner.state import StateSmoother
 
-from .upright import box_back, rotate_jpeg, turn_for
+from .upright import box_back, decode_upright, rotate_jpeg, turn_for
 
 TTL_MS = 400
 LOG_LINES = 20  # conversation lines kept for the dashboard
@@ -145,8 +145,9 @@ class Pipeline:
         conf = np.frombuffer(f.conf, dtype=np.uint8).reshape(f.depth_h, f.depth_w)
 
         dets = None
-        if self.det is not None:
-            dets = self.det.detect(rotate_jpeg(f.jpeg, turn))
+        upright = decode_upright(f.jpeg, turn)  # decoded once: YOLO and the dashboard share it
+        if self.det is not None and upright is not None:
+            dets = self.det.detect_image(upright)
             for d in dets:
                 d.box = box_back(d.box, turn, f.rgb_w, f.rgb_h)
                 locate(d, f, depth, conf)
@@ -185,7 +186,7 @@ class Pipeline:
             out.append(json.dumps({"lookup": g.lookup}))
         pi = json.dumps({"seq": f.seq, "cmd": cmd, "ttl_ms": TTL_MS})
         done = time.monotonic()
-        self.view = {"jpeg": f.jpeg, "turn": turn, "dets": dets, "depth": depth, "conf": conf}
+        self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf}
         self.status = {
             "seq": f.seq, "cmd": cmd, "state": state, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
