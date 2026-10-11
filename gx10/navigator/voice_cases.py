@@ -71,6 +71,12 @@ ROUTES = [
     ("go to the kitchen", "object", "kitchen"),
     ("take me to Safeway", "place", "Safeway"),
     ("take me to the train station", "place", "train station"),
+    # Several steps or a way of getting there: planned by the model
+    ("get me around the table to the window", "plan", None),
+    ("take me out of this room", "plan", None),
+    ("walk me past the people slowly", "plan", None),
+    ("go to the door and then turn left", "plan", None),
+    ("guide me to the couch avoiding the table", "plan", None),
     # Questions about the picture go to the model with the whole sentence
     ("how many chairs are there", "ask", None),
     ("is the door open", "ask", None),

@@ -56,6 +56,23 @@ def open_side(clearance: dict) -> Optional[str]:
     return "left" if left >= right else "right"
 
 
+def scene_words(clearance: dict, dets) -> str:
+    """What the depth sensor says, in a line for the planner: "ahead blocked at 0.8 m; left open to 3.0 m; ..."."""
+    def side(hs):
+        known = [clearance.get(h) for h in hs if clearance.get(h) is not None]
+        return max(known) if known else None
+    parts = []
+    for name, v in (("ahead", clearance.get(0)), ("left", side(LEFT_SIDE)), ("right", side(RIGHT_SIDE))):
+        parts.append(f"{name} unknown" if v is None else
+                     f"{name} open to {v:.1f} m" if v >= USABLE_M else f"{name} blocked at {v:.1f} m")
+    things = []
+    for d in sorted((d for d in dets or [] if getattr(d, "dist_m", None) is not None), key=lambda d: d.dist_m)[:6]:
+        b = getattr(d, "bearing", None) or 0.0
+        where = "left" if b < -12 else "right" if b > 12 else "ahead"
+        things.append(f"{NICE.get(d.label, d.label)} ({where}, {d.dist_m:.1f} m)")
+    return "; ".join(parts) + ("; things: " + ", ".join(things) if things else "")
+
+
 class ObstacleTalk:
     def __init__(self):
         self._last_cmd = None

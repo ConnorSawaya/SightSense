@@ -11,6 +11,7 @@ from . import server as srv
 class FakePipe:
     last_frame = -1e9
     status = {}
+    speed_cap = None
 
 
 class FakePi:
@@ -58,10 +59,21 @@ class Speed(unittest.TestCase):
         self.assertEqual({m["speed"] for m in self.pi.got}, {0.5})
         self.assertTrue(all(set(m) == {"speed"} for m in self.pi.got))  # never a command or raw power
 
+    def test_a_plan_can_only_slow_it(self):
+        self.assertIsNone(self.s.effective_speed())  # neither set: the Pi keeps its own duty
+        self.s.pipe.speed_cap = 0.5  # a plan step "slow"
+        self.assertEqual(self.s.effective_speed(), 0.5)
+        self.s.set_speed(0.4)
+        self.assertEqual(self.s.effective_speed(), 0.4)  # the dashboard is lower: it wins
+        self.s.set_speed(0.9)
+        self.assertEqual(self.s.effective_speed(), 0.5)
+        self.s.pipe.speed_cap = None
+        self.assertEqual(self.s.effective_speed(), 0.9)
+
     def test_status_shows_it(self):
         from unittest.mock import MagicMock
 
-        pipe = MagicMock(last_frame=-1e9, said=(None, -1e9), log=[], status={})
+        pipe = MagicMock(last_frame=-1e9, said=(None, -1e9), log=[], status={}, speed_cap=None)
         s = srv.Server(pipe)
         s.set_speed(0.35)
         self.assertEqual(s.status()["speed"], 0.35)

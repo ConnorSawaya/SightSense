@@ -177,15 +177,75 @@ def run_signs():
     return bad
 
 
+PLAN_REQUESTS = ["get me around the table to the window", "take me out of this room", "walk me past the people slowly",
+                 "go to the door and then turn left"]
+
+
+def run_plans():
+    """Plans for real scenes: well formed, and no step leaning towards a side depth says is blocked under 1 m."""
+    from detector.detector import Detector
+    from ingest.server import UprightVLM, locate
+    from ingest.upright import box_back, decode_upright, turn_for
+    from planner.obstacle import check
+    from planner.obstacle_talk import LEFT_SIDE, RIGHT_SIDE, scene_words
+    import numpy as np
+
+    det, up, bad, n, times = Detector(hazards=[]), UprightVLM(), 0, 0, []
+    print("--- plans")
+    for rec, at, what in SCENES[2:6]:
+        f = frame_at(rec, at)
+        d = np.frombuffer(f.depth_mm, np.uint16).reshape(f.depth_h, f.depth_w)
+        c = np.frombuffer(f.conf, np.uint8).reshape(f.depth_h, f.depth_w)
+        r = check(d, c, f.fx, f.fy, f.cx, f.cy, f.pose)
+        turn = turn_for(f.pose)
+        dets = det.detect_image(decode_upright(f.jpeg, turn), conf=0.4)
+        for x in dets:
+            x.box = box_back(x.box, turn, f.rgb_w, f.rgb_h)
+            locate(x, f, d, c)
+        scene = scene_words(r.clearance, dets)
+        print(f"  {what}\n    depth: {scene}")
+        for req in PLAN_REQUESTS:
+            t0 = time.monotonic()
+            a = vlm.plan(__import__("ingest.upright", fromlist=["rotate_jpeg"]).rotate_jpeg(f.jpeg, turn), req, scene)
+            s = time.monotonic() - t0
+            times.append(s)
+            n += 1
+            problems = []
+            if not a.ok or a.steps is None:
+                problems.append(f"no plan ({a.error})")
+            else:
+                from navigator.plan import guard
+
+                checked, note = guard(a.steps, r.clearance)
+                if checked is None:
+                    a.text, a.steps = note, {"steps": []}
+                for st in (checked or {"steps": []})["steps"]:
+                    if st["do"] == "find":
+                        break  # later steps happen somewhere else
+                    side = {"left": LEFT_SIDE, "right": RIGHT_SIDE}.get(st.get("way"))
+                    if st["do"] in ("go", "turn") and side:
+                        room = [r.clearance.get(h) for h in side if r.clearance.get(h) is not None]
+                        if room and max(room) < 1.0:
+                            problems.append(f"leans {st['way']} into something {max(room):.1f} m away")
+            bad += bool(problems)
+            steps = "; ".join(" ".join(str(v) for k, v in st.items() if k != "do" or True) for st in (a.steps or {}).get("steps", []))
+            print(f"    {req!r:44} {s:4.1f}s  {a.text!r}  [{steps}]" + (f"   <-- {', '.join(problems)}" if problems else ""))
+    print(f"plans: {n - bad}/{n} with no problem found; median {statistics.median(times):.2f} s\n")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--routes", action="store_true", help="routing only, rules only, no model")
     ap.add_argument("--scene", help="only scenes whose description contains this")
+    ap.add_argument("--plans", action="store_true", help="only the step plans")
     a = ap.parse_args()
     if a.routes:
         sys.exit(1 if run_routes(False) else 0)
     print("model:", vlm.warm())
-    bad = run_routes(True) + run_signs() + run_answers(a.scene)
+    if a.plans:
+        sys.exit(1 if run_plans() else 0)
+    bad = run_routes(True) + run_signs() + run_answers(a.scene) + run_plans()
     sys.exit(1 if bad else 0)
 
 

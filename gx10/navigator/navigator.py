@@ -25,6 +25,7 @@ from typing import Callable, Optional
 from planner.speech import ANSWER, GUIDE, INFO
 
 from . import commands
+from .plan import PlanRunner, guard
 from .frame import Frame
 from .object_guide import ARRIVED, CONFIRMING, GUIDING, IDLE, SEARCHING, ObjectGuide, direction_words, distance_words
 from .route import RouteFollower
@@ -43,6 +44,7 @@ class Guidance:
     lookup: Optional[str] = None
     distance_m: Optional[float] = None
     speech_kind: int = ANSWER  # planner/speech.py priority of speech: ANSWER, GUIDE or INFO
+    speed: Optional[float] = None  # a plan's "slow" step: a share of the speed level (only ever lower)
 
 
 def guide_speech_kind(text: str) -> int:
@@ -97,6 +99,9 @@ class Navigator:
         self._interpreting = False  # the model is working out a sentence the rules could not place
         self.heard = None  # last voice command, for the dashboard: {"text", "kind", "target", "by"}
         self.heard_text = ""  # the words of the last voice command, for chat replies
+        self.plan: Optional[PlanRunner] = None  # a step plan from the model, while mode == "plan"
+        self.scene = ""  # what the depth sensor says, set by the frame service each frame, for the planner
+        self.clearance = {}  # the obstacle check's clearances, same frame: plan.guard() checks plans against them
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
         self.repeat_asked = False  # "say that again": the frame service knows the last sentence sent
@@ -126,8 +131,12 @@ class Navigator:
 
     def _apply(self, cmd: commands.Command):
         """Carry out a command. Call with the lock held."""
-        if cmd.kind == "object":
+        if cmd.kind == "plan":
+            self._ask = ("plan", cmd.target)  # needs a picture: planned with the next frame
+            self._say("Let me plan that.")
+        elif cmd.kind == "object":
             self._stop_route()
+            self.plan = None
             self.mode = "object"
             self._say(self.objects.start(cmd.target, getattr(cmd, "side", None)))
         elif cmd.kind == "place":
@@ -155,7 +164,8 @@ class Navigator:
                     if not yes:
                         self.mode = "idle"
         elif cmd.kind == "cancel":
-            said = self.objects.cancel()
+            was_plan, self.plan = self.plan is not None, None
+            said = self.objects.cancel() or ("Cancelled." if was_plan else None)
             had_route = self.route is not None or self._route_confirm is not None or self._place
             self._stop_route()
             self.mode = "idle"
@@ -211,15 +221,26 @@ class Navigator:
 
     # ------------------------------------------------------------ every frame
 
-    def on_frame(self, f: Frame, detections=None) -> Guidance:
-        """detections: this frame's YOLO results from gx10/detector, if it is running."""
+    def on_frame(self, f: Frame, detections=None, stopped: bool = False) -> Guidance:
+        """detections: this frame's YOLO results from gx10/detector, if it is running.
+        stopped: the obstacle check's wheel command is STOP (a plan's timed steps wait)."""
         with self._lock:
             if self._ask and not self._asking and f.jpeg:
                 (kind, question), self._ask, self._asking = self._ask, None, True
-                threading.Thread(target=self._ask_worker, args=(kind, question, f.jpeg), daemon=True).start()
+                worker = self._plan_worker if kind == "plan" else self._ask_worker
+                args = (question, f.jpeg, self.scene, dict(self.clearance)) if kind == "plan" else (kind, question, f.jpeg)
+                threading.Thread(target=worker, args=args, daemon=True).start()
 
             g = Guidance(self.mode, IDLE)
-            if self.mode == "object":
+            if self.mode == "plan" and self.plan is not None:
+                r = self.plan.update(f, detections, self._clock(), stopped)
+                g.state, g.desired_bearing, g.stop, g.speed = r["state"], r["desired"], r["stop"], self.plan.speed
+                for s in r["speech"]:
+                    self._say(s, guide_speech_kind(s))
+                if self.plan.done:
+                    self.plan, self.mode = None, "idle"
+                    self._say("Done.")
+            elif self.mode == "object":
                 step = self.objects.update(f, detections)
                 self._last_obj = step
                 g.state, g.desired_bearing, g.stop, g.distance_m = step.state, step.desired_bearing, step.stop, step.distance_m
@@ -271,8 +292,8 @@ class Navigator:
                 cmd = commands.Command("unknown")
             if cmd.kind == "ask":
                 cmd.target = text  # ask with the whole sentence; the model shortens it ("colour")
-            if cmd.kind == "chat":
-                cmd.target = text  # the reply depends on the words: hello, thanks, how are you
+            if cmd.kind in ("chat", "plan"):
+                cmd.target = text  # the reply depends on the words; a plan is made from the whole request
             if cmd.kind == "object" and cmd.target:
                 cmd.target, cmd.side = commands._qualified(cmd.target)
             self.heard = {"text": text, "kind": cmd.kind, "target": cmd.target, "by": "model"}
@@ -300,6 +321,8 @@ class Navigator:
 
     def _status(self) -> str:
         """Answer to "am I going the right way?" (called with the lock held)."""
+        if self.mode == "plan" and self.plan is not None:
+            return self.plan.status
         if self.mode == "object":
             name, s = self.objects.name, self._last_obj
             state = s.state if s else self.objects.state
@@ -346,6 +369,33 @@ class Navigator:
 
     def _stop_route(self):
         self.route = self._route_confirm = self._route_step = self._place = None
+
+    def _plan_worker(self, request, jpeg, scene, clearance=None):
+        try:
+            a = self._vlm.plan(jpeg, request, scene)
+        except Exception as e:
+            print(f"navigator: plan failed: {e}", flush=True)
+            a = None
+        with self._lock:
+            self._asking = False
+            if a is None or not a.ok or not getattr(a, "steps", None):
+                self._say("I couldn't plan that. You can say: guide me to the door.")
+                return
+            checked, note = guard(a.steps, clearance) if clearance else (a.steps, None)
+            if checked is None:
+                print(f"navigator: plan for {request!r} refused by depth: {a.steps['steps']}", flush=True)
+                self._say(note)
+                return
+            dropped = len(a.steps["steps"]) - len(checked["steps"])
+            a.steps = checked
+            self.objects.cancel()
+            self._stop_route()
+            self.plan = PlanRunner(a.steps, self.objects, self._clock())
+            self.mode = "plan"
+            print(f"navigator: plan for {request!r}: {a.steps['steps']} ({getattr(a, 'seconds', 0):.2f} s)", flush=True)
+            self._say(a.text or "Here's the plan.")
+            if dropped:
+                self._say("I left out a turn towards something close.")
 
     def _ask_worker(self, kind, question, jpeg):
         try:

@@ -77,6 +77,8 @@ PROMPTS = {
         "or whether something is there\n"
         "- chat: a greeting, thanks, or small talk such as how are you\n"
         "- help: what the cane can do\n"
+        "- plan: getting somewhere in several steps or in a particular way, such as around something, "
+        "out of a room, past people, or slowly\n"
         "- yes: agreeing, or saying go ahead\n"
         "- no: refusing\n"
         "- cancel: stop guiding\n"
@@ -91,8 +93,27 @@ PROMPTS = {
     "If you cannot see what they ask about, say you can't see it.",
 }
 
-INTENTS = ("object", "place", "describe", "objects", "read", "status", "path", "ask", "chat", "help", "yes", "no",
-           "cancel", "unknown")
+# A request with several parts, or about how to get somewhere ("get me around the table to the window").
+# The model only plans: navigator/plan.py turns the steps into preferred directions, extra stops and a lower
+# speed, and the LiDAR obstacle check still decides what is clear (AGENTS.md rule 4).
+PROMPTS["plan"] = (
+    VOICE + 'They said: "{request}"\n'
+    "What the cane senses now, from its depth sensor (reliable; trust it over the picture for distances): {scene}\n"
+    "Plan how the cane should guide them, as a short list of steps it can do:\n"
+    '- {{"do": "find", "target": "door"}}: find a thing and lead them to it\n'
+    '- {{"do": "go", "way": "left" or "ahead" or "right", "seconds": 1 to 8}}: lean that way while walking\n'
+    '- {{"do": "turn", "way": "left" or "right"}}: turn that way\n'
+    '- {{"do": "slow"}} or {{"do": "normal"}}: walking speed, e.g. slow near people\n'
+    '- {{"do": "wait", "seconds": 1 to 5}}: stand still\n'
+    '- {{"do": "say", "text": "..."}}: tell them something short\n'
+    "The cane stops for obstacles by itself. Never plan to go or turn towards a side the depth sensor calls blocked, "
+    "unless after a find step, when they will be somewhere else. "
+    "Use at most 6 steps, as few as will do.\n"
+    'Reply only as JSON: {{"say": "one short sentence telling them the plan", "steps": [...]}}'
+)
+
+INTENTS = ("object", "place", "describe", "objects", "read", "status", "path", "ask", "chat", "help", "plan", "yes",
+           "no", "cancel", "unknown")
 
 # A distance in an answer is thrown away: distances come from the LiDAR only
 _DISTANCE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:m|cm|metres?|meters?|feet|foot|ft|inch(?:es)?|yards?|steps?|paces?)\b", re.I)
@@ -113,6 +134,7 @@ class Answer:
     model: str = ""
     seconds: float = 0.0
     raw: str = ""  # the model's reply, for the dashboard and debugging
+    steps: Optional[dict] = None  # plan only: {"say": ..., "steps": [...]}, checked by navigator/plan.py
     error: Optional[str] = None
 
 
@@ -188,6 +210,24 @@ def ask(jpeg: bytes, question: str) -> Answer:
     if not kept:
         return _fail(a, "empty reply" if not text else "reply only gave a distance")
     a.text = tidy(" ".join(kept), max_words=30)
+    return a
+
+
+def plan(jpeg: bytes, request: str, scene: str) -> Answer:
+    """A few steps for navigator/plan.py. label is "plan"; .steps holds the checked plan, .text what to say.
+    The model never steers: steps become preferred directions, extra stops or a lower speed only."""
+    from navigator.plan import validate
+
+    request = re.sub(r'["\n]', " ", request or "").strip()[:200]
+    scene = re.sub(r'["\n]', " ", scene or "nothing measured").strip()[:400]
+    a = _one(jpeg, PROMPTS["plan"].format(request=request, scene=scene))
+    if not a.ok:
+        return a
+    checked = validate(_first_json(a.raw))
+    if checked is None:
+        return _fail(a, "unusable plan reply")
+    a.label, a.steps = "plan", checked
+    a.text = tidy(checked["say"]) if checked["say"] else ""
     return a
 
 

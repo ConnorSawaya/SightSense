@@ -100,3 +100,21 @@ python3 -m navigator.check_live                # real model on the vlm test pict
 ```
 
 Not yet tried with real phone frames, a real walk or GPS.
+
+## Step plans: the model plans, depth decides (October 11)
+
+"Get me around the table to the window", "take me out of this room", "walk me past the people slowly":
+requests with several parts, or about how to get somewhere, go to `vlm.plan()` with the picture and what the
+depth sensor says ("ahead blocked at 0.8 m; left open to 3.0 m; things: chair (ahead, 0.9 m)"). The model
+answers with up to six steps from a fixed list (find, go left/ahead/right, turn, slow, normal, wait, say);
+anything else is dropped. `plan.guard()` then drops steps taken from where the user stands that lean towards
+a side under 1 m, and refuses a plan when every side is that close ("Something is close on every side. Step
+back, then ask again."). `PlanRunner` does the steps one at a time.
+
+The model never steers (AGENTS.md rule 4). A step only gives a desired bearing (as the object guide and the
+route do), an extra stop, or a lower speed (a "slow" step halves the speed level, and the lower of it and the
+dashboard's slider is sent). The obstacle check still decides clear or blocked from depth, and timed steps
+only count while the user is not stopped. "Stop" cancels a plan; "am I going the right way" gives the step.
+
+`python -m vlm.eval_voice --plans` runs four requests on four recorded scenes: 16/16 plans with no step
+leaning into something depth says is close, median 1.2 s.

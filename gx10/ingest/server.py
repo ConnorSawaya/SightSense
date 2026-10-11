@@ -33,7 +33,7 @@ import vlm
 from navigator import Navigator, decode
 from planner.obstacle import FAR_M, HEADINGS, Smoother, check
 from planner.cue import DirectionCue
-from planner.obstacle_talk import ObstacleTalk
+from planner.obstacle_talk import ObstacleTalk, scene_words
 from planner.recovery import Recovery
 from planner.speech import ANSWER, GUIDE, SAFETY, SpeechPlan
 from planner.state import StateSmoother
@@ -156,6 +156,7 @@ class Pipeline:
         self.smoother = Smoother()
         self.states = StateSmoother()
         self.cue = DirectionCue()
+        self.speed_cap = None
         self.voice = SpeechPlan()  # every sentence goes through it: one at a time, most important first
         self.talk = ObstacleTalk()  # obstacles in words: what, how far, which way is open
         self.recovery = Recovery()  # after a stop: which way to turn, a tone to keep turning, "Go ahead."
@@ -187,7 +188,7 @@ class Pipeline:
                 d.box = box_back(d.box, turn, f.rgb_w, f.rgb_h)
                 locate(d, f, depth, conf)
 
-        g = self.nav.on_frame(f, dets)
+        g = self.nav.on_frame(f, dets, stopped=self.smoother.cmd == "STOP")
         c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading,
                   stopped=self.smoother.cmd == "STOP", want_maps=True)  # maps: dashboard obstacle view only
         raw_cmd = c.raw_cmd
@@ -196,6 +197,9 @@ class Pipeline:
         cmd, obstacle_speech = self.smoother.update(raw_cmd, c.best, now)
         around = self.talk.update(cmd, c.clearance, dets)  # the obstacle check's own command, before an arrival stop
         hazard = self.talk.hazard(cmd, c.clearance, dets)
+        self.nav.scene = scene_words(c.clearance, dets)  # for the planner: what depth says, in words
+        self.nav.clearance = c.clearance  # and in numbers, to check its plans against
+        self.speed_cap = g.speed  # a plan's "slow" step; the Server sends the lower of it and the dashboard's
         escape = self.recovery.update(cmd, c.clearance, f.pose, now)
         if g.stop:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
@@ -362,21 +366,29 @@ class Server:
         print(f"motor speed {self.speed:.0%} of the Pi's start-up duty", flush=True)
         return True
 
+    def effective_speed(self):
+        """The level sent to the Pi: the dashboard's, lowered by a plan's "slow" step. None if neither is set."""
+        cap = getattr(self.pipe, "speed_cap", None)
+        if self.speed is None and cap is None:
+            return None
+        return round(min(1.0 if self.speed is None else self.speed, 1.0 if cap is None else cap), 2)
+
     async def speed_loop(self):
         while True:
             await asyncio.sleep(0.25)
-            if self.speed is None or not self.pis:
+            level = self.effective_speed()
+            if level is None or not self.pis:
                 continue
             now = time.monotonic()
-            if self.speed == self._speed_sent[0] and now - self._speed_sent[1] < SPEED_RESEND_S:
+            if level == self._speed_sent[0] and now - self._speed_sent[1] < SPEED_RESEND_S:
                 continue
-            msg = json.dumps({"speed": self.speed})
+            msg = json.dumps({"speed": level})
             for p in list(self.pis):
                 try:
                     await asyncio.wait_for(p.send(msg), 1.0)
                 except (ConnectionClosed, asyncio.TimeoutError):
                     self.pis.discard(p)
-            self._speed_sent = (self.speed, now)
+            self._speed_sent = (level, now)
 
     async def manual_loop(self):
         while True:
@@ -421,6 +433,7 @@ class Server:
             "manual": self.manual_sent if self.manual else None,
             "pi_health": self._pi_health(now),
             "speed": self.speed,
+            "speed_sent": self.effective_speed(),
         }
 
     def _pi_health(self, now):

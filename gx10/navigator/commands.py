@@ -133,6 +133,13 @@ def parse(text: str) -> Command:
         target, side = _qualified(_clean_target(m.group(1))[0])
         return Command("object", target, side) if target else Command("unknown")
 
+    # Several steps, or a way of getting there: the model plans it (navigator/plan.py); depth still decides
+    if re.search(r"\b(?:guide|take|bring|lead|walk|get|help|navigate|steer|go|move)\b", t) and re.search(
+            r"\band then\b|\bthen\b|\bafter that\b|\baround (?:the|this|that|it)\b|\bpast (?:the|this|that)\b"
+            r"|\bout of (?:the|this|here)\b|\bget me out\b|\bthrough (?:the|this|that)\b|\bavoid(?:ing)?\b"
+            r"|\bslowly\b|\bcarefully\b|\bwithout (?:hitting|bumping)\b|\balong (?:the|this)\b", t):
+        return Command("plan", raw.strip())
+
     m = re.search(r"\b(?:guide|take|bring|lead|walk|get|navigate|steer|help)\s+me\s+(?:to|towards?|over to)\s+(.+)", t) or re.search(
         r"^(?:go|navigate|head)\s+(?:to|towards?)\s+(.+)", t
     )
