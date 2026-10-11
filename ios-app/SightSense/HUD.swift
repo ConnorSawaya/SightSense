@@ -85,12 +85,12 @@ struct GuidanceCard: View {
 }
 
 /// Distance at the centre of the LiDAR picture on a 0 to 5 m bar, like a car's parking sensor.
-/// The zones mark the GX10's distances (stop 1.2 m, caution 2.5 m); the GX10 judges a corridor,
+/// The zones mark the GX10's distances (stop answer 0.8 m, caution 1.5 m); the GX10 judges a corridor,
 /// not just the centre, so this is a guide for people watching, not the decision.
 struct ProximityBar: View {
     let metres: Float?
     static let range: ClosedRange<Float> = 0...5
-    static let zones: [(upTo: Float, state: String)] = [(1.2, "STOP"), (2.5, "CAUTION"), (5, "CLEAR")]
+    static let zones: [(upTo: Float, state: String)] = [(0.8, "STOP"), (1.5, "CAUTION"), (5, "CLEAR")]
 
     var body: some View {
         VStack(spacing: 6) {
@@ -119,12 +119,17 @@ struct ProximityBar: View {
             .frame(height: 16)
             .animation(.smooth(duration: 0.25), value: metres)
 
-            HStack {
-                Text("0").frame(maxWidth: .infinity, alignment: .leading)
-                Text("1.2").frame(maxWidth: .infinity)
-                Text("2.5").frame(maxWidth: .infinity)
-                Text("5 m").frame(maxWidth: .infinity, alignment: .trailing)
+            // Labels under the zone edges, at their true place on the bar.
+            GeometryReader { geo in
+                ForEach(Self.zones.dropLast(), id: \.upTo) { zone in
+                    Text(String(format: "%g", zone.upTo))
+                        .fixedSize()
+                        .position(x: CGFloat(zone.upTo / Self.range.upperBound) * geo.size.width, y: geo.size.height / 2)
+                }
+                Text("0").position(x: 4, y: geo.size.height / 2)
+                Text("5 m").fixedSize().position(x: geo.size.width - 12, y: geo.size.height / 2)
             }
+            .frame(height: 12)
             .font(.caption2.monospacedDigit())
             .foregroundStyle(.tertiary)
         }
@@ -318,7 +323,7 @@ struct Reticle: View {
     }
 }
 
-/// Rings spreading out from an antenna, for the screen before connecting.
+/// The logo with rings spreading out from it, for the screen before connecting.
 struct RadarPulse: View {
     var body: some View {
         ZStack {
@@ -331,13 +336,13 @@ struct RadarPulse: View {
                         out ? .easeOut(duration: 2.4).delay(Double(i) * 0.8) : .linear(duration: 0)
                     }
             }
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 30, weight: .medium))
-                .foregroundStyle(Theme.accent)
-                .frame(width: 64, height: 64)
-                .glassEffect(.regular.tint(Theme.accent.opacity(0.15)), in: .circle)
+            LogoMark()
+                .frame(width: 84, height: 84)
+                .clipShape(.rect(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                .shadow(color: Theme.accent.opacity(0.35), radius: 16)
         }
-        .frame(width: 150, height: 150)
+        .frame(width: 170, height: 170)
         .accessibilityHidden(true)
     }
 }

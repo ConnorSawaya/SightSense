@@ -28,6 +28,15 @@ python3 tools/fake_gx10.py --save /tmp/frames   # then connect the app to <lapto
 
 `run_link_test.sh` builds `GX10Link.swift` and `FrameMessage.swift` for the Mac and checks depth conversion, row padding, intrinsics scaling, the message layout, 15 frames a second, guidance received, a voice command sent, and reconnecting after the GX10 drops.
 
+## App icon
+
+The logo is drawn in code (`SightSense/LogoMark.swift`): a cane whose tip sends out rings in the LiDAR view's colours. The app shows it on the top bar and the connect screen. To redraw the app icon after changing it:
+
+```bash
+swiftc -parse-as-library tools/render_icon.swift SightSense/LogoMark.swift -o /tmp/render_icon \
+  && /tmp/render_icon SightSense/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+```
+
 In the Simulator there is no camera or LiDAR: Connect opens the link without sending frames, so guidance, speech and voice can still be tried. Launch with `-autoconnect host:port` to connect straight away.
 
 ## Files

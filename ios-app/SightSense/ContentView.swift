@@ -83,25 +83,31 @@ struct ContentView: View {
 
             Spacer()
 
-            VStack(spacing: 1) {
+            HStack(spacing: 8) {
+            LogoMark()
+                .frame(width: 28, height: 28)
+                .clipShape(.rect(cornerRadius: 7))
+            VStack(alignment: .leading, spacing: 1) {
                 Text("SIGHTSENSE")
                     .font(.system(size: 13, weight: .heavy))
                     .fontWidth(.expanded)
-                    .kerning(2)
+                    .kerning(1.5)
                 Text("LiDAR GUIDE")
                     .font(.system(size: 9, weight: .semibold))
                     .fontWidth(.expanded)
                     .kerning(1.5)
                     .foregroundStyle(Theme.accent)
             }
+            }
             .lineLimit(1)
-            .fixedSize()
+            .minimumScaleFactor(0.7)
             .accessibilityHidden(true)
 
             Spacer()
 
             Button { showSettings = true } label: {
                 LinkCapsule(state: capture.linkState, rate: capture.sendRate, running: capture.isRunning)
+                    .fixedSize()
             }
             .buttonStyle(.plain)
             .accessibilityHint("Opens connection settings")
