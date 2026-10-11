@@ -76,6 +76,13 @@ camera looks `tilt - L` degrees below the horizon. The joint locks at 0, 15,
 30, 45, 60 and 75 degrees. The default is 45, which is 15 degrees below the
 horizon at a 30 degree lean.
 
+**Use the 60 degree step on the cane**, which is 30 degrees below the horizon at
+a 30 degree lean. At 15 degrees the obstacle check cannot judge open floor and
+stops (see "The ground, and where the phone has to point" in
+[`../../gx10/planner/README.md`](../../gx10/planner/README.md)). The drawings
+here still show 45. At 60 the cane's own lower end may show at the bottom edge
+of the picture, and at 75 it will; the same note says what to set then.
+
 ## Hardware
 
 | Qty | Item | Where | Hole type |

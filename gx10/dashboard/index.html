@@ -209,7 +209,8 @@ function show(s) {
       const tt = document.createElement("span"); tt.className = "dim"; tt.textContent = t;
       li.append(w, x, tt); return li;
     }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "nothing yet" })]));
-    $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "");
+    $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "")
+      + (f.clearance ? " · floor: " + (f.cam_h != null ? f.cam_h.toFixed(2) + " m below the phone" : "not seen") : "");
     $("fps").textContent = s.fps + " / s";
     $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";
     $("rtt").textContent = s.rtt_ms !== null ? s.rtt_ms.toFixed(0) + " ms" : "-";

@@ -6,6 +6,7 @@ points, positive to the user's right, so the phone's direction in its mount does
 not matter (same convention as gx10/navigator).
 """
 
+import os
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -31,6 +32,13 @@ STOP_AHEAD_M = 0.8
 LEAVE_STOP_M = 1.0
 CAMERA_HEIGHT_M = 0.9  # used only when the floor cannot be seen (estimate for a cane handle)
 CHANGE_FRAMES, STOP_FRAMES = 3, 2
+# The cane's own lower end (motor, wheel, Pi clamp) can show at the bottom of the picture once the
+# phone is on the cane, and it then reads as an obstacle about 0.4 m ahead for ever. Set this to the
+# distance along the floor from the phone to the cane's tip (about 0.65) to ignore a strip that long
+# and 24 cm wide straight ahead. Off by default: with nothing of the cane in view it would only
+# hide a thin post nearer than the tip. It is kept under STOP_AHEAD_M.
+OWN_CANE_M = float(os.environ.get("SIGHTSENSE_OWN_CANE_M", "0"))
+OWN_CANE_HALF_W_M = 0.12
 STUCK_S = 5.0
 
 
@@ -42,12 +50,14 @@ class Check:
     raw_cmd: str  # this frame's command before smoothing
     floor_seen: bool
     points: int
+    cam_h: Optional[float] = None  # how far the phone is above the floor it found; None when no floor was seen
 
 
 def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired: float = 0.0, last: float = 0.0,
-          stopped: bool = False) -> Check:
+          stopped: bool = False, own_cane_m: Optional[float] = None) -> Check:
     """One frame. depth_mm and conf are (h, w) arrays; pose is 16 numbers, column by column.
-    stopped: the smoothed command is STOP now (going again needs LEAVE_STOP_M)."""
+    stopped: the smoothed command is STOP now (going again needs LEAVE_STOP_M).
+    own_cane_m: see OWN_CANE_M; None means use that setting."""
     h, w = depth_mm.shape
     M = np.asarray(pose, dtype=np.float64).reshape(4, 4).T  # column by column -> matrix
     R, t = M[:3, :3], M[:3, 3]
@@ -87,6 +97,10 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
     # Obstacle points in the user's floor frame: a = metres right, b = metres ahead
     d = obst[:, [0, 2]] - t[[0, 2]]
     a, b = d @ r2, d @ f2
+    own = OWN_CANE_M if own_cane_m is None else own_cane_m
+    if own > 0:  # the cane itself, not something in the way
+        mine = (np.abs(a) <= OWN_CANE_HALF_W_M) & (b <= min(own, STOP_AHEAD_M - 0.05))
+        a, b = a[~mine], b[~mine]
 
     clearance, usable = {}, []
     for hd in HEADINGS:
@@ -112,7 +126,7 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
             hd = max(known, key=lambda k: (known[k], -abs(k - desired)))
             if known[hd] >= (LEAVE_STOP_M if stopped else STOP_AHEAD_M):
                 best = hd
-    return Check(clearance, usable, best, wheel(best), floor_seen, len(obst))
+    return Check(clearance, usable, best, wheel(best), floor_seen, len(a), float(cam_y - floor_y) if floor_seen else None)
 
 
 def wheel(heading: Optional[float]) -> str:
