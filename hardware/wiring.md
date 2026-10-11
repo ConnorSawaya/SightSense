@@ -11,7 +11,7 @@ As of the evening of October 10, 2026.
 | Part of the wiring | State |
 | --- | --- |
 | Six wires, Pi end | Fitted. Read from photos; all six are on the pins on this page. |
-| Six wires, driver end | Fitted. Read from photos; each wire is in the right column of the driver's header. Which row each is on has not been confirmed. |
+| Six wires, driver end | Fitted. Read from photos by several independent readers, who all placed every wire on its planned pin. They were sure of the columns and less sure of the rows, so check black and yellow by eye before the first power-on. |
 | Limit switches | Not fitted |
 | Fuse and kill switch | Not fitted |
 | Battery, converter, motor | Not checked |
@@ -131,14 +131,14 @@ Not fitted yet. Without them the controller cannot find left, centre or right. A
 4. Motor to M+ and M−.
 5. Find the adapter's positive screw. With only the battery plugged into the green adapter and no wires under its screws, set a multimeter to DC volts and put one probe on each screw. It should read about 12 V. If there is no minus sign, the red probe is on the positive screw. Mark that screw, then unplug the battery.
 6. Battery still unplugged: the converter's positive wire to the marked screw and its negative wire to the other screw. Then the marked screw through the fuse and kill switch to B+, and the other screw to B−. Follow the wire from the marked screw by eye and check it ends at B+.
-7. Plug the battery in last, with the kill switch off.
+7. Leave the battery and the Pi unplugged. Do the checks in "Before the first power-on" next. Power goes on in "First tests from the Pi".
 
 ## Before the first power-on
 
 Do these with everything unplugged.
 
-1. Black is on the driver pin in line with **VCC** in the printed table, and yellow is on the pin in line with **GND**. If these two are swapped, the Pi's 3.3 V supply is connected straight to ground when the Pi starts.
-2. The two middle pins of the driver's header, R_IS and L_IS, are empty.
+1. Black is on the driver's top-row pin nearest the printed table, which is **VCC**, and yellow is on the bottom-row pin directly below it, which is **GND**. If these two are swapped, the Pi's 3.3 V supply is connected straight to ground when the Pi starts.
+2. The second column of the driver's header from the printed table, R_IS and L_IS, is empty.
 3. No wire is on Pi pin 2 or pin 4.
 4. Nothing metal is touching the Pi's header or the underside of the driver. The driver's heatsink is metal.
 5. With a multimeter on continuity, if there is one: Pi pin 17 to driver VCC, and Pi pin 20 to driver GND. Then check there is no continuity between VCC and GND.
@@ -147,7 +147,7 @@ Do these with everything unplugged.
 
 Run these from `~/SightSense/pi` on the Pi.
 
-Start with no 12 V at the driver, so nothing can move: kill switch off. Until the kill switch is fitted, one barrel plug feeds both the Pi and the driver, so leave it out and run the Pi from its own USB-C supply for steps 1 and 2. If the Pi runs from the converter with no kill switch, the driver has 12 V the whole time the Pi is on, including while it starts.
+Start with no 12 V at the driver, so nothing can move. If the kill switch is fitted, switch it off, then plug the battery in: that powers the Pi through the converter. Until the kill switch is fitted, one barrel plug feeds both the Pi and the driver, so leave it out and run the Pi from its own USB-C supply for steps 1 and 2. If the Pi runs from the converter with no kill switch, the driver has 12 V the whole time the Pi is on, including while it starts.
 
 1. Check the Pi's power. `throttled=0x0` is good.
 
@@ -161,13 +161,15 @@ Start with no 12 V at the driver, so nothing can move: kill switch off. Until th
    python3 cane.py --bench switches
    ```
 
-3. Give the driver 12 V: kill switch on, or plug the battery in if the kill switch is not fitted yet. Have the motor free to turn and a hand on the stop before you do, because the Pi does not hold the driver off until `cane.py` starts. This gives one 0.3 second pulse each way at 25% power:
+3. Give the driver 12 V: kill switch on, or plug the battery in if the kill switch is not fitted yet. Have the motor free to turn, not fitted to the steering, and a hand on the stop before you do. The Pi holds the driver off only while `cane.py` is running: not before it starts, and not after it ends. Watch the shaft for ten seconds first. It must stay still. Then run the test. It gives one 0.3 second pulse each way at 25% power and does not look at the limit switches:
 
    ```bash
    python3 cane.py --bench motor
    ```
 
-4. Keep hands clear of the wheel. The motor moves as soon as the program starts, before anything is typed: it homes to centre. Then type commands and watch the wheel go to each switch. Type `free` to switch the driver off, or `quit` to finish:
+   Watch for ten seconds after it ends, then take the 12 V away: kill switch off, or pull the battery plug. If the shaft ever turns with no program running, take the 12 V away at once and fit the two resistors in "Holding the driver off" below before going on. A still shaft is a good sign, not proof: a floating pin can change later.
+
+4. Keep hands clear of the wheel. The motor moves as soon as the program starts, before anything is typed: it homes to centre. Then type commands and watch the wheel go to each switch. Type `free` to switch the driver off, or `quit` to finish. Give the driver 12 V just before you start the program and take it away as soon as the program ends, because after `quit` or Ctrl+C the Pi no longer holds the driver off:
 
    ```bash
    python3 cane.py --typed
@@ -202,12 +204,13 @@ These are what to look at first. None has been needed yet, so none is proven.
 
 - The IBT-2 passes the full 12 V and far more current than the motor needs, so the software limits are the only limits: motor power is capped at 25%, and each steering move is cut off after 0.4 seconds.
 - No command from the GX10 for 0.4 seconds: motor driver off.
+- These limits exist only while `cane.py` is running. Before it starts and after it ends, nothing limits the motor. Keep the 12 V off, kill switch off or battery unplugged, whenever `cane.py` is not running.
 - The motor has a worm gear, so it holds its position when the power is off. With the driver off the steering stays where it was; it does not swing back to centre.
 - Use the `gpiozero` library. `RPi.GPIO` and `pigpio` do not work on a Raspberry Pi 5.
 
-## Suggested, not yet tried
+## Holding the driver off
 
-When the controller exits, the Pi's motor pins go back to inputs with no pull, which was seen on the Pi. If the IBT-2 has no pull-downs of its own, floating enable pins may read as "on". A 10 kΩ resistor from each of R_EN and L_EN to GND would hold the driver off whenever the Pi is not driving them.
+Not yet tried. When the controller exits, the Pi's motor pins go back to inputs with no pull, which was seen on the Pi. If the IBT-2 has no pull-downs of its own, floating enable pins may read as "on", and the motor then gets 12 V with no power cap and no time limit. Whether this board has pull-downs is not known. A 10 kΩ resistor from each of R_EN and L_EN to GND would hold the driver off whenever the Pi is not driving them. Fit them before the motor goes on the steering if the shaft ever moved with no program running in test 3.
 
 ## Where these facts come from
 

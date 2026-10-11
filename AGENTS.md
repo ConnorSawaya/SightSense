@@ -19,7 +19,7 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 
 ## Current status
 
-As of the commit that added this file, the repository holds structure and documentation only. No application code has been written yet.
+What exists so far, by area:
 
 | Area | State |
 | --- | --- |
@@ -28,7 +28,7 @@ As of the commit that added this file, the repository holds structure and docume
 | iPhone app (`ios-app/`) | Not started |
 | GX10 software (`gx10/`) | Not started |
 | Pi motor controller (`pi/`) | Written; tests pass on the Pi and its GPIO pins open; not yet run with a real motor or switches. A bench test (`pi/spin_test.py`) ramps the motor to full power at start-up; it is for the bench only and must be switched off before the motor goes on the steering |
-| Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos; limit switches, fuse and kill switch not fitted; not tested under power |
+| Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos (columns sure, rows less so); limit switches, fuse and kill switch not fitted; not tested under power |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
 | Motor bracket, Pi plate | Not designed |
@@ -158,7 +158,7 @@ One request at a time, 6-second timeout, keep the model loaded.
 - **Slow model.** A few tokens per second means the setup is wrong, not the model. Check `ollama ps`.
 - **Empty is not clear.** No points in a corridor can mean open space or missing readings.
 - **Stale targets.** If ARKit tracking resets, stored positions are wrong. Clear them.
-- **Pi resets when the motor starts.** Keep the Pi on its own power bank and fit the capacitor.
+- **Pi resets when the motor starts.** The Pi now shares the motor's battery through a converter. If it resets or reports under-voltage when the motor runs, put it back on its own power bank.
 - **Venue Wi-Fi.** `AIHackathon@UCSC` dropped a laptop about a minute after each join, and `UCSC-Guest` has a sign-in page a headless Pi cannot pass. The fixed `192.168.8.x` addresses only exist on the team's own router.
 - **Pi will not start.** Count the green light's blinks before changing anything else. Three long and one short is a bootloader error; the fix is in [`pi/README.md`](pi/README.md).
 - **Pi under-voltage.** A weak supply or long cable makes the Pi throttle and can reset it. `vcgencmd get_throttled` should print `0x0`.

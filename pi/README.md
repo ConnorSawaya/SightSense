@@ -176,7 +176,7 @@ Print each switch as it is pressed:
 python3 cane.py --bench switches
 ```
 
-One 0.3 second pulse each way. Keep a hand on the kill switch:
+One 0.3 second pulse each way. Keep a hand on the stop: the kill switch, or the battery's barrel plug until the kill switch is fitted:
 
 ```bash
 python3 cane.py --bench motor

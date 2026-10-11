@@ -183,7 +183,7 @@ def full_wiring():
         b += [rect(x, y, w, 56, rx=8), text(x + w / 2, y + 19, title, 14, weight=500), text(x + w / 2, y + 38, sub, fill=MUTED)]
     b += [line(f"M{x1} 58 L{x2} 58", PLUS12, 3.5) + line(f"M{x1} 78 L{x2} 78", GROUND, 3.5) for x1, x2 in ((460, 420), (270, 230))]
     b.append(line("M135 96 L135 170", USB5, 3.5))
-    b += [line("M395 96 L395 130 L430 130", PLUS12, 3.5), rect(430, 116, 80, 28), text(470, 130, "5 A fuse"),
+    b += [line("M395 96 L395 130 L430 130", PLUS12, 3.5), rect(430, 116, 80, 28, extra='stroke-dasharray="4 3"'), text(470, 130, "5 A fuse"),
           line("M510 130 L530 130", PLUS12, 3.5), rect(530, 116, 100, 28, extra='stroke-dasharray="4 3"'), text(580, 130, "Kill switch"),
           line("M630 130 L660 130 L660 225 L640 225", PLUS12, 3.5), line("M375 96 L375 156 L652 156 L652 250 L640 250", GROUND, 3.5)]
     b += [rect(40, 170, 190, 330, rx=8), text(105, 192, "Raspberry Pi 5", 14, weight=500),
@@ -199,7 +199,7 @@ def full_wiring():
         y = 400 + 25 * i if i < 3 else 475
         b += [rect(170, y - 10, 60, 20, PIN), text(200, y, f"Pin {pin}")]
         if i < 3:
-            b += [rect(280, y - 10, 130, 20, PIN), text(345, y, name), line(f"M230 {y} L280 {y}", SWITCH, 2),
+            b += [rect(280, y - 10, 130, 20, PIN, extra='stroke-dasharray="4 3"'), text(345, y, name), line(f"M230 {y} L280 {y}", SWITCH, 2),
                   line(f"M410 {y} L430 {y}", GROUND, 2)]
     b.append(line("M430 400 L430 475 L230 475", GROUND, 2))
     b += [rect(450, 450, 190, 56, rx=8), text(545, 478, "12 V gear motor", 14, weight=500),
