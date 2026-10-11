@@ -62,6 +62,27 @@ One message per camera frame, laid out as:
 
 `cmd` is one of `LEFT`, `CENTER`, `RIGHT`, `STOP`, `FREE`. It is sent every frame, so it also acts as the heartbeat. The Pi switches the motor off if nothing arrives for `ttl_ms`.
 
+## Talk button: Pi → GX10 (text, on the command connection)
+
+```json
+{"button": "down"}
+```
+
+Added October 11. `button` is `down` when the talk button in the cane's handle is pressed and `up` when it is let go. The Pi sends each once. It does not listen to or understand anything itself.
+
+## Listen: GX10 → iPhone (text)
+
+```json
+{"listen": true}
+```
+
+Added October 11, for the talk button.
+
+- `true` when the button goes down: the phone stops speaking and starts speech recognition, as if its own talk button were held.
+- `false` when the button is let go after being held for 0.6 seconds or longer: the phone stops listening and sends what it heard as a Voice message.
+- After a shorter click no `false` is sent. The phone stops by itself 1.5 seconds after the last word it heard, or after 8 seconds if it heard nothing.
+- `true` while the phone is already listening stops it, so a second click ends a command.
+
 ## Guidance: GX10 → iPhone (text)
 
 ```json

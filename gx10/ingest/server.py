@@ -39,6 +39,7 @@ TTL_MS = 400
 MANUAL_CMDS = ("LEFT", "CENTER", "RIGHT", "STOP", "FREE")
 MANUAL_HOLD_S = 1.0  # back to automatic if the dashboard stops sending for this long (tab closed, link lost)
 PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as missing
+TALK_HOLD_S = 0.6  # the cane's talk button held this long is a hold: letting go ends the command. Shorter is a click
 MANUAL_HZ = 10  # commands per second to the Pi in manual mode; also its heartbeat
 LOG_LINES = 20  # conversation lines kept for the dashboard
 
@@ -229,6 +230,7 @@ class Server:
         self.manual_sent = None  # what actually went to the Pi, after the depth check
         self.manual_seq = 0
         self.pi_health = None  # (report, time received, address): temperature, input volts, settings
+        self.talk_down = None  # when the cane's talk button went down, while it is held
         self.rec = None
         if record_dir:
             self.rec = Path(record_dir) / time.strftime("%Y%m%d-%H%M%S")
@@ -360,18 +362,43 @@ class Server:
         print("pi connected:", ws.remote_address[0], flush=True)
         self.pis.add(ws)
         try:
-            async for msg in ws:  # the Pi only sends health reports; see contracts/MESSAGES.md
+            async for msg in ws:  # health reports and the talk button; see contracts/MESSAGES.md
                 try:
                     m = json.loads(msg)
                 except (TypeError, json.JSONDecodeError):
                     continue
                 if isinstance(m, dict) and isinstance(m.get("health"), dict):
                     self.pi_health = (m["health"], time.monotonic(), ws.remote_address[0])
+                elif isinstance(m, dict) and m.get("button") in ("down", "up"):
+                    await self.talk_button(m["button"])
         except ConnectionClosed:
             pass
         finally:
+            self.talk_down = None
             self.pis.discard(ws)
             print("pi disconnected:", ws.remote_address[0], flush=True)
+
+    async def talk_button(self, event: str):
+        """The talk button in the cane's handle: tell the phone to listen, as if its own talk button were held.
+
+        Down starts it. Up ends it only after a hold; after a click the phone stops by itself when the
+        speaker has finished. The phone sends what it heard back as an ordinary {"text": ...} message."""
+        now = time.monotonic()
+        if event == "down":
+            self.talk_down, listen = now, True
+        else:
+            held, self.talk_down = (now - self.talk_down if self.talk_down is not None else 0.0), None
+            if held < TALK_HOLD_S:
+                return
+            listen = False
+        ws = self.phone_ws
+        print(f"talk button {event}: " + (f"phone told to {'listen' if listen else 'stop listening'}" if ws else "no phone connected"), flush=True)
+        if ws is None:
+            return
+        try:
+            await ws.send(json.dumps({"listen": listen}))
+        except ConnectionClosed:
+            pass
 
     async def run_frames(self):
         loop = asyncio.get_running_loop()
