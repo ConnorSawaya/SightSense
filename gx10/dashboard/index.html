@@ -133,6 +133,7 @@
   .manual-off .pad button { opacity: .35; pointer-events: none; }
   #manualState { margin-top: 10px; color: var(--text); font-size: 13px; }
   #manualState.warn { color: var(--caution); }
+  .speedctl { margin-top: 12px; } .speedctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; } .speedctl input[type=range] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent, #3a7bd5); }
 
   /* Tables and stat tiles */
   table { width: 100%; border-collapse: collapse; }
@@ -239,6 +240,11 @@
     <div class="pad">
       <button type="button" data-hold="LEFT"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Counter-clockwise</button>
       <button type="button" data-hold="RIGHT"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Clockwise</button>
+    </div>
+    <div class="speedctl">
+      <label for="speed">Motor speed <b id="speedVal">-</b></label>
+      <input type="range" id="speed" min="0" max="100" step="5" value="100" aria-describedby="speedNote">
+      <div class="dim" id="speedNote">Share of the Pi's own power limit. Works in automatic and by hand.</div>
     </div>
     <div id="manualState">Off: the wheel follows the obstacle check.</div>
     <details><summary>How it works</summary><p>Hold a button to spin the motor that way; let go and it stops. No set positions, and free space is not checked while you control it. Keys: &larr; counter-clockwise, &rarr; clockwise. If the directions come out reversed on the cane, start the Pi with --swap. If this page closes, the wheel goes back to automatic within a second.</p></details>
@@ -362,6 +368,7 @@ function show(s) {
     showManual(s);
     $("explain").textContent = s.explain || "";
     showPi(s.pi_health);
+    showSpeed(s);
     $("state").textContent = f.state ? f.state + (f.desired !== null && f.desired !== undefined ? " · wants " + f.desired + "°" : "") : "waiting for frames";
     showBars(f);
     if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
@@ -454,6 +461,26 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("keyup", (e) => { if (KEYS[e.key] && held === KEYS[e.key]) spin(null); });
 window.addEventListener("blur", () => spin(null));  // a key held while switching windows must not keep spinning
 window.addEventListener("pagehide", () => { if (manualOn) sendManual("AUTO"); });
+// Motor speed: a share of the Pi's own power limit, sent to the GX10, which passes it to the Pi
+let speedDragging = false, speedTimer = null, lastHealth = null;
+function speedLabel(pct) {
+  const base = lastHealth && lastHealth.duty ? lastHealth.duty : null;
+  $("speedVal").textContent = pct + "%" + (base != null ? " · " + Math.round(base * pct) + "% power, about " + Math.round((lastHealth.rated_rpm || 0) * base * pct / 100) + " rpm est." : "");
+}
+function sendSpeed(pct) {
+  fetch("/speed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ speed: pct / 100 }) }).catch(() => {});
+}
+$("speed").addEventListener("input", (e) => {
+  speedDragging = true; speedLabel(+e.target.value);
+  clearTimeout(speedTimer); speedTimer = setTimeout(() => sendSpeed(+e.target.value), 150);
+});
+$("speed").addEventListener("change", (e) => { sendSpeed(+e.target.value); setTimeout(() => { speedDragging = false; }, 1500); });
+function showSpeed(s) {
+  lastHealth = s.pi_health || lastHealth;
+  if (speedDragging) return;
+  const pct = s.speed != null ? Math.round(s.speed * 100) : (lastHealth && lastHealth.speed != null ? Math.round(lastHealth.speed * 100) : 100);
+  $("speed").value = pct; speedLabel(pct);
+}
 function showManual(s) {
   const m = s.manual, el = $("manualState");
   if (!manualOn && !m) { el.textContent = "Off: the wheel follows the obstacle check."; el.className = ""; return; }
@@ -480,7 +507,10 @@ function showPi(h) {
   }
   if (h.throttled_now != null) set("piThrottle", h.throttled_now ? "slowed now" : h.throttled_since_boot ? "none now (earlier since boot)" : "none", h.throttled_now ? "bad" : h.throttled_since_boot ? "warnc" : "ok");
   set("piLoad", (h.load != null ? h.load.toFixed(2) : "-") + " / " + (h.wifi_dbm != null ? h.wifi_dbm + " dBm" : "-"));
-  if (h.mode) set("piMotor", h.mode + " · " + Math.round((h.duty || 0) * 100) + "% (max " + Math.round((h.max_duty || 0) * 100) + "%) · about " + Math.round((h.rated_rpm || 0) * (h.duty || 0)) + " rpm est.");
+  if (h.mode) {
+    const now = h.duty_now != null ? h.duty_now : (h.duty || 0);  // duty_now: the start-up duty times the speed level
+    set("piMotor", h.mode + " · " + Math.round(now * 100) + "% power" + (h.speed != null ? " (" + Math.round(h.speed * 100) + "% of " + Math.round((h.duty || 0) * 100) + "%)" : "") + " · about " + Math.round((h.rated_rpm || 0) * now) + " rpm est.");
+  }
   if (h.uptime_s != null) set("piUp", Math.floor(h.uptime_s / 3600) + " h " + Math.floor(h.uptime_s % 3600 / 60) + " min");
 }
 // Ask Qwen: placeholder; the team will wire it to the model soon

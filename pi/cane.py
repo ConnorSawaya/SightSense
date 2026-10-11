@@ -60,10 +60,42 @@ class Inbox:
         return item
 
 
-def control_loop(hw, inbox, stop, duty, wheel_drive=False, rated_rpm=120):
+class SpeedSetting:
+    """The dashboard's speed level: a share (0-1) of the duty this controller was started with.
+
+    Set from the network ({"speed": 0.6}, see contracts/MESSAGES.md), so it can only make the motor
+    slower: never above --duty, and --duty is capped at MAX_DUTY in code. Back to 1 (the start-up
+    duty) whenever the link to the GX10 drops; the GX10 sends it again every 2 s."""
+
+    def __init__(self):
+        self.value = 1.0
+
+    def set(self, value):
+        self.value = max(0.0, min(1.0, float(value)))
+
+    def reset(self):
+        self.value = 1.0
+
+
+def parse_speed(text):
+    """The level from a {"speed": x} message, clamped to 0-1, or None for anything else."""
+    try:
+        msg = json.loads(text)
+    except (TypeError, ValueError):
+        return None
+    v = msg.get("speed") if isinstance(msg, dict) else None
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+        return None
+    return max(0.0, min(1.0, float(v)))
+
+
+def control_loop(hw, inbox, stop, duty, wheel_drive=False, rated_rpm=120, speed=None):
     steering = WheelDrive(hw, duty=duty, rated_rpm=rated_rpm, log=log) if wheel_drive else Steering(hw, duty=duty, log=log)
+    base = steering.duty  # already capped at MAX_DUTY
     try:
         while not stop.is_set():
+            if speed is not None:
+                steering.duty = base * speed.value  # the dashboard can only scale it down
             item = inbox.take()
             if item:
                 text, received = item
@@ -93,12 +125,15 @@ def control_loop(hw, inbox, stop, duty, wheel_drive=False, rated_rpm=120):
         log("driver off, stopped")
 
 
-async def send_health(link, stop, about):
+async def send_health(link, stop, about, speed=None):
     """Temperature, input voltage and settings to the GX10 dashboard every 2 s.
     Runs beside the command reader; a failure here never reaches the motor."""
     while not stop.is_set():
         try:
             report = await asyncio.to_thread(health.read, about)  # vcgencmd takes a few ms
+            if speed is not None and about:  # what the dashboard's speed level makes of the start-up duty
+                report["speed"] = round(speed.value, 2)
+                report["duty_now"] = round(about.get("duty", 0) * speed.value, 3)
             await link.send(json.dumps({"health": report}))
         except asyncio.CancelledError:
             raise
@@ -126,7 +161,7 @@ async def send_button(link, stop, button):
         await asyncio.sleep(talk_button.POLL_S)
 
 
-async def listen_gx10(url, inbox, stop, about=None, button=None):
+async def listen_gx10(url, inbox, stop, about=None, button=None, speed=None):
     """Keep a WebSocket open to the GX10's command port, reconnecting forever."""
     import websockets
     status = None
@@ -136,7 +171,7 @@ async def listen_gx10(url, inbox, stop, about=None, button=None):
                                           max_size=4096, max_queue=1,
                                           ping_interval=2, ping_timeout=3) as link:
                 log(status := f"connected to {url}")
-                senders = [asyncio.create_task(send_health(link, stop, about))]
+                senders = [asyncio.create_task(send_health(link, stop, about, speed))]
                 if button is not None:
                     senders.append(asyncio.create_task(send_button(link, stop, button)))
                 try:
@@ -144,6 +179,12 @@ async def listen_gx10(url, inbox, stop, about=None, button=None):
                         try:
                             message = await asyncio.wait_for(link.recv(), 0.1)
                         except asyncio.TimeoutError:
+                            continue
+                        level = parse_speed(message)
+                        if level is not None:  # a speed level, not a command: it never reaches the inbox
+                            if speed is not None and level != speed.value:
+                                speed.set(level)
+                                log(f"speed {level:.0%} of the start-up duty")
                             continue
                         inbox.put(message)
                 finally:
@@ -153,13 +194,15 @@ async def listen_gx10(url, inbox, stop, about=None, button=None):
         except Exception as e:
             problem = f"no link to {url}: {e!r}"
         inbox.put('{"cmd":"FREE","ttl_ms":400}')
+        if speed is not None:
+            speed.reset()  # back to the start-up duty until the GX10 says otherwise
         if problem != status:
             log(status := problem)
         await asyncio.sleep(RETRY_S)
 
 
-def follow_gx10(url, inbox, stop, about=None, button=None):
-    asyncio.run(listen_gx10(url, inbox, stop, about, button))
+def follow_gx10(url, inbox, stop, about=None, button=None, speed=None):
+    asyncio.run(listen_gx10(url, inbox, stop, about, button, speed))
 
 
 def follow_keyboard(inbox, stop):
@@ -277,7 +320,7 @@ def main():
         bench(hw, args.bench, duty)
         return
 
-    inbox, stop = Inbox(), threading.Event()
+    inbox, stop, speed = Inbox(), threading.Event(), SpeedSetting()
     if args.typed:
         source = threading.Thread(target=follow_keyboard, args=(inbox, stop), daemon=True)
     else:
@@ -290,7 +333,7 @@ def main():
                 button = talk_button.TalkButton()
             except Exception as e:  # the cane still steers without it
                 log(f"talk button not read: {e!r}")
-        source = threading.Thread(target=follow_gx10, args=(f"ws://{host}", inbox, stop, about, button), daemon=True)
+        source = threading.Thread(target=follow_gx10, args=(f"ws://{host}", inbox, stop, about, button, speed), daemon=True)
     if args.wheel_drive:
         log(f"direct wheel drive; LEFT uses {'LPWM GPIO24' if args.swap else 'RPWM GPIO23'}, "
             f"RIGHT uses {'RPWM GPIO23' if args.swap else 'LPWM GPIO24'}")
@@ -298,7 +341,7 @@ def main():
             f"{args.rated_rpm * duty:g} rpm while powered (not measured)")
     source.start()
     try:
-        control_loop(hw, inbox, stop, duty, args.wheel_drive, args.rated_rpm)
+        control_loop(hw, inbox, stop, duty, args.wheel_drive, args.rated_rpm, speed)
     except KeyboardInterrupt:
         pass
     finally:

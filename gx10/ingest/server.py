@@ -48,7 +48,9 @@ MANUAL_CMDS = ("LEFT", "RIGHT", "STOP")
 MANUAL_HOLD_S = 1.0  # back to automatic if the dashboard stops sending for this long (tab closed, link lost)
 PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as missing
 TALK_HOLD_S = 0.6  # the cane's talk button held this long is a hold: letting go ends the command. Shorter is a click
-MANUAL_HZ = 10  # commands per second to the Pi in manual mode; also its heartbeat
+MANUAL_HZ = 10
+SPEED_RESEND_S = 2.0  # the dashboard's speed level goes to the Pi on every change and this often (a Pi that
+                      # reconnects or restarts gets it again; the Pi drops back to its own duty when the link drops)  # commands per second to the Pi in manual mode; also its heartbeat
 LOG_LINES = 20  # conversation lines kept for the dashboard
 # "sound check", by voice or typed on the dashboard: each tone the phone knows, with its name spoken, one at a time
 SOUND_CHECK = (("other", "Sound check. Four tones follow."), ("left", "Left."), ("right", "Right."),
@@ -283,6 +285,8 @@ class Server:
         self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
         self.manual_sent = None  # what went to the Pi
         self.manual_seq = 0
+        self.speed = None  # the dashboard's speed level, 0-1 of the Pi's own start-up duty; None = never set
+        self._speed_sent = (None, -1e9)
         self.pi_health = None  # (report, time received, address): temperature, input volts, settings
         self.talk_down = None  # when the cane's talk button went down, while it is held
         self.rec = None
@@ -345,6 +349,35 @@ class Server:
         a manual spin is sent as asked, whatever the free space."""
         return now - self.pipe.last_frame < 0.5 and self.pipe.status.get("cmd") == "STOP"
 
+    def set_speed(self, level) -> bool:
+        """The dashboard's speed slider: a share (0-1) of the duty the Pi was started with. The Pi can only go
+        slower than its own --duty with it, never faster (contracts/MESSAGES.md, "Speed")."""
+        try:
+            level = float(level)
+        except (TypeError, ValueError):
+            return False
+        if level != level:  # NaN
+            return False
+        self.speed = round(max(0.0, min(1.0, level)) * 20) / 20  # 5% steps
+        print(f"motor speed {self.speed:.0%} of the Pi's start-up duty", flush=True)
+        return True
+
+    async def speed_loop(self):
+        while True:
+            await asyncio.sleep(0.25)
+            if self.speed is None or not self.pis:
+                continue
+            now = time.monotonic()
+            if self.speed == self._speed_sent[0] and now - self._speed_sent[1] < SPEED_RESEND_S:
+                continue
+            msg = json.dumps({"speed": self.speed})
+            for p in list(self.pis):
+                try:
+                    await asyncio.wait_for(p.send(msg), 1.0)
+                except (ConnectionClosed, asyncio.TimeoutError):
+                    self.pis.discard(p)
+            self._speed_sent = (self.speed, now)
+
     async def manual_loop(self):
         while True:
             await asyncio.sleep(1 / MANUAL_HZ)
@@ -387,6 +420,7 @@ class Server:
             "log": list(self.pipe.log),
             "manual": self.manual_sent if self.manual else None,
             "pi_health": self._pi_health(now),
+            "speed": self.speed,
         }
 
     def _pi_health(self, now):
@@ -557,7 +591,7 @@ async def main():
             serve(server.pi, a.host, a.pi_port):
         print(f"listening: phone on {a.host}:{a.phone_port}, pi on {a.host}:{a.pi_port}"
               + (f", dashboard on http://{a.host}:{a.dashboard_port}" if a.dashboard_port else ""), flush=True)
-        await asyncio.gather(server.run_frames(), server.report(), server.manual_loop())
+        await asyncio.gather(server.run_frames(), server.report(), server.manual_loop(), server.speed_loop())
 
 
 if __name__ == "__main__":
