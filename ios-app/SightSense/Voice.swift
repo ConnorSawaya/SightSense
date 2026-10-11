@@ -20,6 +20,10 @@ final class Voice: ObservableObject {
     static let quietAtStart: TimeInterval = 8
     private var stopsItself = false
     private var quietTimer = 0  // counts up; a waiting stop only fires if nothing newer was set
+    private var finishing = false  // from stop() until its 0.4 s wait is over: the last command is still being finished
+    /// When the phone last ended a command by itself, and how long after that a click still counts as its end.
+    private(set) var stoppedItselfAt = Date.distantPast
+    static let endClick: TimeInterval = 2
 
     func requestPermission() {
         SFSpeechRecognizer.requestAuthorization { _ in }
@@ -29,7 +33,7 @@ final class Voice: ObservableObject {
     /// Starts listening. `done` gets the final text when `stop()` is called (not called if nothing was heard).
     /// With `stopsItself`, it also stops when the speaker has finished; `stop()` still ends it sooner.
     func start(stopsItself: Bool = false, done: @escaping (String) -> Void) {
-        guard !isListening else { return }
+        guard !isListening, !finishing else { return }  // a new start would be cancelled by the last stop
         problem = nil
         heard = ""
         switch SFSpeechRecognizer.authorizationStatus() {
@@ -83,6 +87,7 @@ final class Voice: ObservableObject {
         let mine = quietTimer
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
             guard let self, self.isListening, self.quietTimer == mine else { return }
+            self.stoppedItselfAt = Date()
             self.stop()
         }
     }
@@ -96,9 +101,11 @@ final class Voice: ObservableObject {
         request?.endAudio()
         let done = finished
         finished = nil
+        finishing = true
         // Give the recognizer a moment to finish the last words.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
             guard let self else { return }
+            self.finishing = false
             self.task?.cancel()
             self.task = nil
             self.request = nil

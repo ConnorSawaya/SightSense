@@ -61,6 +61,8 @@ struct ContentView: View {
             link.onListen = { [weak talker, weak link] on in
                 guard let talker, let link else { return }
                 if on, !talker.isListening {
+                    // A click just after the phone stopped by itself is the user ending that command, not starting another.
+                    guard Date().timeIntervalSince(talker.stoppedItselfAt) > Voice.endClick else { return }
                     talker.start(stopsItself: true) { [weak link] text in link?.send(command: text) }
                 } else {
                     talker.stop()
