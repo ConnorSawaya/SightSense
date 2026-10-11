@@ -12,7 +12,7 @@ A smart guide cane for people who are blind or have low vision, built by a four-
 - The user says "guide me to the apple", "take me to the door" or "take me to Safeway"; the cane confirms, then steers them there around obstacles.
 
 ```
-iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/RIGHT/STOP──► Pi ──► motor ──► steering wheel
+iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/RIGHT/STOP──► Pi ──► motor ──► wheel
    ▲                                           │
    └──────────── beeps and speech ◄────────────┘
 ```
@@ -25,13 +25,17 @@ What exists so far, by area:
 | --- | --- |
 | Repo layout, message formats, wiring plan | Written |
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
-| iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location); LiDAR-only Liquid Glass screen (iOS 26+). Real iPhone 15 Pro frames reached the GX10 frame service (`gx10/ingest`, port 8775) over Tailscale on October 10 around 5 PM: 4–18 frames/s; guidance, describe and read worked. Heat cut (30 fps camera, lower rate when hot) merged; not yet measured on the phone |
-| GX10 software (`gx10/`) | First versions of all pieces: `ingest/` (frame service), `planner/` (7-heading obstacle check, steady phone state), `dashboard/`, `vlm/` (`qwen3-vl:30b-a3b-instruct`), `navigator/` (rules, then the model for voice it does not understand; status and picture questions), `detector/` (YOLO26s). Run live with the iPhone on October 10 (describe 0.9 s, read 0.8 s, stop at about 2.2 m on a walk); model voice tested on a replayed phone recording, not yet live |
+| iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location) and built on the Mac. Written October 11 on a laptop with no Xcode and **not yet compiled**: step 8, the place lookup (`Places.swift`); listening from the cane's talk button; tones for left, right and unknown. LiDAR-only Liquid Glass screen (iOS 26+). Real iPhone 15 Pro frames reached the GX10 frame service (`gx10/ingest`, port 8775) over Tailscale on October 10 around 5 PM: 4–18 frames/s; guidance, describe and read worked. Heat cut (30 fps camera, lower rate when hot) merged; not yet measured on the phone |
+| GX10 software (`gx10/`) | First versions of all pieces: `ingest/` (frame service), `planner/` (7-heading obstacle check, steady phone state), `dashboard/`, `vlm/` (`qwen3-vl:30b-a3b-instruct`), `navigator/` (rules, then the model for voice it does not understand; status and picture questions), `detector/` (YOLO26s). Run live with the iPhone on October 10 (describe 0.9 s, read 0.8 s, stop at about 2.2 m on a walk); model voice tested on a replayed phone recording, not yet live. October 11, tested on a laptop only: the talk button passed on to the phone as `listen`, a bad text message no longer drops the phone, the service starts without Ollama. The GX10 has to be restarted from this code to get them |
 | Pi motor controller (`pi/`) | Direct wheel mode added October 11: LEFT/RIGHT spin opposite ways, CENTER/STOP/FREE switch off, no homing or position switches. Real local WebSockets carry synthetic phone frames through GX10 depth planning to the Pi loop and mock GPIO. An SD update installer is prepared. GPIO opened on the Pi October 10; the updated code and actual RPM have not yet been checked on the physical motor. The SD installer disables the previous full-power boot bench test. A talk button on GPIO17 is read and reported to the GX10 (`pi/talk_button.py`); tested on mock pins only |
 | Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos (columns sure, rows less so); limit switches, fuse, kill switch and talk button not fitted; not tested under power |
-| Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
+| Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in; the plug inside the handle's socket is a separate part glued into the tube |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
-| Motor bracket, Pi plate | Not designed |
+| Motor mount 2 (`hardware/motor-mount-2/`) | Designed on motor sizes from a published drawing, geometric checks only, not printed; two small fit tests to print first |
+| Electronics mount (`hardware/electronics-mount/`) | Clamp for the Pi and battery; designed, not printed |
+| Joint sleeve (`hardware/joint-sleeve/`) | Clamp over each tube joint; designed, geometric checks only, not printed; strength figures are estimates |
+| Whole-cane model (`hardware/assembly/`) | Four 400 mm tubes with couplers and every printed part in place; model only |
+| Whole system on one computer (`pi/test_whole_system.py`) | Fake phone frames, typed voice, a place, the talk button and the dashboard through the real GX10 service and Pi controller to mock motor pins. Passes on a laptop with the model stubbed and YOLO off; not run on the cane |
 
 Update this table when you finish something.
 
@@ -72,7 +76,7 @@ These come from the hackathon and from the team. Breaking one can get the projec
 | Team laptops | Venue | Development, SSH to the Pi and GX10. |
 | Home desktop | Not at the venue | i7-14700F, RTX 4060 (8 GB), 32 GB RAM, Windows 11. On October 11 its Tailscale connection reached the GX10 dashboard and command port. The existing Pi node was offline while its SD card was removed. |
 
-Planned addresses (reserve in the router; the subnet depends on the router): GX10 `192.168.8.10`, Pi `192.168.8.20`, iPhone `192.168.8.30`. Ports on the GX10: 8765 frames in, 8766 commands out, 8000 dashboard, 11434 Ollama.
+Planned addresses (reserve in the router; the subnet depends on the router): GX10 `192.168.8.10`, Pi `192.168.8.20`, iPhone `192.168.8.30`. Ports on the GX10: 8765 frames in, 8766 commands out, 8000 dashboard, 11434 Ollama. As run for the cane, over Tailscale, the frame service takes the phone on 8775 (`--phone-port 8775`, the port in the app's presets) and the Pi on 8766.
 
 ## Decisions already made
 
@@ -107,9 +111,9 @@ Input: a depth frame and a desired bearing in degrees relative to the camera (0 
 4. Candidate headings: −30, −20, −10, 0, 10, 20, 30 degrees.
 5. Each heading has a corridor 0.7 m wide. Clearance = 5th-percentile distance of points inside it (at least 30 points; none means clear to range).
 6. A corridor with under 60% valid depth pixels is unknown, which counts as blocked.
-7. Usable if clearance ≥ 2.5 m.
+7. Usable if clearance ≥ 1.5 m (2.5 m until October 10, which stopped about 2.2 m from things).
 8. Choose the usable heading with the lowest cost: `|heading − desired| + 0.5 · |heading − last choice|`.
-9. Nothing usable, or under 1.2 m straight ahead with no usable side → `STOP`.
+9. Nothing usable: steer towards the most open heading if it is open past 0.8 m (1.0 m once stopped); otherwise `STOP`.
 10. Wheel: ≤ −15° → `LEFT`; ≥ +15° → `RIGHT`; else `CENTER`.
 11. A change needs 3 agreeing frames; `STOP` needs 2.
 12. `STOP` for 5 seconds → say "Path blocked. Turn slowly to scan."
@@ -167,7 +171,7 @@ One request at a time, 6-second timeout, keep the model loaded.
 
 **Must work:** obstacle stop with a measured delay · "guide me to the object" in a room · describe and read · dashboard (live view, decision, delay, GPU use) · wheel free when the link drops.
 
-**Aiming for:** steering wheel · voice commands · "take me to a place" with route following.
+**Aiming for:** the wheel · voice commands · "take me to a place" with route following.
 
 **If there is time:** automatic re-routing · person tracking · wake word.
 

@@ -3,9 +3,10 @@
     {"health": {"cpu_c": 44.4, "in_v": 5.28, "undervolt_now": false, ...}}
 
 Standard library only. Every reading is optional: one that fails is left out, and
-nothing here touches the motor. There is no battery gauge on the cane: the Pi runs
-from a USB-C power bank that does not report its charge, so the input voltage
-(in_v, which sags as the bank runs down) and the undervoltage flags stand in for it.
+nothing here touches the motor. There is no battery gauge on the cane: the Pi's supply
+(a 12 V to 5 V converter on the motor's pack, or a USB-C power bank) does not report
+its charge, so the input voltage (in_v, which sags as the supply runs down) and the
+undervoltage flags stand in for it.
 """
 
 import os

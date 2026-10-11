@@ -8,8 +8,6 @@ Printable parts, wiring and build notes for the cane.
 | [`wiring.md`](wiring.md) | Raspberry Pi, IBT-2 motor driver, motor, switches and power, with a check list and first tests | Six Pi-to-driver wires fitted; switches, fuse and kill switch not fitted; not tested under power |
 | [`diagrams/`](diagrams/) | The wiring diagrams used in `wiring.md`, and the script that draws them | Drawn |
 | [`wheel-adapter/`](wheel-adapter/) | Hub and cap that put the omni wheel onto the gearmotor's 6 mm D-shaft | Design in, not printed; wheel hex and centre hole measured, shaft sizes from a published drawing |
-| `motor-bracket/` | Holds the 12 V motor above the steering fork | To design |
-| `pi-plate/` | Carries the Pi and the motor driver on the tube | To design |
 | [`handle-phone-mount/`](handle-phone-mount/) | Tilted handle, pole collar and adjustable phone cradle (camera forward) | Design in, not yet printed; cradle is oversize and the phone is strapped in |
 | [`electronics-mount/`](electronics-mount/) | Two-piece clamp on the tube above the motor: Raspberry Pi 5 on standoffs on one side, a flat plate for the battery on the other | Design in, not printed |
 | [`motor-mount-2/`](motor-mount-2/) | Sturdier version of the v4 motor receiver: adds a sleeve over the end of the tube and holds the gearbox along its whole length. Takes the same v4 main insert | Design in, not printed; motor sizes from a published drawing |

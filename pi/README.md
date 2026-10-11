@@ -154,7 +154,7 @@ The GX10's Tailscale address and port 8766 were checked from the laptop on Octob
 
 The updated GX10 server discards expired frames and subtracts processing time from the command TTL. The Pi switches off when that TTL expires. The server update must also be run on the GX10 for this receive-time budget to apply; the running GX10 was not changed by staging the Pi SD card.
 
-What has been run: the service, its fake phone and this controller together on a laptop, with a simulated wheel, the vision model stubbed out and YOLO off. The wheel went centre, left, then back to centre for stop as the fake phone walked at a wall, and the driver went off when the frames stopped. `test_with_gx10.py` repeats that. It has not been run on the cane, or against the service on the GX10.
+What has been run: the service, its fake phone and this controller together on a laptop, with a simulated wheel, the vision model stubbed out and YOLO off. As the fake phone walked at a wall the commands went CENTER, a turn while the obstacle check steered away from the wall, then STOP close to it, and the driver went off when the frames stopped. `test_with_gx10.py` repeats that. `test_whole_system.py` does the same in direct wheel mode on mock motor pins, with typed voice, a place, the talk button and the dashboard. It has not been run on the cane, or against the service on the GX10.
 
 ## Timed position steering
 

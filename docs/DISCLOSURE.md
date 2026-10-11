@@ -22,6 +22,7 @@ What in this project we did not make ourselves, and what existed before the even
 | Wikimedia Commons `Red_Apple.jpg`, Ultralytics sample `bus.jpg` | Source photos for the `gx10/vlm/` test pictures; not committed |
 | gpiozero | Motor and switch control on the Raspberry Pi |
 | websockets (Python library) | The Raspberry Pi's link to the GX10's command port |
+| Tailscale | Private network between the phone, the Pi, the laptops and the GX10, used from October 10 because the team's router was not at the venue |
 | OpenSCAD | Designing the cane coupler |
 | build123d | Designing the handle and phone mount |
 | Raspberry Pi OS Lite, Raspberry Pi Imager | The Raspberry Pi's operating system, and writing it to the SD card |
@@ -31,7 +32,7 @@ Update this table as tools are added or dropped.
 
 ## What uses the internet
 
-Only the place lookup ("take me to Safeway"), through Apple Maps. The camera video, depth data, obstacle check and all AI models stay on the local network.
+Two things. The place lookup ("take me to Safeway") goes through Apple Maps. And since October 10 the phone and the Pi reach the GX10 over Tailscale, so camera frames, depth and commands travel encrypted between the team's own devices over the internet, through Tailscale's relay servers when no direct path exists. The obstacle check and all AI models run on the GX10. No cloud AI is used.
 
 ## Work done before the event
 

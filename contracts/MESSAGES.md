@@ -2,11 +2,11 @@
 
 The agreed messages between the iPhone, the GX10 and the Raspberry Pi. Everyone builds against these, so tell the whole team before changing anything here.
 
-All links are WebSockets on the team's private router.
+All links are WebSockets. The plan was the team's private router. The router was not at the venue, so since October 10 the phone and the Pi reach the GX10 over Tailscale, at the GX10's Tailscale address.
 
 ## Addresses
 
-Reserve these in the router. The subnet depends on the router.
+Reserve these in the router. The subnet depends on the router. As run for the cane on October 10 and 11, the GX10's frame service takes the phone on port 8775 (`--phone-port 8775`, the port in the app's presets) and the Pi on 8766.
 
 | Device | Address | Ports |
 | --- | --- | --- |
@@ -70,6 +70,16 @@ One message per camera frame, laid out as:
 
 Added October 11. `button` is `down` when the talk button in the cane's handle is pressed and `up` when it is let go. The Pi sends each once. It does not listen to or understand anything itself.
 
+## Health: Pi → GX10 (text, on the command connection, every 2 seconds)
+
+```json
+{"health": {"cpu_c": 44.4, "in_v": 5.28, "wifi_dbm": -52, "uptime_s": 913, "undervolt_now": false, "throttled_now": false, "mode": "wheel-drive", "t": 1791735600.0}}
+```
+
+Written down here on October 11, after the code (`pi/health.py`). The Pi's own state, for the dashboard: temperature, input voltage, Wi-Fi signal, time since start, load, the under-voltage and throttling flags (now and since start), and the controller's settings. Every field is optional: one the Pi cannot read is left out. Nothing in it steers the wheel.
+
+Whatever serves the command port must read what the Pi sends, even if it ignores it. Left unread, these messages fill the link and the Pi drops it (about every 38 seconds in a laptop test).
+
 ## Listen: GX10 → iPhone (text)
 
 ```json
@@ -82,6 +92,7 @@ Added October 11, for the talk button.
 - `false` when the button is let go after being held for 0.6 seconds or longer: the phone stops listening and sends what it heard as a Voice message.
 - After a shorter click no `false` is sent. The phone stops by itself 1.5 seconds after the last word it heard, or after 8 seconds if it heard nothing.
 - `true` while the phone is already listening stops it, so a second click ends a command.
+- `true` in the 2 seconds after the phone has stopped by itself is taken as the end of that command and does not start another.
 
 ## Guidance: GX10 → iPhone (text)
 

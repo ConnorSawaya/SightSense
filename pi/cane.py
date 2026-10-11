@@ -1,9 +1,10 @@
 """The cane's motor controller. Run it on the Raspberry Pi.
 
-    python3 cane.py --gx10 192.168.8.10     follow the GX10
-    python3 cane.py --typed                 type commands instead
-    python3 cane.py --typed --sim           same, with a simulated wheel (any computer)
-    python3 cane.py --gx10 ADDRESS --open-loop   no limit switches fitted: positions by timing
+    python3 cane.py --wheel-drive --gx10 ADDRESS:8766   follow the GX10 (the direct-drive wheel fitted now)
+    python3 cane.py --wheel-drive --typed               type commands instead
+    python3 cane.py --wheel-drive --typed --sim         same, with a simulated wheel (any computer)
+    python3 cane.py --gx10 ADDRESS               earlier position steering: needs limit switches, homes at start-up
+    python3 cane.py --gx10 ADDRESS --open-loop   position steering by timing: the motor moves at start-up
     python3 cane.py --bench switches        print each switch as it is pressed
     python3 cane.py --bench button          print the talk button as it is pressed
     python3 cane.py --bench motor           one short pulse each way
