@@ -1,0 +1,18 @@
+[Unit]
+Description=SightSense cane motor controller: follows the GX10's commands
+After=network-online.target sightsense-spin-test.service
+Wants=network-online.target
+# Only runs while this file exists. It holds the GX10's address.
+ConditionPathExists=/boot/firmware/sightsense.env
+
+[Service]
+User=sightsense
+WorkingDirectory=/home/sightsense/SightSense/pi
+EnvironmentFile=/boot/firmware/sightsense.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /home/sightsense/SightSense/pi/cane.py $SIGHTSENSE_CANE_ARGS
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

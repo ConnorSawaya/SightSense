@@ -9,7 +9,7 @@ gpiozero's mock pins, and is skipped where gpiozero is not installed.
 import unittest
 
 from hardware import (
-    PIN_L_EN, PIN_LPWM, PIN_R_EN, PIN_RPWM, PIN_SWITCH, GpioHardware, SimHardware,
+    PIN_L_EN, PIN_LPWM, PIN_R_EN, PIN_RPWM, PIN_SWITCH, GpioHardware, OpenLoopHardware, SimHardware,
 )
 from steering import (
     CENTER, FAULT_REST_S, LEFT, MAX_DUTY, MAX_RUNS, MOVE_LIMIT_S, RIGHT,
@@ -283,6 +283,81 @@ class Messages(unittest.TestCase):
             with self.subTest(text=text):
                 with self.assertRaises(ValueError):
                     parse_command(text)
+
+
+class Motor:
+    """Stands in for the real motor under OpenLoopHardware, and keeps a record."""
+
+    def __init__(self, clock):
+        self.clock = clock
+        self.runs = []  # (direction, duty, seconds) of each finished run
+        self._on = None
+
+    def drive(self, direction, duty):
+        self._on = (direction, duty, self.clock())
+
+    def off(self):
+        if self._on:
+            direction, duty, since = self._on
+            self.runs.append((direction, duty, self.clock() - since))
+            self._on = None
+
+    def close(self):
+        self.off()
+
+    def pressed(self):
+        raise AssertionError("open loop must not read the limit switches")
+
+
+class OpenLoop(unittest.TestCase):
+    """No limit switches fitted: the position is worked out from run time."""
+
+    def setUp(self):
+        self.now = 0.0
+        self.motor = Motor(lambda: self.now)
+        self.hw = OpenLoopHardware(self.motor, travel_s=0.25, clock=lambda: self.now)
+        self.lines = []
+        self.steering = Steering(self.hw, log=self.lines.append)
+
+    def run_for(self, seconds, cmd=None):
+        end, beat = self.now + seconds, self.now
+        while self.now < end:
+            if cmd and self.now >= beat:
+                self.steering.command(cmd, self.now)
+                beat += BEAT
+            self.steering.tick(self.now)
+            self.now += TICK
+
+    def test_does_not_move_at_start(self):
+        self.run_for(3.0)
+        self.assertEqual(self.motor.runs, [])
+        self.assertEqual(self.steering.position, CENTER)
+
+    def test_left_then_stop_is_one_short_run_each_way(self):
+        self.run_for(1.0)
+        self.run_for(1.0, LEFT)
+        self.run_for(1.0, "STOP")
+        self.assertEqual([r[0] for r in self.motor.runs], [-1, 1])
+        for _, duty, seconds in self.motor.runs:
+            self.assertEqual(duty, MAX_DUTY)
+            self.assertLess(seconds, 0.25)
+        self.assertEqual(self.steering.position, CENTER)
+
+    def test_left_to_right_goes_through_centre(self):
+        self.run_for(1.0)
+        self.run_for(1.0, LEFT)
+        self.run_for(1.5, RIGHT)
+        self.assertEqual([r[0] for r in self.motor.runs], [-1, 1, 1])
+        self.assertEqual(self.steering.position, RIGHT)
+        self.assertTrue(all(seconds <= MOVE_LIMIT_S + TICK for _, _, seconds in self.motor.runs))
+
+    def test_silence_switches_the_motor_off_mid_move(self):
+        self.hw.travel_s = 5.0  # so slow that the move is still going when the commands stop
+        self.run_for(1.0)
+        self.run_for(0.2, RIGHT)
+        self.run_for(1.0)
+        self.assertIsNone(self.motor._on)
+        self.assertTrue(any("no command for 400 ms" in line for line in self.lines))
 
 
 try:

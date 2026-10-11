@@ -35,6 +35,9 @@ Homing with no switch pressed: short pulses left, right, right, left until a swi
 | `spin_test.py` | Bench test: ramps the motor from stopped to full power once |
 | `sightsense-spin-test.service` | Runs the bench test once at start-up |
 | `test_spin.py` | Tests for the bench test |
+| `test_with_gx10.py` | Runs the GX10's real pipeline against the steering rules |
+| `sightsense-cane.service` | Starts the controller when the Pi starts |
+| `sightsense.env.example` | The settings file the service reads |
 
 ## Setup
 
@@ -98,6 +101,54 @@ python3 cane.py --gx10 192.168.8.10
 ```
 
 The address can also come from the `SIGHTSENSE_GX10` environment variable. Add `--swap` if "left" turns the wheel right, and `--duty 0.15` for less power.
+
+## Following the GX10
+
+The GX10's frame service ([`../gx10/ingest/`](../gx10/ingest/)) sends the Pi one command for every frame it processes. The command comes from the obstacle check on depth, steered toward what the navigator wants: an object found by the vision model and YOLO, a route, or straight ahead. The Pi only has to connect:
+
+```bash
+python3 cane.py --gx10 169.233.72.156:8766
+```
+
+That was the GX10's address on the venue Wi-Fi on October 10, and 8766 is the service's default Pi port. Ask whoever started the service which address and port it is on.
+
+When the phone stops sending frames, the service stops sending commands, and the Pi switches the driver off 0.4 seconds later.
+
+What has been run: the service, its fake phone and this controller together on a laptop, with a simulated wheel, the vision model stubbed out and YOLO off. The wheel went centre, left, then back to centre for stop as the fake phone walked at a wall, and the driver went off when the frames stopped. `test_with_gx10.py` repeats that. It has not been run on the cane, or against the service on the GX10.
+
+## No limit switches yet
+
+`--open-loop` is for a cane with no limit switches fitted. The controller works out where the wheel is from how long the motor has run, and reads no switches.
+
+```bash
+python3 cane.py --gx10 169.233.72.156:8766 --open-loop
+```
+
+- Put the wheel at centre by hand before starting. The controller assumes it is there.
+- `--travel 0.25` is the time from centre to one side, in seconds. Change it until the wheel turns as far as you want. It cannot be set above 0.35.
+- Nothing checks where the wheel really is, so it drifts. Re-centre it by hand now and then.
+- The 25% power cap, the 0.4 second limit and the 0.4 second silence rule all still apply.
+- Tested on a simulated motor only.
+
+## Starting by itself
+
+`sightsense-cane.service` starts the controller when the Pi starts, and starts it again if it stops. It reads the GX10's address from a file on the SD card's boot partition, so the address can be changed from any computer.
+
+```bash
+sudo install -m 644 sightsense-cane.service /etc/systemd/system/
+sudo cp sightsense.env.example /boot/firmware/sightsense.env
+sudo systemctl enable --now sightsense-cane.service
+```
+
+- Edit `/boot/firmware/sightsense.env` to set the address and any options. Delete it and the controller no longer starts by itself.
+- The wheel moves as soon as the controller starts. Do not enable this until the cane is ready for that.
+- Not yet installed on the team's Pi.
+
+Watch what it is doing:
+
+```bash
+journalctl -u sightsense-cane.service -f
+```
 
 ## Testing without the GX10
 

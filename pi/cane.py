@@ -3,6 +3,7 @@
     python3 cane.py --gx10 192.168.8.10     follow the GX10
     python3 cane.py --typed                 type commands instead
     python3 cane.py --typed --sim           same, with a simulated wheel (any computer)
+    python3 cane.py --gx10 ADDRESS --open-loop   no limit switches fitted: positions by timing
     python3 cane.py --bench switches        print each switch as it is pressed
     python3 cane.py --bench motor           one short pulse each way
 
@@ -159,9 +160,14 @@ def main():
     parser.add_argument("--sim", action="store_true", help="simulated wheel, no GPIO")
     parser.add_argument("--bench", choices=("motor", "switches"), help="wiring check")
     parser.add_argument("--swap", action="store_true", help="reverse the motor direction")
+    parser.add_argument("--open-loop", action="store_true",
+                        help="no limit switches: work out the position from run time; centre the wheel by hand first")
+    parser.add_argument("--travel", type=float, default=0.25,
+                        help="with --open-loop: seconds from centre to one side")
     parser.add_argument("--duty", type=float, default=MAX_DUTY,
                         help=f"motor power, at most {MAX_DUTY}")
     args = parser.parse_args()
+    args.gx10 = (args.gx10 or "").strip()  # an address typed into a file on Windows ends in a stray character
     if not (args.bench or args.typed or args.gx10):
         parser.error("give --gx10 ADDRESS, --typed or --bench")
     duty = max(0.0, min(args.duty, MAX_DUTY))
@@ -170,8 +176,11 @@ def main():
         from hardware import SimHardware
         hw = SimHardware()
     else:
-        from hardware import GpioHardware
+        from hardware import GpioHardware, OpenLoopHardware
         hw = GpioHardware(swap=args.swap)
+        if args.open_loop and not args.bench:
+            hw = OpenLoopHardware(hw, travel_s=min(max(args.travel, 0.05), 0.35))
+            log("open loop: no limit switches are read. The wheel must be at centre now.")
 
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     if args.bench:

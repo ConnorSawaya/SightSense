@@ -1,6 +1,7 @@
-"""The motor and limit switches: the real ones, and a simulated wheel.
+"""The motor and limit switches: the real ones, a simulated wheel, and the
+real motor with worked-out positions for a cane with no switches fitted.
 
-Both offer drive(direction, duty), off(), pressed() and close().
+All offer drive(direction, duty), off(), pressed() and close().
 direction is -1 for left and +1 for right. Wiring is in ../hardware/wiring.md.
 """
 
@@ -107,3 +108,30 @@ class SimHardware:
             speed = self._direction * (self.duty / MAX_DUTY) / self.travel_s
             self.x = max(-1.0, min(1.0, self.x + speed * (now - self._then)))
         self._then = now
+
+
+class OpenLoopHardware(SimHardware):
+    """The real motor on a cane with no limit switches fitted.
+
+    Where the wheel is gets worked out from how long the motor has run, using
+    the same sums as the simulated wheel. Put the wheel at centre by hand
+    before starting. travel_s is how long the motor takes from centre to one
+    side at the capped power. Nothing checks where the wheel really is, so it
+    drifts: re-centre it by hand now and then.
+    """
+
+    def __init__(self, motor, travel_s=0.25, clock=time.monotonic):
+        super().__init__(x=0.0, travel_s=travel_s, clock=clock)
+        self._motor = motor
+
+    def drive(self, direction, duty):
+        super().drive(direction, duty)
+        self._motor.drive(direction, duty)
+
+    def off(self):
+        super().off()
+        self._motor.off()
+
+    def close(self):
+        super().close()
+        self._motor.close()
