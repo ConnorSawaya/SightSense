@@ -30,7 +30,8 @@ from websockets.exceptions import ConnectionClosed
 
 import vlm
 from navigator import Navigator, decode
-from planner.obstacle import HEADINGS, USABLE_M, Smoother, check
+from planner.obstacle import HEADINGS, Smoother, check
+from planner.state import StateSmoother
 
 from .upright import box_back, rotate_jpeg, turn_for
 
@@ -70,6 +71,7 @@ class Pipeline:
             self.det = Detector()
             print("yolo:", self.det.using, flush=True)
         self.smoother = Smoother()
+        self.states = StateSmoother()
         self.speech = deque()
         self.last_state = None
         self.last_frame = -1e9
@@ -80,7 +82,7 @@ class Pipeline:
         f = decode(raw)
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
-            self.smoother, self.last_state = Smoother(), None
+            self.smoother, self.states, self.last_state = Smoother(), StateSmoother(), None
         self.last_frame = now
         self.vlm.turn = turn = turn_for(f.pose)
         depth = np.frombuffer(f.depth_mm, dtype=np.uint16).reshape(f.depth_h, f.depth_w)
@@ -101,15 +103,7 @@ class Pipeline:
         if g.stop:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
 
-        ahead = c.clearance.get(0)
-        if cmd == "STOP":
-            state = "STOP"
-        elif ahead is None:
-            state = "UNCERTAIN"
-        elif cmd != "CENTER" or ahead < USABLE_M:
-            state = "CAUTION"
-        else:
-            state = "CLEAR"
+        state = self.states.update(cmd, c.clearance.get(0))  # held steady: see planner/state.py
 
         if g.speech:
             self.speech.append(g.speech)

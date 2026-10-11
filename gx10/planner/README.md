@@ -7,12 +7,14 @@ The obstacle check from AGENTS.md, from LiDAR depth only, with numpy. The vision
 - **Unknown is blocked:** a heading whose wedge of pixels has under 60% good readings (glass, missing depth) has no clearance. A wedge with over 20% of readings nearer than 0.3 m is blocked at 0 m (found by the fake walk: without it, a wall 0.13 m away read as clear).
 - Usable from 2.5 m; cost `|heading − desired| + 0.5 · |heading − last|`; nothing usable → `STOP`.
 - Smoothing: a change needs 3 agreeing frames, `STOP` 2. `STOP` for 5 s → "Path blocked. Turn slowly to scan."
+- Phone state (`state.py`): STOP follows the command at once both ways (leaving STOP goes to CAUTION first). CAUTION needs 2 frames; back to CLEAR needs the way ahead past 2.8 m (2.5 m + 0.3 m) for 5 frames. Before this, holding the phone still about 2.5 m from something flickered CLEAR/CAUTION and replayed the caution earcon (iPhone test, October 10).
 - Headings are measured in the floor plane from where the camera points (positive right), so the phone's direction in its mount does not matter.
 
 All numbers are starting values at the top of `obstacle.py`, to tune on real recordings.
 
 ```bash
 ../../venv-yolo/bin/python -m unittest planner.test_obstacle   # ray-cast scenes (fake_scene.py)
+python3 -m unittest planner.test_state                          # state hold, no numpy scenes needed
 ```
 
 Tested on ray-cast scenes: open floor, a wall 1.5 m ahead, a box to go round, glass, a wall nearer than 0.3 m, a doormat, a phone turned sideways. On one real phone frame (the phone 0.23 m from a laptop) it gave `STOP` in 14.6 ms. Not yet tested on a real walk.
