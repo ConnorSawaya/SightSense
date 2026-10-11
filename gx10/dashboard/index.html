@@ -247,7 +247,7 @@
     <div class="decision" id="cmd">-</div>
     <div class="state" id="state">waiting for frames</div>
     <div class="bars" id="bars"></div>
-    <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
+    <div class="dim">Clearance per heading, metres (the longest = clear as far as it can see, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
   </section>
 
   <section class="card span-4 half" style="--i:3">
@@ -350,6 +350,8 @@ $("grid").addEventListener("pointermove", (e) => {
 const barEls = {};
 function showBars(f) {
   const bars = $("bars");
+  // "Clear to range" is the obstacle check's FAR_M (4.5 m, or 10 m with the longer range): the tallest bar is that
+  const far = Math.max(4.5, ...Object.values(f.clearance || {}).filter((v) => v !== null));
   for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
     let b = barEls[h];
     if (!b) {
@@ -359,7 +361,7 @@ function showBars(f) {
       b.append(b.fill, b.lab); bars.append(b);
     }
     b.classList.toggle("chosen", String(f.best) === h);
-    b.fill.style.height = (v === null ? 100 : Math.max(4, v / 4.5 * 100)) + "%";
+    b.fill.style.height = (v === null ? 100 : Math.max(4, Math.min(v, far) / far * 100)) + "%";
     b.fill.style.setProperty("--c", color(v));
     b.lab.textContent = (h > 0 ? "+" : "") + h + "°\n" + (v === null ? "?" : v.toFixed(1));
   }
