@@ -43,9 +43,29 @@ PROMPTS = {
     # Asked before "find": the box prompt alone always returns a box, even for things
     # that are not there (it boxed an exit sign as an apple). See README.md.
     "present": "Is there a {name} in this image? Reply only yes or no.",
+    # Voice that navigator/commands.py could not place. Text only, no picture. Same command names.
+    "interpret": (
+        'A blind person said this to their smart guide cane: "{text}"\n'
+        "Pick the one command they mean:\n"
+        '- object: go to or find a thing nearby (target: the thing, like "door" or "red cup")\n'
+        "- place: go to a named place, shop or address (target: the place)\n"
+        "- describe: a general request to describe what is around or ahead, nothing specific asked\n"
+        "- read: read signs or text\n"
+        "- status: how the trip is going (am I going the right way, how far is it)\n"
+        "- path: whether the way ahead is clear or safe to walk\n"
+        "- ask: a specific question about what is in front of them, such as a colour, a count "
+        "or whether something is there\n"
+        "- yes: agreeing, or saying go ahead\n"
+        "- no: refusing\n"
+        "- cancel: stop guiding\n"
+        "- unknown: none of these\n"
+        'Reply only as JSON: {{"command": "...", "target": "..." or null}}'
+    ),
     "ask": 'Answer this question about the image in under 20 words: "{question}" '
     "Do not estimate distances. Do not say whether it is safe to walk or whether the way is clear.",
 }
+
+INTENTS = ("object", "place", "describe", "read", "status", "path", "ask", "yes", "no", "cancel", "unknown")
 
 # A distance in an answer is thrown away: distances come from the LiDAR only
 _DISTANCE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:m|cm|metres?|meters?|feet|foot|ft|inch(?:es)?|yards?|steps?|paces?)\b", re.I)
@@ -116,6 +136,25 @@ def ask(jpeg: bytes, question: str) -> Answer:
     if not kept:
         return _fail(a, "empty reply" if not text else "reply only gave a distance")
     a.text = " ".join(" ".join(kept).split()[:30])
+    return a
+
+
+def interpret(text: str) -> Answer:
+    """Which command a sentence the rules could not place asks for. Text only, no picture.
+
+    label is one of INTENTS; text is the target ("" if none). The model only picks a
+    command: it never steers, and "path" is still answered from depth.
+    """
+    text = re.sub(r'["\n]', " ", text or "").strip()[:200]
+    a = _one(None, PROMPTS["interpret"].format(text=text))
+    if not a.ok:
+        return a
+    obj = _first_json(a.raw)
+    if not isinstance(obj, dict) or obj.get("command") not in INTENTS:
+        return _fail(a, "unparseable interpret reply")
+    target = obj.get("target")
+    a.label = obj["command"]
+    a.text = re.sub(r"\s+", " ", target).strip(" .!?,")[:80] if isinstance(target, str) else ""
     return a
 
 
@@ -297,7 +336,7 @@ def _ask(jpeg: bytes, prompt: str, deadline: float) -> Answer:
                 "think": False,  # reasoning adds seconds
                 "keep_alive": -1,
                 "options": {"temperature": 0, "num_predict": 200, "num_ctx": CTX},
-                "messages": [{"role": "user", "content": prompt, "images": [base64.b64encode(jpeg).decode()]}],
+                "messages": [_message(prompt, jpeg)],
             },
             deadline - t0,
         )
@@ -310,6 +349,13 @@ def _ask(jpeg: bytes, prompt: str, deadline: float) -> Answer:
         reason = getattr(e, "reason", e)
         kind = "timeout" if "timed out" in str(reason) else "error"
         return Answer(False, COULDNT_TELL, model=model, seconds=time.monotonic() - t0, error=f"{kind}: {reason}")
+
+
+def _message(prompt: str, jpeg: Optional[bytes]) -> dict:
+    m = {"role": "user", "content": prompt}
+    if jpeg:
+        m["images"] = [base64.b64encode(jpeg).decode()]
+    return m
 
 
 def _post(path: str, body: dict, timeout_s: float) -> dict:
