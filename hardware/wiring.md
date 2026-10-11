@@ -47,8 +47,22 @@ GPIO numbers are BCM numbers. The header pin is the position on the 40-pin heade
 | GPIO13 | 33 | Centre limit switch |
 | GND | 39 | The other leg of all three switches |
 
-- Follow the names printed beside the IBT-2's pins. Leave R_IS and L_IS empty.
-- VCC goes to the Pi's 3.3 V pin, not 5 V. On 3.3 V the board reads the Pi's 3.3 V signals reliably.
+- Leave R_IS and L_IS empty.
+- VCC goes to the Pi's 3.3 V pin, not 5 V. The board's user guide lists VCC as +5 V, for a 5 V Arduino, and its control inputs as 3.3 to 5 V. Its buffer chip is a 74HC244, which only reads a 3.3 V signal within its guaranteed range when the chip itself runs on 3.3 V. This has not been tried on the team's board yet.
+
+### The IBT-2's pins
+
+Seen from above, with the screw terminals along the top edge and the 2 × 4 header at the bottom right:
+
+| | Left | | | Right |
+| --- | --- | --- | --- | --- |
+| Top row | VCC | R_IS | R_EN | RPWM |
+| Bottom row | GND | L_IS | L_EN | LPWM |
+
+- The board prints the same eight names in a table to the left of the header, in the same rows and the same order. "7" and "8" are printed at the header's left end, "1" and "2" at its right end.
+- Screw terminals, left to right starting beside the capacitor: B−, B+, M+, M−. The names are printed on the underside, next to the solder joints.
+
+Checked against the [Handson Technology user guide](https://cdn.hackaday.io/files/1936598285506656/BTS7960%20Motor%20Driver.pdf) (pin table, pin photo and mechanical drawing) and a photo of the team's own board. The Pi's header pins were checked against gpiozero's board data for the Pi 5.
 
 ### Finding the pins
 
