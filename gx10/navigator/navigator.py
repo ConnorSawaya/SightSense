@@ -19,6 +19,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Callable, Optional
 
 from . import commands
@@ -41,16 +42,28 @@ class Guidance:
     distance_m: Optional[float] = None
 
 
+HELP = ("I can tell you what is in front of you, read signs, answer a question about what the camera sees, "
+        "guide you to an object, or take you to a place. Say stop to cancel.")
+
+
+def time_words(now) -> str:
+    """The time and date as a sentence, from the GX10's own clock."""
+    hour = now.hour % 12 or 12
+    return f"It's {hour}:{now.minute:02d} {'AM' if now.hour < 12 else 'PM'}, {now.strftime('%A, %B')} {now.day}."
+
+
 class Navigator:
-    def __init__(self, vlm, clock: Callable[[], float] = time.monotonic):
+    def __init__(self, vlm, clock: Callable[[], float] = time.monotonic, now=datetime.now):
         self._vlm = vlm
         self._clock = clock
+        self._now = now  # wall clock, for "what time is it"
         self._lock = threading.Lock()
         self.objects = ObjectGuide(vlm.find, clock)
         self.route: Optional[RouteFollower] = None
         self.mode = "idle"
         self._route_confirm = None  # route waiting for "yes"
         self._place = None
+        self._replaced = None  # a place whose lookup was still out when the user asked for another
         self._speech = deque()
         self._lookup = None
         self._ask = None  # ("describe" | "read" | "ask", question), waiting for the next frame
@@ -59,6 +72,8 @@ class Navigator:
         self.heard = None  # last voice command, for the dashboard: {"text", "kind", "target", "by"}
         self._last_obj = None  # the object guide's last step, for "am I going the right way"
         self.path_asked = False  # "is the path clear": the frame service answers from depth
+        self.repeat_asked = False  # "say that again": the frame service knows the last sentence sent
+        self.sound_check_asked = False  # "sound check": the frame service sends each tone with its name
         self._last_route = -1e9
         self._route_step = None
 
@@ -89,6 +104,7 @@ class Navigator:
             self._say(self.objects.start(cmd.target))
         elif cmd.kind == "place":
             self.objects.cancel()
+            self._replaced = self._place if self.route is None and self._route_confirm is None else None
             self._stop_route()
             self.mode = "route"
             self._place = cmd.target
@@ -124,16 +140,32 @@ class Navigator:
             self._say(self._status())
         elif cmd.kind == "path":
             self.path_asked = True
+        elif cmd.kind == "help":
+            self._say(HELP)
+        elif cmd.kind == "repeat":
+            self.repeat_asked = True
+        elif cmd.kind == "soundcheck":
+            self.sound_check_asked = True
+        elif cmd.kind == "time":
+            self._say(time_words(self._now()))
         else:
             self._say("Sorry, I didn't catch that. You can say: what's in front of me, read the sign, "
                       "or guide me to the apple.")
 
     def on_route(self, route: dict):
         with self._lock:
+            if self.route is None and self._place is None:
+                return  # no lookup is waiting: it was cancelled, or the user asked for something else
             try:
                 follower = RouteFollower(route, self._clock)
             except (ValueError, KeyError, TypeError):
+                if self.route is None and self._replaced and route.get("dest") == self._replaced != self._place:
+                    self._replaced = None
+                    return  # the earlier lookup failing; the newer one is still out
                 self._say("I couldn't find a walking route.")
+                if self.route is None:  # a first lookup, not a reroute: nothing is left to wait for
+                    self._stop_route()
+                    self.mode = "idle"
                 return
             if self.route is not None:  # a reroute while already walking: switch straight over
                 self.route = follower
@@ -213,6 +245,18 @@ class Navigator:
                   f"({getattr(a, 'seconds', 0):.2f} s)", flush=True)
             self._apply(cmd)
 
+    def take_sound_check(self) -> bool:
+        """True once after "sound check"; the frame service sends the tones."""
+        with self._lock:
+            asked, self.sound_check_asked = self.sound_check_asked, False
+            return asked
+
+    def take_repeat(self) -> bool:
+        """True once after "say that again"; the frame service repeats the last sentence it sent."""
+        with self._lock:
+            asked, self.repeat_asked = self.repeat_asked, False
+            return asked
+
     def take_path_question(self) -> bool:
         """True once after "is the path clear?"; the frame service answers it from depth."""
         with self._lock:
@@ -246,6 +290,10 @@ class Navigator:
                 return f"Starting the route to {self.route.dest}."
             if s.hold_center and s.turn:
                 return f"Not yet. Turn {s.turn} until I stop saying turn."
+            if s.off_route_m is None:  # the last update had no usable GPS fix
+                return "I can't tell. GPS is weak, so route guidance is paused."
+            if s.desired_bearing is None and not s.hold_center:  # GPS, but no compass heading
+                return "I can't tell which way you are facing. There is no compass heading."
             if s.off_route_m is not None and s.off_route_m > 15:
                 return f"You are about {round(s.off_route_m)} metres off the route. I'll reroute if it continues."
             left = f" About {round(s.remaining_m / 10) * 10:g} metres to go." if s.remaining_m else ""

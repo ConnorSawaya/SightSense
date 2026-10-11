@@ -50,6 +50,10 @@ g.mode, g.state, g.distance_m   # for the dashboard
 | "yes" / "no" | Answer "Say yes to go." |
 | "stop", "cancel", "never mind" | Stop guiding |
 | Anything the rules cannot place, and requests worded as questions ("could you point me toward the exit") | `vlm.interpret` (text only, about 0.4 s) picks one of the commands above: "bring me over toward the red cup" → object, "I need to get to the Starbucks on Main Street" → place, "hold on stop for a second" → cancel. It only picks a command; it never steers, and "path" is still answered from depth |
+| "help", "what can you do", "what can I ask you", "who are you" | Says what it can do, at once, without the model |
+| "say that again", "repeat that", "what did you say" | The frame service repeats the last sentence it sent to the phone |
+| "sound check", "test the sound" | The frame service sends each tone the phone knows with its name spoken, one every 2.5 s: a way to check the phone's tones and speech. Also works typed into the dashboard's text box |
+| "what time is it", "what day is it" | The time and date from the GX10's clock |
 | Anything else | "Sorry, I didn't catch that. You can say: what's in front of me, read the sign, or guide me to the apple." |
 
 "Am I going the right way" got "didn't catch that" three times in the first iPhone test (October 10); that is why status, path and free questions were added.
@@ -61,7 +65,7 @@ Object or place: a known room object ("door", "red cup") is an object; a place w
 1. Look for it: `find()` every 1.5 s. "I can't see the apple yet. Turn slowly to scan." every 10 s; give up after 30 s.
 2. Found: distance = median depth in the middle half of the box. Says "Apple, 2.5 metres, slightly left. Say yes to go." No steering until "yes".
 3. Guiding: the object is stored as a point in the ARKit world, so its bearing is recomputed from the pose every frame, even when it is out of view. `find()` runs again every 2 s to refresh it.
-4. Under 0.8 m (floor distance): `stop` and "The apple is within reach."
+4. Under 1.2 m (floor distance): `stop` and "The apple is within reach." It was 0.8 m, the same as the obstacle stop, so an apple on a table was never reached: the edge of the table stopped the cane first.
 5. Tracking reset (`tracking` is `notAvailable` or `relocalizing`, or the camera jumps more than 0.5 m between frames): the stored point is dropped. Not seen again for 10 s: "I lost the apple."
 
 Bearings are worked out in the room's floor plane from the pose, so "left" is the user's left however the phone sits in its mount and however far the cane is tilted. The obstacle check's headings must use the same convention (0 ahead, positive right, as the user sees it).

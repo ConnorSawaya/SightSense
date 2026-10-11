@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>SightSense sends the camera picture and LiDAR depth to the GX10 to find obstacles and objects.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>SightSense sends camera frames to the GX10 on the team's local network.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SightSense uses your location and heading to follow walking routes.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SightSense listens while you hold the talk button so you can say where to go.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SightSense turns your spoken command into text on the phone.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- ws:// to the GX10 by its Tailscale address (100.x), which iOS does not count as local.
+		     NSAllowsLocalNetworking must not be set alongside, or iOS ignores this key. -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

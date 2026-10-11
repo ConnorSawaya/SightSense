@@ -16,14 +16,22 @@ import walking_stick as ws
 T = ws.PHONE_TILT_DEG
 
 
-def mesh(shape):
+def triangles(shape, tolerance=0.08, angular=0.3):
+    """One shape or a list of shapes as an (n, 3, 3) array of triangle corners."""
     shapes = shape if isinstance(shape, (list, tuple)) else [shape]
     tris = []
     for s in shapes:
-        verts, faces = s.tessellate(0.08, 0.3)
+        verts, faces = s.tessellate(tolerance, angular)
         v = np.array([(p.X, p.Y, p.Z) for p in verts], dtype=np.float32)
         tris.append(v[np.array(faces)])
-    tris = np.concatenate(tris)
+    return np.concatenate(tris)
+
+
+def mesh(shape):
+    return encode(triangles(shape))
+
+
+def encode(tris):
     n = np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0])
     n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
     pos = tris.reshape(-1, 3).astype(np.float32)
@@ -36,7 +44,9 @@ def build():
     at = ws.cradle_location(T)
     scene = [
         ("Handle", (0.20, 0.47, 0.80), True, parts["stick_handle"]),
+        ("Handle plug, glued in the tube", (0.86, 0.30, 0.55), True, parts["socket_plug"]),
         ("Camera collar", (0.95, 0.55, 0.15), True, ws.collar_location() * parts["camera_collar"]),
+        ("Thumb button, 7 mm switch (reference)", (0.80, 0.25, 0.30), True, ws.ref_button()),
         ("Phone cradle", (0.25, 0.68, 0.45), True, at * parts["phone_cradle"]),
         ("Screws and nuts (reference)", (0.82, 0.80, 0.72), True, ws.ref_hardware(T)),
         ("Pole (reference)", (0.55, 0.56, 0.60), True, ws.ref_stick()),

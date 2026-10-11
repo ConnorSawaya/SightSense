@@ -41,7 +41,8 @@ class Command:
 
 
 def parse(text: str) -> Command:
-    raw = re.sub(r"\s+", " ", text or "").strip()
+    # the phone's speech recognition writes what's and let's with a curly apostrophe
+    raw = re.sub(r"\s+", " ", (text or "").replace("\u2019", "'").replace("\u2018", "'")).strip()
     t = raw.lower().strip(" .!?,")
     t = re.sub(r"^(?:hey|ok|okay|please|cane|sightsense)[, ]+", "", t).strip()
     t = re.sub(r"[, ]+please$", "", t)
@@ -52,6 +53,18 @@ def parse(text: str) -> Command:
         return Command("no")
     if re.fullmatch(r"(stop|cancel|never ?mind|forget it|quit|end|stop guiding|cancel (?:that|it|guidance|navigation))", t):
         return Command("cancel")
+
+    # A check of the phone's tones and speech
+    if re.fullmatch(r"(?:sound|audio|speech|voice|speaker) (?:check|test)|(?:test|check) (?:the |my )?(?:sounds?|audio|speech|voice|speaker|tones?)", t):
+        return Command("soundcheck")
+    # About the assistant itself: answered at once, without the model
+    if re.fullmatch(r"help(?: me)?|what can (?:you|i) (?:do|say|ask)(?: you)?|what do you do|(?:who|what) are you"
+                    r"|how do (?:you|i) (?:work|use (?:you|this|it))|commands|instructions", t):
+        return Command("help")
+    if re.fullmatch(r"repeat(?: that| it)?|say (?:that|it) again|again|what did you say|pardon|come again|one more time", t):
+        return Command("repeat")
+    if re.search(r"\bwhat(?:'s| is) the time\b|\bwhat time is it\b|\bwhat(?:'s| is) (?:the|today's) date\b|\bwhat day is it\b", t):
+        return Command("time")
 
     # Is the way clear? Answered from the LiDAR obstacle check, never by the model (AGENTS.md rule 4)
     if re.search(r"\b(?:is|are) (?:the |my )?(?:path|way|road|route ahead|coast)\b.*\b(?:clear|safe|free|blocked|open|ok)\b"

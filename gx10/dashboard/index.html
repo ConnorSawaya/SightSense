@@ -84,7 +84,7 @@
   <section>
     <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
     <div class="explain" id="explain"></div>
-    <p class="dim">Left: phone picture, upright, with YOLO boxes (amber) and hazards (violet). Right: what the LiDAR obstacle check sees. Green floor; obstacles red under 1.2 m, amber under 2.5 m, yellow beyond; magenta too close to measure; dark blue no reading (both count as blocked); grey is beyond range or above the cane. Lines split the seven headings, each labelled with its clearance in metres. The side the wheel turns to, or the side you hold in manual steering, stays bright with its obstacles outlined.</p>
+    <p class="dim">Left: phone picture, upright, with YOLO boxes (amber) and hazards (violet). Right: what the LiDAR obstacle check sees. Green floor; obstacles red under 0.8 m, amber under 1.5 m (what a heading needs to be usable), yellow beyond; magenta too close to measure; dark blue no reading (both count as blocked); grey is beyond range or above the cane. Lines split the seven headings, each labelled with its clearance in metres. The side the wheel turns to, or the side you hold in manual steering, stays bright with its obstacles outlined.</p>
     <div class="panel"><h2>Objects (YOLO, distance from LiDAR)</h2><ul class="list" id="objects"><li class="dim">none</li></ul></div>
     <div class="panel"><h2>Conversation</h2><ul class="list" id="log"><li class="dim">nothing yet</li></ul></div>
   </section>
@@ -98,7 +98,7 @@
       <div class="decision" id="cmd">-</div>
       <div class="state" id="state">waiting for frames</div>
       <div class="bars" id="bars"></div>
-      <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 2.5 m.</div>
+      <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
     </div>
     <div class="panel manual-off" id="manualPanel">
       <h2>Manual steering (motor on the Pi)</h2>
@@ -158,7 +158,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let lastSpeech = "", lastStatus = 0;
-function color(v) { return v === null ? "var(--unknown)" : v >= 2.5 ? "var(--clear)" : v >= 1.2 ? "var(--caution)" : "var(--stop)"; }
+function color(v) { return v === null ? "var(--unknown)" : v >= 1.5 ? "var(--clear)" : v >= 0.8 ? "var(--caution)" : "var(--stop)"; }  // planner/obstacle.py: USABLE_M, STOP_AHEAD_M
 function show(s) {
   lastStatus = Date.now();
   try {
@@ -182,7 +182,9 @@ function show(s) {
     if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
     const st = s.phone ? (f.state || "NO_DATA") : "";
     $("guidance").className = "guidance " + st;
-    $("gstate").textContent = st ? st.replace("_", " ") : "STANDBY"; $("gstate").className = "big " + st;
+    // The direction the phone is told (planner/cue.py); the colour is still the state.
+    const words = {LEFT: "\u2190 BEAR LEFT", STRAIGHT: "\u2191 STRAIGHT", RIGHT: "BEAR RIGHT \u2192", STOP: "STOP", UNKNOWN: "CAN'T SEE AHEAD"};
+    $("gstate").textContent = st ? (words[f.direction] || st.replace("_", " ")) : "STANDBY"; $("gstate").className = "big " + st;
     $("gline").textContent = s.phone ? (s.said || "") : "Waiting for the phone";
     if (s.said) $("speech").textContent = "Says: " + s.said;
     $("ahead").textContent = s.centre_m != null ? "Ahead (LiDAR, centre): " + s.centre_m.toFixed(2) + " m" : "";
@@ -210,7 +212,8 @@ function show(s) {
       const tt = document.createElement("span"); tt.className = "dim"; tt.textContent = t;
       li.append(w, x, tt); return li;
     }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "nothing yet" })]));
-    $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "");
+    $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "")
+      + (f.clearance ? " · floor: " + (f.cam_h != null ? f.cam_h.toFixed(2) + " m below the phone" : "not seen") : "");
     $("fps").textContent = s.fps + " / s";
     $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";
     $("rtt").textContent = s.rtt_ms !== null ? s.rtt_ms.toFixed(0) + " ms" : "-";

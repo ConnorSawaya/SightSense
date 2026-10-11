@@ -4,9 +4,9 @@ Drawn from the maps planner/obstacle.py returns with want_maps=True. For people
 watching only; the wheel is decided in planner/obstacle.py, not here.
 
     green     floor
-    red       obstacle nearer than 1.2 m (the STOP distance straight ahead)
-    amber     obstacle 1.2-2.5 m (a heading needs 2.5 m to be usable)
-    yellow    obstacle beyond 2.5 m
+    red       obstacle nearer than STOP_AHEAD_M (0.8 m)
+    amber     obstacle up to USABLE_M (1.5 m; a heading needs this much to be usable)
+    yellow    obstacle farther than that
     magenta   nearer than 0.3 m: too close to measure, counted as blocked
     dark blue no good reading: unknown, counted as blocked
     grey      good reading beyond range, or above the cane (darker = farther)

@@ -3,6 +3,7 @@
 import math
 import time
 import unittest
+from datetime import datetime
 
 from . import fake
 from .commands import parse
@@ -119,8 +120,17 @@ class GuideToObject(unittest.TestCase):
             self.assertAlmostEqual(s.desired_bearing, math.degrees(heading), delta=2)
         self.assertEqual(steps[-1].state, ARRIVED)
         self.assertTrue(steps[-1].stop)
-        self.assertLess(steps[-1].distance_m, 0.8)
+        self.assertLess(steps[-1].distance_m, 1.2)
+        self.assertGreater(steps[-1].distance_m, 0.8)  # before the obstacle check would stop at the object itself
         self.assertIn("The apple is within reach.", said(steps))
+
+    def test_reach_is_beyond_the_obstacle_stop(self):
+        # An object on a table sits behind the edge of the table. If reach were not the larger,
+        # the obstacle stop would always come first and "within reach" would never be said.
+        from planner.obstacle import STOP_AHEAD_M
+
+        from .object_guide import REACH_M
+        self.assertGreaterEqual(REACH_M, STOP_AHEAD_M + 0.3)
 
     def test_guidance_follows_turns(self):
         self.find_and_confirm(fake.pose())
@@ -206,6 +216,10 @@ class Commands(unittest.TestCase):
             "where is the exit": ("object", "exit"),
             "find a chair": ("object", "chair"),
             "what's in front of me": ("describe", None),
+            # the phone's speech recognition writes contractions with a curly apostrophe
+            "What\u2019s in front of me": ("describe", None),
+            "Where\u2019s the door": ("object", "door"),
+            "Let\u2019s go": ("yes", None),
             "describe the scene": ("describe", None),
             "read the sign": ("read", None),
             "what does it say": ("read", None),
@@ -227,6 +241,14 @@ class Commands(unittest.TestCase):
             "is there a chair here?": ("ask", "is there a chair here?"),
             "What color is the door": ("ask", "What color is the door"),
             "how many people are there": ("ask", "how many people are there"),
+            "help": ("help", None),
+            "what can you do": ("help", None),
+            "What can I ask you?": ("help", None),
+            "help me to the door": ("object", "door"),
+            "say that again": ("repeat", None),
+            "sound check": ("soundcheck", None),
+            "test the sound": ("soundcheck", None),
+            "what time is it": ("time", None),
             "banana bread recipe": ("unknown", None),
             "": ("unknown", None),
         }
@@ -285,6 +307,17 @@ class Route(unittest.TestCase):
         s = self.r.update(37.0, -122.0, 30.0, 0.0)
         self.assertIsNone(s.desired_bearing)
         self.assertEqual(s.speech, "GPS is weak. Route guidance paused.")
+
+    def test_no_compass_heading_pauses_and_says_so_once(self):
+        s = self.r.update(37.0, -122.0, 5.0, None)
+        self.assertIsNone(s.desired_bearing)
+        self.assertEqual(s.speech, "No compass heading. Route guidance paused.")
+        self.assertIsNone(self.r.update(37.0, -122.0, 5.0, None).speech)
+
+    def test_no_compass_heading_is_still_said_after_another_sentence(self):
+        r = RouteFollower(dict(ROUTE, steps=[{"lat": 37.0, "lon": -122.0, "text": "Head north"}]), self.clock)
+        self.assertEqual(r.update(37.0, -122.0, 5.0, None).speech, "Head north")
+        self.assertEqual(r.update(37.0, -122.0, 5.0, None).speech, "No compass heading. Route guidance paused.")
 
     def test_arrives(self):
         s = self.r.update(37.0019, -122.0, 5.0, 0.0)
@@ -376,6 +409,57 @@ class WholeNavigator(unittest.TestCase):
         self.assertEqual(self.say_now("am I going the right way", gps(0.0)), "Yes, you're on the route to Safeway. About 220 metres to go.")
         run(self.nav, self.clock, gps(120.0), 1.5)
         self.assertEqual(self.say_now("am I going the right way", gps(120.0)), "Not yet. Turn left until I stop saying turn.")
+
+    def test_status_route_without_gps_or_compass(self):
+        self.nav.on_voice("take me to Safeway")
+        self.nav.on_route(ROUTE)
+        self.nav.on_voice("yes")
+        weak = lambda: fake.frame(fake.pose(), lat=37.0, lon=-122.0, gps_acc_m=40.0, heading_deg=0.0)
+        run(self.nav, self.clock, weak, 1.5)
+        self.assertEqual(self.say_now("am I going the right way", weak), "I can't tell. GPS is weak, so route guidance is paused.")
+        no_compass = lambda: fake.frame(fake.pose(), lat=37.0, lon=-122.0, gps_acc_m=5.0, heading_deg=None)
+        run(self.nav, self.clock, no_compass, 1.5)
+        self.assertEqual(self.say_now("am I going the right way", no_compass),
+                         "I can't tell which way you are facing. There is no compass heading.")
+
+    def test_lookup_that_finds_nothing_ends_the_lookup(self):
+        self.nav.on_voice("take me to Safeway")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.2)
+        self.nav.on_route({"dest": "Safeway", "polyline": []})  # what the phone sends when Apple Maps finds nothing
+        steps = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.2)
+        self.assertEqual(said(steps), ["I couldn't find a walking route."])
+        self.assertEqual(steps[-1].mode, "idle")
+        self.assertEqual(self.say_now("am I going the right way"), "No destination yet. Say guide me to the apple, or take me to a place.")
+
+    def test_route_that_arrives_after_stop_is_ignored(self):
+        self.nav.on_voice("take me to Safeway")
+        self.nav.on_voice("stop")
+        run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.3)
+        self.nav.on_route(ROUTE)
+        steps = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.3)
+        self.assertEqual(said(steps), [])
+        self.assertEqual(steps[-1].mode, "idle")
+
+    def test_an_earlier_lookup_failing_does_not_end_the_newer_one(self):
+        self.nav.on_voice("take me to Safeway")
+        self.nav.on_voice("take me to Target")
+        self.nav.on_route({"dest": "Safeway", "polyline": []})  # the answer to the first, which found nothing
+        self.nav.on_route(dict(ROUTE, dest="Target"))
+        steps = run(self.nav, self.clock, lambda: fake.frame(fake.pose()), 0.5)
+        self.assertIn("Target, 220 metres, about 3 minutes. Say yes to go.", said(steps))
+        self.assertNotIn("I couldn't find a walking route.", said(steps))
+
+    def test_help_and_the_time(self):
+        self.assertTrue(self.say_now("what can you do").startswith("I can tell you what is in front of you"))
+        nav = Navigator(FakeVLM(), self.clock, now=lambda: datetime(2026, 10, 11, 9, 5))
+        nav.on_voice("what time is it")
+        steps = run(nav, self.clock, lambda: fake.frame(fake.pose()), 0.2)
+        self.assertEqual(said(steps), ["It's 9:05 AM, Sunday, October 11."])
+
+    def test_say_that_again_is_left_for_the_frame_service(self):
+        self.nav.on_voice("say that again")
+        self.assertTrue(self.nav.take_repeat())
+        self.assertFalse(self.nav.take_repeat())  # answered once
 
     def test_path_question_left_for_the_frame_service(self):
         self.nav.on_voice("is the path clear")

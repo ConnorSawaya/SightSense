@@ -84,6 +84,27 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - It turned out the planning session was running on the home desktop, which cannot reach the Pi or the GX10. Work that needs those devices moves to a session on a laptop at the venue.
 - Two earlier project folders (`PathSense`, `PathSense-iOS`, dated October 7–8) were found on the home desktop. They were not imported, pending the organizers' answer on earlier work.
 
+## 11. Getting the Pi running (October 10, afternoon)
+
+- **No router.** The team's own router was not at the venue, so the planned private network and its fixed addresses did not exist.
+- **Venue Wi-Fi did not work for the Pi.** `AIHackathon@UCSC` dropped the team lead's laptop about a minute after each join, four times in a row. `UCSC-Guest` showed a sign-in page, which a Pi with no screen cannot pass.
+- **Phone hotspot.** From about 3:30 PM the laptop, and later the Pi, used a phone hotspot. The network for the whole system was still to be settled.
+- **The Pi would not start.** Its green light blinked three long and one short: a bootloader error, reported before it reads the SD card. Copying the official bootloader recovery files onto the card fixed it at about 4:15 PM. Time had already been lost to a Wi-Fi password with one wrong capital letter, which looked like the cause until the blink code was read.
+- **First login** at about 4:25 PM. The Pi reported under-voltage on its supply.
+- **The parts differed from the plan.** The motor driver is an IBT-2 (BTS7960) board, not an L298N, and the motor has a worm gear, so it holds its position when unpowered. A 12 V to 5 V converter powers the Pi from the motor's battery. The wiring notes and the controller were changed to match at about 5:00 PM.
+- **Wiring.** The six wires between the Pi and the driver were fitted between about 8:00 and 8:45 PM and read back from photos. The limit switches, the fuse and the kill switch were not fitted, and nothing had been run through the driver.
+- **Motor controller.** Written from about 2:00 PM against a simulated wheel on a laptop, because the Pi was not yet running. Its tests passed on the Pi at about 4:25 PM. It had not yet driven a real motor.
+
+## 12. Direct wheel drive and the Pi update (October 11)
+
+- The user clarified that the 12 V 120 rpm motor is connected directly to the mecanum wheel. Opposite rotations are intended to produce left/right guidance. This supersedes the earlier three-position steering plan and the wheel ideas in the historical table below.
+- Added `--wheel-drive`: LEFT/RIGHT spin opposite ways; CENTER/STOP/FREE switch off. It has no homing or position switches. Duty stays capped at 25%, each pulse at 400 ms, with a 50 ms rest and a finite command watchdog.
+- Added tests using real local WebSockets, the GX10 depth pipeline, synthetic phone frames, the Pi control loop and mock GPIO. No physical motor or real AI model was exercised in those tests.
+- Prepared an SD update tool that backs up bootfs, restores an empty kernel command line from a matching backup, removes the old full-power bench startup, and installs the Pi files on its next boot. Network and login settings are preserved.
+- The laptop's Tailscale status showed the GX10 online at `100.108.5.67` and an existing Pi named `sightsense` offline at `100.75.181.48`. The GX10 accepted a command WebSocket on port 8766. Actual motor RPM and lateral direction remain physical measurements.
+- The user then requested the `Bono` Wi-Fi network; the PC's current SSID confirmed that spelling. Its private credentials were written only to the SD card. The updater can install a supplied NetworkManager profile on the next normal boot, including on an already configured Pi, while keeping the existing Tailscale identity. The Pi's Wi-Fi connection still needs a physical boot check.
+- After the card was returned, the Pi's explicit `multi-user.target` default bypassed the generated boot installer. Ethernet brought it online for SSH. The installer was run there, its private Wi-Fi profile activated, and the controller connected to the live GX10. It stayed reachable on Bono with Ethernet disabled and reconnected after a normal reboot. GPIO18/23/24/25 were low while STOP commands arrived; `get_throttled` returned `0x0`. The updater now explicitly selects `kernel-command-line.target`. Physical wheel direction and RPM remain unmeasured.
+
 ## Ideas considered and dropped
 
 | Idea | Why it was dropped |

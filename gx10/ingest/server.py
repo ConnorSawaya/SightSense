@@ -16,6 +16,7 @@ vision-language model only supply a desired bearing, speech and "within reach".
 import argparse
 import asyncio
 import json
+import math
 import os
 import statistics
 import threading
@@ -31,6 +32,7 @@ from websockets.exceptions import ConnectionClosed
 import vlm
 from navigator import Navigator, decode
 from planner.obstacle import HEADINGS, Smoother, check
+from planner.cue import DirectionCue
 from planner.state import StateSmoother
 
 from .upright import box_back, decode_upright, rotate_jpeg, turn_for
@@ -39,8 +41,13 @@ TTL_MS = 400
 MANUAL_CMDS = ("LEFT", "CENTER", "RIGHT", "STOP", "FREE")
 MANUAL_HOLD_S = 1.0  # back to automatic if the dashboard stops sending for this long (tab closed, link lost)
 PI_HEALTH_FRESH_S = 6.0  # the Pi reports every 2 s; older than this is shown as missing
+TALK_HOLD_S = 0.6  # the cane's talk button held this long is a hold: letting go ends the command. Shorter is a click
 MANUAL_HZ = 10  # commands per second to the Pi in manual mode; also its heartbeat
 LOG_LINES = 20  # conversation lines kept for the dashboard
+# "sound check", by voice or typed on the dashboard: each tone the phone knows, with its name spoken, one at a time
+SOUND_CHECK = (("other", "Sound check. Four tones follow."), ("left", "Left."), ("right", "Right."),
+               ("unknown", "Can't see ahead."), ("stop", "Stop. Sound check done."))
+SOUND_CHECK_GAP_S = 2.5
 
 
 def locate(d, f, depth, conf):
@@ -104,22 +111,27 @@ def path_answer(cmd, ahead):
     started in STOP does not answer "something is 4 metres ahead, stop".
     """
     from navigator.object_guide import distance_words
-    from planner.obstacle import FAR_M, USABLE_M
+    from planner.obstacle import FAR_M, STOP_AHEAD_M, USABLE_M
 
     if ahead is None:
         return "I can't tell. The depth straight ahead is unclear, so I'm treating it as blocked."
-    if ahead < 1.2 or (cmd == "STOP" and ahead < USABLE_M):
+    if ahead < STOP_AHEAD_M or (cmd == "STOP" and ahead < USABLE_M):
         return f"No. Something is {distance_words(ahead)} ahead. Stop."
-    if ahead >= USABLE_M and cmd == "CENTER":
-        far = "as far as I can measure" if ahead >= FAR_M else f"for about {distance_words(ahead)}"
-        return f"Nothing detected straight ahead {far}. Keep using your cane."
     turn = {"LEFT": " Steering left.", "RIGHT": " Steering right."}.get(cmd, "")
+    if ahead >= FAR_M:  # no obstacle points straight ahead at all, whichever way the wheel is steering
+        return f"Nothing detected straight ahead as far as I can measure.{turn} Keep using your cane."
+    if cmd == "CENTER" and ahead >= USABLE_M:
+        return f"Nothing detected straight ahead for about {distance_words(ahead)}. Keep using your cane."
     return f"Something is {distance_words(ahead)} ahead.{turn}"
 
 
 class Pipeline:
     def __init__(self, use_yolo: bool):
-        print("vision-language model:", vlm.warm(), flush=True)
+        try:
+            print("vision-language model:", vlm.warm(), flush=True)
+        except Exception as e:  # the obstacle check runs from depth alone, so start without the model
+            print("vision-language model NOT loaded:", repr(e), flush=True)
+            print("describe, read and find will fail until Ollama is up; then restart this service", flush=True)
         self.vlm = UprightVLM()
         self.nav = Navigator(self.vlm)
         self.det = None
@@ -132,9 +144,10 @@ class Pipeline:
             print("yolo:", self.det.using, flush=True)
         self.smoother = Smoother()
         self.states = StateSmoother()
+        self.cue = DirectionCue()
         self.speech = deque()
-        self.last_state = None
         self.said = (None, -1e9)
+        self.checks, self.next_check = deque(), 0.0  # a sound check under way
         self.last_frame = -1e9
         self.status = {}
         self.view = None  # newest frame's picture and depth, for the dashboard
@@ -144,7 +157,7 @@ class Pipeline:
         f = decode(raw)
         now = time.monotonic()
         if now - self.last_frame > 1.0:  # new session or a gap: start again from STOP, forget old timers
-            self.smoother, self.states, self.last_state = Smoother(), StateSmoother(), None
+            self.smoother, self.states, self.cue = Smoother(), StateSmoother(), DirectionCue()
             if self.det is not None:
                 self.stable.reset()
         self.last_frame = now
@@ -162,7 +175,7 @@ class Pipeline:
 
         g = self.nav.on_frame(f, dets)
         c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading,
-                  want_maps=True)  # the maps are for the dashboard's obstacle view only
+                  stopped=self.smoother.cmd == "STOP", want_maps=True)  # maps: dashboard obstacle view only
         raw_cmd = c.raw_cmd
         if g.hold_center and raw_cmd != "STOP":
             raw_cmd = "CENTER"  # turning on the spot; depth still wins
@@ -171,21 +184,29 @@ class Pipeline:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
 
         state = self.states.update(cmd, c.clearance.get(0))  # held steady: see planner/state.py
+        # sounds only on a change (planner/cue.py); no stop tone for the STOP every session starts in
+        cue = self.cue.update(cmd, c.clearance.get(0), now, quiet_stop=raw_cmd != "STOP" and not g.stop)
 
         if self.nav.take_path_question():
             self.speech.appendleft(path_answer(raw_cmd, c.clearance.get(0)))
+        if self.nav.take_repeat():
+            self.speech.appendleft(self.said[0] or "I haven't said anything yet.")
         if g.speech:
             self.speech.append(g.speech)
-        msg = {"seq": f.seq, "state": state}
-        if state == "STOP":
-            msg["earcon"] = "stop"  # the app plays it at most once a second
-        elif state == "CAUTION" and self.last_state != "CAUTION":
-            msg["earcon"] = "caution"
-        self.last_state = state
+        if self.nav.take_sound_check():
+            self.checks, self.next_check = deque(SOUND_CHECK), now
+        msg = {"seq": f.seq, "state": state, "direction": cue.direction}
+        if cue.earcon:
+            msg["earcon"] = cue.earcon
         if obstacle_speech:
             msg["speech"] = obstacle_speech  # safety speech goes first
+        elif cue.speech:
+            msg["speech"] = cue.speech
         elif self.speech:
             msg["speech"] = self.speech.popleft()
+        if self.checks and now >= self.next_check and "earcon" not in msg and "speech" not in msg:
+            msg["earcon"], msg["speech"] = self.checks.popleft()  # real guidance always goes first
+            self.next_check = now + SOUND_CHECK_GAP_S
         if msg.get("speech"):
             self.said = (msg["speech"], time.monotonic())  # kept for the dashboard; speech is on one frame only
             self.log.append((time.strftime("%H:%M:%S"), "cane", msg["speech"]))
@@ -198,9 +219,10 @@ class Pipeline:
         self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf,
                      "maps": c.maps, "clearance": c.clearance, "best": c.best, "cmd": cmd}
         self.status = {
-            "seq": f.seq, "cmd": cmd, "state": state, "turn": turn * 90, "best": c.best,
+            "seq": f.seq, "cmd": cmd, "state": state, "direction": cue.direction, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
-            "floor_seen": c.floor_seen, "nav": f"{g.mode}/{g.state}",
+            "floor_seen": c.floor_seen, "cam_h": None if c.cam_h is None else round(c.cam_h, 2),
+            "nav": f"{g.mode}/{g.state}",
             "desired": None if g.desired_bearing is None else round(g.desired_bearing, 1),
             "dets": [f"{d.label} {d.conf:.2f}" for d in dets] if dets else [],
             "objects": sorted(
@@ -225,12 +247,15 @@ class Server:
         self.rx = deque(maxlen=60)
         self.proc_ms = deque(maxlen=60)
         self.dropped = 0
+        self.expired = 0
         self.received = 0
-        self.phone_ws = None
+        self.phone_ws = None  # the newest phone connection: the dashboard shows it and the talk button tells it
+        self.phones = []  # every open phone connection, oldest first
         self.manual = None  # (cmd, time of the dashboard's last message) while someone steers by hand
         self.manual_sent = None  # what actually went to the Pi, after the depth check
         self.manual_seq = 0
         self.pi_health = None  # (report, time received, address): temperature, input volts, settings
+        self.talk_down = None  # when the cane's talk button went down, while it is held
         self.rec = None
         if record_dir:
             self.rec = Path(record_dir) / time.strftime("%Y%m%d-%H%M%S")
@@ -239,6 +264,7 @@ class Server:
 
     async def phone(self, ws):
         print("phone connected:", ws.remote_address[0], flush=True)
+        self.phones.append(ws)
         self.phone_ws = ws
         try:
             async for msg in ws:
@@ -253,12 +279,17 @@ class Server:
                     if self.rec:
                         self.writer.submit(self._save, f"{self.received:06d}-{t:.3f}.bin", msg)
                 else:
-                    self._text(msg)
+                    try:
+                        self._text(msg)
+                    except Exception as e:  # a bad text message must not drop the phone
+                        print("text message error:", repr(e), flush=True)
         except ConnectionClosed:
             pass
-        print("phone disconnected:", ws.remote_address[0], flush=True)
-        if self.phone_ws is ws:
-            self.phone_ws = None
+        finally:
+            print("phone disconnected:", ws.remote_address[0], flush=True)
+            self.phones.remove(ws)
+            if self.phone_ws is ws:
+                self.phone_ws = self.phones[-1] if self.phones else None  # an earlier phone may still be connected
 
     def text_command(self, text: str):
         """The dashboard's text box: the same as a voice command from the phone."""
@@ -280,10 +311,9 @@ class Server:
         self.manual = (cmd, time.monotonic())
         return True
 
-    def _manual_for_pi(self, now):
+    def _manual_for_pi(self, now, cmd):
         """The command the Pi gets in manual mode. Depth still wins: while phone frames
         arrive and the obstacle check says STOP, a turn or CENTER becomes STOP."""
-        cmd = self.manual[0]
         depth_live = now - self.pipe.last_frame < 0.5
         if depth_live and cmd in ("LEFT", "CENTER", "RIGHT") and self.pipe.status.get("cmd") == "STOP":
             return "STOP", True
@@ -292,16 +322,18 @@ class Server:
     async def manual_loop(self):
         while True:
             await asyncio.sleep(1 / MANUAL_HZ)
-            if not self.manual:
+            manual = self.manual  # read once: the dashboard's thread can clear it at any moment
+            if not manual:
                 continue
             now = time.monotonic()
-            if now - self.manual[1] > MANUAL_HOLD_S:
+            if now - manual[1] > MANUAL_HOLD_S:
                 print("manual steering off: the dashboard stopped sending", flush=True)
-                self.manual = self.manual_sent = None
+                if self.manual is manual:
+                    self.manual = self.manual_sent = None
                 continue
-            cmd, overridden = self._manual_for_pi(now)
+            cmd, overridden = self._manual_for_pi(now, manual[0])
             self.manual_seq += 1
-            self.manual_sent = {"asked": self.manual[0], "cmd": cmd, "depth_stop": overridden,
+            self.manual_sent = {"asked": manual[0], "cmd": cmd, "depth_stop": overridden,
                                 "depth_live": now - self.pipe.last_frame < 0.5}
             msg = json.dumps({"seq": self.manual_seq, "cmd": cmd, "ttl_ms": TTL_MS})
             for p in list(self.pis):
@@ -317,10 +349,11 @@ class Server:
         return {
             "phone": ws.remote_address[0] if ws else None,
             "pis": len(self.pis),
-            "fps": sum(1 for t in self.rx if now - t <= 1.0),
+            "fps": sum(1 for t in list(self.rx) if now - t <= 1.0),  # a copy: the phone's frames add to it from another thread
             "proc_ms": statistics.median(self.proc_ms) if self.proc_ms else None,
             "rtt_ms": rtt * 1000 if rtt else None,
             "dropped": self.dropped,
+            "expired": self.expired,
             "model": vlm.active_model(),
             "frame": self.pipe.status if now - self.pipe.last_frame < 2 else {},
             "heard": self.pipe.nav.heard,
@@ -340,6 +373,8 @@ class Server:
         try:
             m = json.loads(msg)
         except json.JSONDecodeError:
+            return
+        if not isinstance(m, dict):
             return
         if self.rec:
             self.writer.submit(self._append, "text.jsonl", json.dumps({"t": time.monotonic(), "msg": m}) + "\n")
@@ -362,18 +397,47 @@ class Server:
         print("pi connected:", ws.remote_address[0], flush=True)
         self.pis.add(ws)
         try:
-            async for msg in ws:  # the Pi only sends health reports; see contracts/MESSAGES.md
+            async for msg in ws:  # health reports and the talk button; see contracts/MESSAGES.md
                 try:
                     m = json.loads(msg)
                 except (TypeError, json.JSONDecodeError):
                     continue
                 if isinstance(m, dict) and isinstance(m.get("health"), dict):
                     self.pi_health = (m["health"], time.monotonic(), ws.remote_address[0])
+                elif isinstance(m, dict) and m.get("button") in ("down", "up"):
+                    await self.talk_button(m["button"])
         except ConnectionClosed:
             pass
         finally:
+            self.talk_down = None
             self.pis.discard(ws)
             print("pi disconnected:", ws.remote_address[0], flush=True)
+
+    async def talk_button(self, event: str):
+        """The talk button in the cane's handle: tell the phone to listen, as if its own talk button were held.
+
+        Down starts it. Up ends it only after a hold; after a click the phone stops by itself when the
+        speaker has finished. The phone sends what it heard back as an ordinary {"text": ...} message."""
+        now = time.monotonic()
+        if event == "down":
+            self.talk_down, listen = now, True
+        else:
+            held, self.talk_down = (now - self.talk_down if self.talk_down is not None else 0.0), None
+            if held < TALK_HOLD_S:
+                return
+            listen = False
+        ws = self.phone_ws
+        what = f"phone told to {'listen' if listen else 'stop listening'}" if ws else "no phone connected"
+        print(f"talk button {event}: {what}", flush=True)
+        log = getattr(self.pipe, "log", None)
+        if log is not None:  # shown in the dashboard's conversation, so the button can be checked without the phone
+            log.append((time.strftime("%H:%M:%S"), "cane", f"(talk button {event}: {what})"))
+        if ws is None:
+            return
+        try:
+            await ws.send(json.dumps({"listen": listen}))
+        except ConnectionClosed:
+            pass
 
     async def run_frames(self):
         loop = asyncio.get_running_loop()
@@ -382,6 +446,9 @@ class Server:
             self.new_frame.clear()
             raw, t_recv, ws = self.latest
             self.latest = None
+            if time.monotonic() - t_recv >= TTL_MS / 1000:
+                self.expired += 1
+                continue
             t0 = time.monotonic()
             try:
                 out, pi = await loop.run_in_executor(self.worker, self.pipe.process, raw, t_recv)
@@ -389,16 +456,34 @@ class Server:
                 print("frame error:", repr(e), flush=True)
                 continue
             self.proc_ms.append((time.monotonic() - t0) * 1000)
-            for p in (list(self.pis) if not self.manual else []):  # in manual mode manual_loop talks to the Pi
-                try:
-                    await p.send(pi)
-                except ConnectionClosed:
-                    self.pis.discard(p)
+            if self.manual:
+                pass  # in manual mode manual_loop talks to the Pi
+            elif time.monotonic() - t_recv >= TTL_MS / 1000:
+                self.expired += 1
+            else:
+                await asyncio.gather(*(self._send_pi(p, pi, t_recv) for p in list(self.pis)))
             for text in out:
                 try:
                     await ws.send(text)
                 except ConnectionClosed:
                     break
+
+    async def _send_pi(self, peer, message, received):
+        """Send within the frame's original lifetime; a slow peer must not block others."""
+        remaining_ms = math.floor((received + TTL_MS / 1000 - time.monotonic()) * 1000)
+        if remaining_ms <= 0:
+            return
+        command = json.loads(message)
+        command["ttl_ms"] = min(command.get("ttl_ms", TTL_MS), remaining_ms)
+        try:
+            await asyncio.wait_for(peer.send(json.dumps(command)), remaining_ms / 1000)
+        except (ConnectionClosed, asyncio.TimeoutError):
+            self.pis.discard(peer)
+            # A cancelled send may be incomplete: close instead of reusing the peer.
+            try:
+                await asyncio.wait_for(peer.close(), 1)
+            except (ConnectionClosed, asyncio.TimeoutError):
+                pass
 
     async def report(self):
         while True:
@@ -410,8 +495,8 @@ class Server:
                 continue
             ms = statistics.median(self.proc_ms) if self.proc_ms else 0
             cl = " ".join(f"{k:+d}:{'?' if v is None else f'{v:.1f}'}" for k, v in s["clearance"].items())
-            print(f"{time.strftime('%H:%M:%S')} {fps:2d} fps in, {ms:5.1f} ms  {s['cmd']:6s} {s['state']:9s} "
-                  f"[{cl}] floor {'y' if s['floor_seen'] else 'n'} turn {s['turn']} nav {s['nav']} "
+            print(f"{time.strftime('%H:%M:%S')} {fps:2d} fps in, {ms:5.1f} ms  {s['cmd']:6s} {s['state']:9s} {s['direction']:8s} "
+                  f"[{cl}] floor {('%.2fm' % s['cam_h']) if s.get('cam_h') is not None else 'n'} turn {s['turn']} nav {s['nav']} "
                   f"desired {s['desired']} {','.join(s['dets'][:3])} pis {len(self.pis)} dropped {self.dropped}"
                   + (f"  says {s['speech']!r}" if s["speech"] else ""), flush=True)
 
@@ -428,6 +513,9 @@ async def main():
     a = ap.parse_args()
 
     server = Server(Pipeline(not a.no_yolo), a.record)
+    from planner.obstacle import OWN_CANE_M
+
+    print("own-cane strip ignored: " + (f"{OWN_CANE_M:.2f} m ahead" if OWN_CANE_M > 0 else "off (SIGHTSENSE_OWN_CANE_M)"), flush=True)
     if a.dashboard_port:
         from dashboard.dashboard import start
 
