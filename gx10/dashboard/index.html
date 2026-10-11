@@ -31,6 +31,12 @@
   input { flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid #39424d; background: #0d1014; color: var(--text); font-size: 15px; }
   button { padding: 8px 14px; border-radius: 6px; border: 0; background: #3a7bd5; color: white; font-size: 15px; cursor: pointer; }
   .said { margin-top: 8px; min-height: 1.4em; }
+  .list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
+  .list li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #262c34; font-variant-numeric: tabular-nums; }
+  .list li:last-child { border-bottom: 0; }
+  .who { color: var(--dim); min-width: 3.2em; }
+  .you .what { color: #8fb8ff; } .cane .what { color: var(--text); }
+  h2 { font-size: 14px; margin: 0; color: var(--dim); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -44,6 +50,8 @@
   <section>
     <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
     <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading. Live stream from the GX10, newest frame only (up to 8 a second).</p>
+    <div class="panel"><h2>Objects (YOLO, distance from LiDAR)</h2><ul class="list" id="objects"><li class="dim">none</li></ul></div>
+    <div class="panel"><h2>Conversation</h2><ul class="list" id="log"><li class="dim">nothing yet</li></ul></div>
   </section>
   <section>
     <div class="panel">
@@ -93,6 +101,21 @@ function show(s) {
       b.append(fill, lab); bars.append(b);
     }
     if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
+    const objs = f.objects || [];
+    $("objects").replaceChildren(...(objs.length ? objs.map((o) => {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); a.textContent = o.label + " " + o.conf.toFixed(2);
+      const b = document.createElement("span"); b.textContent = (o.dist_m === null ? "no depth" : o.dist_m.toFixed(1) + " m") + (o.side ? " · " + o.side : "");
+      li.append(a, b); return li;
+    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "none" })]));
+    const log = (s.log || []).slice().reverse();
+    $("log").replaceChildren(...(log.length ? log.map(([t, who, text]) => {
+      const li = document.createElement("li"); li.className = who;
+      const w = document.createElement("span"); w.className = "who"; w.textContent = who === "you" ? "You" : "Cane";
+      const x = document.createElement("span"); x.className = "what"; x.textContent = text; x.style.flex = "1";
+      const tt = document.createElement("span"); tt.className = "dim"; tt.textContent = t;
+      li.append(w, x, tt); return li;
+    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "nothing yet" })]));
     $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "");
     $("fps").textContent = s.fps + " / s";
     $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";

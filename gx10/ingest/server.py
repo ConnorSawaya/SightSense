@@ -36,6 +36,34 @@ from planner.state import StateSmoother
 from .upright import box_back, rotate_jpeg, turn_for
 
 TTL_MS = 400
+LOG_LINES = 20  # conversation lines kept for the dashboard
+
+
+def locate(d, f, depth, conf):
+    """Distance (LiDAR, median of the box's middle half) and direction of one detection.
+
+    Sets d.dist_m (None if too few good readings) and d.bearing (degrees, positive right,
+    in the floor plane like the navigator). Uses depth only, never the model.
+    """
+    from navigator.frame import camera_to_world, ground_bearing, pixel_to_camera
+
+    sx, sy = f.depth_w / f.rgb_w, f.depth_h / f.rgb_h
+    x1, y1, x2, y2 = d.box[0] * sx, d.box[1] * sy, d.box[2] * sx, d.box[3] * sy
+    u, v = (x1 + x2) / 2, (y1 + y2) / 2
+    hw, hh = max((x2 - x1) / 4, 1), max((y2 - y1) / 4, 1)
+    r0, r1 = max(0, int(v - hh)), min(f.depth_h, int(v + hh) + 1)
+    c0, c1 = max(0, int(u - hw)), min(f.depth_w, int(u + hw) + 1)
+    z, c = depth[r0:r1, c0:c1], conf[r0:r1, c0:c1]
+    good = z[(c >= 1) & (z >= 200) & (z <= 5000)]
+    d.dist_m = float(np.median(good)) / 1000 if good.size >= 5 else None
+    p = camera_to_world(f.pose, pixel_to_camera(f, u, v, d.dist_m or 2.0))
+    d.bearing = ground_bearing(f.pose, p)
+
+
+def side(bearing):
+    if bearing is None:
+        return ""
+    return "ahead" if abs(bearing) < 10 else ("right" if bearing > 0 else "left")
 
 
 class UprightVLM:
@@ -103,6 +131,7 @@ class Pipeline:
         self.last_frame = -1e9
         self.status = {}
         self.view = None  # newest frame's picture and depth, for the dashboard
+        self.log = deque(maxlen=LOG_LINES)  # (clock time, "you" | "cane", text), for the dashboard
 
     def process(self, raw: bytes, t_recv: float):
         f = decode(raw)
@@ -119,6 +148,7 @@ class Pipeline:
             dets = self.det.detect(rotate_jpeg(f.jpeg, turn))
             for d in dets:
                 d.box = box_back(d.box, turn, f.rgb_w, f.rgb_h)
+                locate(d, f, depth, conf)
 
         g = self.nav.on_frame(f, dets)
         c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading)
@@ -145,6 +175,8 @@ class Pipeline:
             msg["speech"] = obstacle_speech  # safety speech goes first
         elif self.speech:
             msg["speech"] = self.speech.popleft()
+        if msg.get("speech"):
+            self.log.append((time.strftime("%H:%M:%S"), "cane", msg["speech"]))
 
         out = [json.dumps(msg)]
         if g.lookup:
@@ -158,6 +190,11 @@ class Pipeline:
             "floor_seen": c.floor_seen, "nav": f"{g.mode}/{g.state}",
             "desired": None if g.desired_bearing is None else round(g.desired_bearing, 1),
             "dets": [f"{d.label} {d.conf:.2f}" for d in dets] if dets else [],
+            "objects": sorted(
+                ({"label": d.label, "conf": round(d.conf, 2),
+                  "dist_m": None if d.dist_m is None else round(d.dist_m, 1), "side": side(d.bearing)}
+                 for d in dets or []),
+                key=lambda o: (o["dist_m"] is None, o["dist_m"] or 0)),
             "gx10_ms": round((done - t_recv) * 1000, 1), "tracking": f.tracking, "thermal": f.thermal,
             "speech": msg.get("speech"),
         }
@@ -223,6 +260,7 @@ class Server:
             "dropped": self.dropped,
             "model": vlm.active_model(),
             "frame": self.pipe.status if now - self.pipe.last_frame < 2 else {},
+            "log": list(self.pipe.log),
         }
 
     def _text(self, msg):
@@ -233,6 +271,7 @@ class Server:
         if self.rec:
             self.writer.submit(self._append, "text.jsonl", json.dumps({"t": time.monotonic(), "msg": m}) + "\n")
         if "text" in m:
+            self.pipe.log.append((time.strftime("%H:%M:%S"), "you", str(m["text"])))
             cmd = self.pipe.nav.on_voice(str(m["text"]))
             print(f'voice: {m["text"]!r} -> {cmd.kind} {cmd.target or ""}', flush=True)
         elif "polyline" in m:

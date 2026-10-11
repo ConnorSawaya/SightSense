@@ -52,16 +52,40 @@ def _upright(img, turn):
     return cv2.rotate(img, _CV[turn]) if turn else img
 
 
+def _turn_box(box, turn, w, h):
+    """A box on the original w x h picture -> the same box on the picture turned upright."""
+    x1, y1, x2, y2 = box
+    if turn == 1:  # 90 clockwise: (u, v) -> (h - v, u)
+        pts = [(h - y1, x1), (h - y2, x2)]
+    elif turn == 3:  # 90 anticlockwise: (u, v) -> (v, w - u)
+        pts = [(y1, w - x1), (y2, w - x2)]
+    elif turn == 2:
+        pts = [(w - x1, h - y1), (w - x2, h - y2)]
+    else:
+        return box
+    xs, ys = sorted(p[0] for p in pts), sorted(p[1] for p in pts)
+    return [xs[0], ys[0], xs[1], ys[1]]
+
+
 def _picture(view):
     img = cv2.imdecode(np.frombuffer(view["jpeg"], np.uint8), cv2.IMREAD_COLOR)
     if img is None:
         img = np.zeros((480, 640, 3), np.uint8)
-    for d in view["dets"] or []:
-        x1, y1, x2, y2 = d.box
-        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 200, 255), 2)
+    h, w = img.shape[:2]
     img = _upright(img, view["turn"])
-    for i, d in enumerate(view["dets"] or []):  # labels after turning, so the text reads the right way
-        cv2.putText(img, f"{d.label} {d.conf:.2f}", (8, 24 + 22 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 255), 2)
+    # nearest first, so near labels are drawn last and stay on top
+    dets = sorted(view["dets"] or [], key=lambda d: -(getattr(d, "dist_m", None) or 99))
+    for d in dets:
+        x1, y1, x2, y2 = (int(v) for v in _turn_box(d.box, view["turn"], w, h))
+        dist = getattr(d, "dist_m", None)
+        near = dist is not None and dist < 1.5
+        color = (60, 60, 255) if near else (0, 200, 255)  # red-ish when close, amber otherwise
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+        label = d.label + (f" {dist:.1f} m" if dist is not None else "")
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        ty = y1 - 4 if y1 - th - 6 > 0 else y1 + th + 4
+        cv2.rectangle(img, (x1, ty - th - 3), (x1 + tw + 4, ty + 3), (0, 0, 0), -1)
+        cv2.putText(img, label, (x1 + 2, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
     return img
 
 
