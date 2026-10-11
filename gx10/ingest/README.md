@@ -58,7 +58,7 @@ pi got 120 commands: STOP -> CENTER -> LEFT -> STOP
 Since then the check counts a heading usable from 1.5 m and stops inside 0.8 m, and direction cues replaced the caution beep. The same walk on October 11 (a Windows laptop, YOLO off, Ollama not running; not re-run on the GX10):
 
 ```
-  seq    1  STOP      earcon stop    speech None  (wall 4.00 m)
+  seq    1  STOP      earcon None    speech None  (wall 4.00 m)
   seq    3  CAUTION   earcon None    speech None  (wall 3.93 m)
   seq   18  CLEAR     earcon None    speech None  (wall 3.43 m)
   seq   77  CAUTION   earcon None    speech None  (wall 1.47 m)

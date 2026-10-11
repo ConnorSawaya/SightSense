@@ -48,8 +48,11 @@ class DirectionCue:
         self._unknown = 0
         self._told = None  # (direction, time) last announced
         self._pending = None  # a direction still to announce once GAP_S has passed
+        self._stop_owed = False  # in a STOP whose tone has not sounded yet (see quiet_stop)
 
-    def update(self, cmd: str, ahead: Optional[float], now: float) -> Cue:
+    def update(self, cmd: str, ahead: Optional[float], now: float, quiet_stop: bool = False) -> Cue:
+        """quiet_stop: this STOP does not come from this frame's depth or from an arrival (the smoother
+        begins every session in STOP). No tone for it; the tone comes with the first frame that does."""
         d = direction_for(cmd, ahead)
         if d == "UNKNOWN":
             self._unknown += 1
@@ -62,10 +65,13 @@ class DirectionCue:
         self.direction = d
         if d == "STOP":
             self._pending = None
-            if changed:
+            self._stop_owed = self._stop_owed or changed
+            if self._stop_owed and cmd == "STOP" and not quiet_stop:
+                self._stop_owed = False
                 self._told = ("STOP", now)
                 return Cue(d, earcon="stop")
             return Cue(d)
+        self._stop_owed = False
         if d == "STRAIGHT":
             self._pending = None
             return Cue(d)

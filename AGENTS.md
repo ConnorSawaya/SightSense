@@ -129,7 +129,7 @@ Build it first with three headings and a desired bearing of 0.
 5. Feed that bearing to the obstacle check as the desired bearing.
 6. Re-run the find every 2 seconds (1.5 while scanning). For objects YOLO knows, use YOLO's box every frame.
 7. Not seen for 10 seconds with no stored point → "I lost the apple."
-8. Under 0.8 m → `STOP` and "The apple is within reach."
+8. Under 1.2 m → `STOP` and "The apple is within reach." (0.8 m until October 11; it has to be more than the 0.8 m of the obstacle stop.)
 
 ### Route follower ("take me to Safeway", about once a second)
 

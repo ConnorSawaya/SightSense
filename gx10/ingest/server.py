@@ -179,7 +179,8 @@ class Pipeline:
             cmd = "STOP"  # the object is within reach; this only ever adds a stop
 
         state = self.states.update(cmd, c.clearance.get(0))  # held steady: see planner/state.py
-        cue = self.cue.update(cmd, c.clearance.get(0), now)  # sounds only on a change: see planner/cue.py
+        # sounds only on a change (planner/cue.py); no stop tone for the STOP every session starts in
+        cue = self.cue.update(cmd, c.clearance.get(0), now, quiet_stop=raw_cmd != "STOP" and not g.stop)
 
         if self.nav.take_path_question():
             self.speech.appendleft(path_answer(raw_cmd, c.clearance.get(0)))

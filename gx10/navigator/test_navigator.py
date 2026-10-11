@@ -119,8 +119,17 @@ class GuideToObject(unittest.TestCase):
             self.assertAlmostEqual(s.desired_bearing, math.degrees(heading), delta=2)
         self.assertEqual(steps[-1].state, ARRIVED)
         self.assertTrue(steps[-1].stop)
-        self.assertLess(steps[-1].distance_m, 0.8)
+        self.assertLess(steps[-1].distance_m, 1.2)
+        self.assertGreater(steps[-1].distance_m, 0.8)  # before the obstacle check would stop at the object itself
         self.assertIn("The apple is within reach.", said(steps))
+
+    def test_reach_is_beyond_the_obstacle_stop(self):
+        # An object on a table sits behind the edge of the table. If reach were not the larger,
+        # the obstacle stop would always come first and "within reach" would never be said.
+        from planner.obstacle import STOP_AHEAD_M
+
+        from .object_guide import REACH_M
+        self.assertGreaterEqual(REACH_M, STOP_AHEAD_M + 0.3)
 
     def test_guidance_follows_turns(self):
         self.find_and_confirm(fake.pose())

@@ -21,6 +21,22 @@ class TestDirectionCue(unittest.TestCase):
         self.assertEqual(sounds(cues), [])
         self.assertEqual(cues[-1].direction, "STRAIGHT")
 
+    def test_the_stop_a_session_starts_in_is_silent(self):
+        # The smoother begins every session in STOP for two frames, whatever the depth says.
+        cue = DirectionCue()
+        first = [cue.update("STOP", 4.0, i / 15, quiet_stop=True) for i in range(2)]
+        self.assertEqual(sounds(first), [])
+        self.assertEqual(first[-1].direction, "STOP")
+        self.assertEqual(sounds([cue.update("CENTER", 4.0, 0.2)]), [])
+
+    def test_a_real_stop_at_the_start_still_sounds_at_once(self):
+        self.assertEqual(sounds([DirectionCue().update("STOP", 0.5, 0.0)]), [("stop", None)])
+        # open floor on the first frame, then the depth itself says stop while still stopped
+        cue = DirectionCue()
+        self.assertEqual(sounds([cue.update("STOP", 4.0, 0.0, quiet_stop=True)]), [])
+        self.assertEqual(sounds([cue.update("STOP", 0.5, 0.07)]), [("stop", None)])
+        self.assertEqual(sounds([cue.update("STOP", 0.5, 0.14)]), [])  # once
+
     def test_long_stop_sounds_once(self):
         # The old rule sent the stop beep with every frame; the app played it once a second.
         cues = run([("CENTER", 4.0)] * 5 + [("STOP", 0.5)] * 150)

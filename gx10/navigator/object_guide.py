@@ -21,7 +21,7 @@ from .frame import Frame, box_distance, camera_position, camera_to_world, ground
 REFIND_GUIDING_S = 2.0
 REFIND_SEARCHING_S = 1.5
 LOST_AFTER_S = 10.0  # not seen for this long and no stored point -> "I lost the ..."
-REACH_M = 0.8
+REACH_M = 1.2  # keep above obstacle.STOP_AHEAD_M (0.8) plus how far an object sits back on a table, or the obstacle stop comes first
 SEARCH_GIVE_UP_S = 30.0  # added: stop searching after this long
 CONFIRM_TIMEOUT_S = 20.0  # added: no "yes" within this long -> cancel
 POSE_JUMP_M = 0.5  # added: camera moving this far between frames means tracking reset
