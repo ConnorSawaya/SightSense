@@ -10,6 +10,7 @@ Printable parts, wiring and build notes for the cane.
 | `motor-bracket/` | Holds the 12 V motor above the steering fork | To design |
 | `pi-plate/` | Carries the Pi and the motor driver on the tube | To design |
 | [`handle-phone-mount/`](handle-phone-mount/) | Tilted handle, pole collar and adjustable phone cradle (camera forward) | Design in, not yet printed; cradle is oversize and the phone is strapped in |
+| [`electronics-mount/`](electronics-mount/) | Two-piece clamp on the tube above the motor: Raspberry Pi 5 on standoffs on one side, a flat plate for the battery on the other | Design in, not printed |
 
 ## Conventions
 
