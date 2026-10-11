@@ -39,8 +39,9 @@ class WalkAtAWall(unittest.TestCase):
         vlm.warm = lambda *a, **k: "stubbed for the test"
         pipe = Pipeline(False)
         cls.bench = Bench().started()
-        cls.commands = []
-        for message, _wall_m in walk_frames():
+        cls.commands, cls.walls = [], []
+        for message, wall_m in walk_frames():
+            cls.walls.append(wall_m)
             _, for_pi = pipe.process(message, 0.0)
             cmd, ttl_ms, _seq = parse_command(for_pi)
             cls.commands.append(cmd)
@@ -52,8 +53,11 @@ class WalkAtAWall(unittest.TestCase):
         self.assertEqual(len(self.commands), 120)
 
     def test_goes_straight_while_clear_and_stops_at_the_wall(self):
-        self.assertIn("CENTER", self.commands)
-        self.assertEqual(set(self.commands[-30:]), {"STOP"})
+        far = {cmd for cmd, wall_m in zip(self.commands, self.walls) if wall_m > 2.0}
+        near = {cmd for cmd, wall_m in zip(self.commands, self.walls) if wall_m < 0.6}
+        self.assertIn("CENTER", far)
+        self.assertEqual(near, {"STOP"})  # the obstacle check stops for a wall inside 0.8 m (gx10/planner)
+        self.assertEqual(self.commands[-1], "STOP")
 
     def test_wheel_ends_centred_and_inside_its_limits(self):
         self.assertEqual(self.bench.wheel.pressed(), {CENTER})

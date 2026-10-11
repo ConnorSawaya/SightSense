@@ -170,9 +170,10 @@ class FullFlow(unittest.IsolatedAsyncioTestCase):
                             seen.add(server.pipe.status["cmd"])
                             await asyncio.sleep(1 / 15)
                         self.assertIn("CENTER", seen)
-                        self.assertIn("LEFT", seen)
+                        turns = seen & {"LEFT", "RIGHT"}  # the obstacle check steers one way before it stops
+                        self.assertTrue(turns)
                         self.assertEqual(server.pipe.status["cmd"], "STOP")
-                        self.assertTrue(any("wheel LEFT" in line for line in lines))
+                        self.assertTrue(any(f"wheel {turn}" in line for turn in turns for line in lines))
                         await asyncio.sleep(0.45)
                         self.assertTrue(all(pins.pin(n).state == 0 for n in (PIN_R_EN, PIN_L_EN, PIN_RPWM, PIN_LPWM)))
                     stop.set()
