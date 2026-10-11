@@ -76,8 +76,8 @@ def path_answer(cmd, ahead):
     if ahead < 1.2 or (cmd == "STOP" and ahead < USABLE_M):
         return f"No. Something is {distance_words(ahead)} ahead. Stop."
     if ahead >= USABLE_M and cmd == "CENTER":
-        far = "as far as I can measure" if ahead >= FAR_M else f"about {distance_words(ahead)}"
-        return f"Nothing detected straight ahead for {far}. Keep using your cane."
+        far = "as far as I can measure" if ahead >= FAR_M else f"for about {distance_words(ahead)}"
+        return f"Nothing detected straight ahead {far}. Keep using your cane."
     turn = {"LEFT": " Steering left.", "RIGHT": " Steering right."}.get(cmd, "")
     return f"Something is {distance_words(ahead)} ahead.{turn}"
 
