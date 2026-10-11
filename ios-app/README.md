@@ -63,7 +63,7 @@ A push button in the cane's handle does the same job as the talk button on the s
 - A click in the 2 seconds after the phone has stopped by itself with something heard is taken as the end of that command. It plays the tone but does not start another. If the phone heard nothing, the click starts a new listen.
 - While the phone is listening, from either button, it does not speak. Tones still play, the stop tone among them.
 
-**Not built yet.** This was written on a Windows laptop with no Xcode. It has not been compiled or run on a phone. Build it and try both buttons before relying on it.
+**Not built yet.** This was written on a Windows laptop with no Xcode. It has not been compiled or run on a phone. Every Swift file in the app parses with a Swift grammar (tree-sitter, October 11), which rules out syntax errors only: types, names and the Apple frameworks are checked by the compiler alone. Build it and try both buttons before relying on it.
 
 ## Build order
 
