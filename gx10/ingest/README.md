@@ -23,7 +23,7 @@ In the app, enter the GX10's address on the network the phone is on, e.g. `169.2
 1. Keeps only the newest frame; any older one still waiting is dropped and counted.
 2. Turns the picture upright for YOLO and the vision-language model using gravity from the pose (`upright.py`); boxes are mapped back to the original picture, which the depth lines up with. With the phone upright on the cane the picture arrives turned 90°.
 3. YOLO → navigator → obstacle check (`../planner/`), with the navigator's desired bearing.
-4. Sends the phone `{"seq", "state", "earcon", "speech"}` (and `{"lookup": ...}` when needed) and the Pi `{"seq", "cmd", "ttl_ms": 400}`.
+4. Sends the phone `{"seq", "state", "earcon", "speech"}` (and `{"lookup": ...}` when needed). The Pi command keeps the same `seq`, `cmd`, `ttl_ms` fields, but its TTL is the remainder of the frame's 400 ms receive-time budget. Expired frames send no motor command. Slow Pi peers are closed without holding up other peers.
 5. After a gap of more than 1 s it starts again from `STOP`.
 
 Prints one line a second: frames in, processing time, command, state, clearance per heading, navigator state, detections, Pis connected, frames dropped.

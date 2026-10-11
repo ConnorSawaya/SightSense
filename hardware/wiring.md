@@ -19,6 +19,8 @@ As of the evening of October 10, 2026.
 
 Nothing on this page has been run with the motor yet.
 
+October 11 update: the user reports the motor is connected directly to the mecanum wheel. Use `cane.py --wheel-drive`: LEFT/RIGHT spin opposite ways, CENTER/STOP/FREE switch off. This mode does not use the position switches or homing described below. The SD updater disables the previous full-power startup test. The physical left/right effect and RPM still need observation on the assembly.
+
 ## The whole thing
 
 ![Full wiring of the cane](diagrams/full-wiring.svg)
@@ -111,6 +113,8 @@ Three ways to check the Pi end by eye:
 
 ## Limit switches
 
+These inputs are for the earlier position-steering modes. Direct wheel drive does not open or read them.
+
 Not fitted yet. Without them the controller cannot find left, centre or right. At start-up it gives six 0.4 second pulses, left and right, then switches the driver off. While commands keep arriving it rests 3 seconds and does the same again, about every 6 seconds.
 
 | Pi header pin | What that pin is | Connects to |
@@ -170,7 +174,7 @@ Start with no 12 V at the driver, so nothing can move. If the kill switch is fit
 
    Watch for ten seconds after it ends, then take the 12 V away: kill switch off, or pull the battery plug. If the shaft ever turns with no program running, take the 12 V away at once and fit the two resistors in "Holding the driver off" below before going on. A still shaft is a good sign, not proof: a floating pin can change later.
 
-4. Keep hands clear of the wheel. The motor moves as soon as the program starts, before anything is typed: it homes to centre. Then type commands and watch the wheel go to each switch. Type `free` to switch the driver off, or `quit` to finish. Give the driver 12 V just before you start the program and take it away as soon as the program ends, because after `quit` or Ctrl+C the Pi no longer holds the driver off:
+4. For the current direct wheel, start `python3 cane.py --typed --wheel-drive`. It starts off. Type `left`, then `free`, then `right`, then `stop` and observe the fitted wheel's effect. Add `--swap` if left/right is reversed. The earlier position-steering command below homes immediately and is only for a mechanism with a steering axis and position switches. Give the driver 12 V just before the test and take it away after it ends; closing the controller releases its GPIO pins:
 
    ```bash
    python3 cane.py --typed
@@ -178,7 +182,7 @@ Start with no 12 V at the driver, so nothing can move. If the kill switch is fit
 
 More on these in [`../pi/README.md`](../pi/README.md).
 
-The Pi's card is also set to run a bench test at start-up: 15 seconds after the Pi comes on, the motor ramps to full power for about 12 seconds. The motor must be free to turn. How to switch it off is in [`../pi/README.md`](../pi/README.md).
+The earlier card setup enabled a full-power boot bench test. The October 11 SD updater removes its enable marker and cloud-init startup commands, and masks its service before enabling the direct wheel controller. The separate bench script remains documented in [`../pi/README.md`](../pi/README.md).
 
 ## If something is wrong
 

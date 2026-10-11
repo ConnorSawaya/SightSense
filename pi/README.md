@@ -1,6 +1,6 @@
 # Raspberry Pi
 
-The motor controller on the cane. It receives one word from the GX10 and turns the steering wheel to match.
+The motor controller on the cane. The motor directly drives the mecanum wheel: LEFT and RIGHT spin opposite ways, and CENTER, STOP and FREE switch it off.
 
 Wiring is in [`../hardware/wiring.md`](../hardware/wiring.md). The command format is in [`../contracts/MESSAGES.md`](../contracts/MESSAGES.md).
 
@@ -8,7 +8,41 @@ Wiring is in [`../hardware/wiring.md`](../hardware/wiring.md). The command forma
 
 Runs on the Pi: the tests pass there, the simulated wheel follows typed commands, and the real GPIO pins open with the switches reading "none pressed". Not yet run with a real motor or switches wired up.
 
-## Behaviour
+## Direct wheel mode
+
+The user confirmed the direct-drive wheel on October 11. Use `--wheel-drive`.
+
+| GX10 command | Pi action |
+| --- | --- |
+| LEFT | RPWM GPIO23, opposite PWM off |
+| RIGHT | LPWM GPIO24, opposite PWM off |
+| CENTER, STOP, FREE | Both PWM signals and both enables off |
+
+Add `--swap` if the fitted wheel's left/right effect is reversed. The motor direction and lateral effect must be observed on the actual assembly.
+
+- No homing, steering position or limit-switch inputs in this mode.
+- Starts with the driver off and waits for a valid command.
+- Power is capped at 25%. Each pulse lasts at most 400 ms, followed by a 50 ms rest. Continuing heartbeats allow another pulse.
+- STOP switches off immediately. A reversal switches off first and waits 50 ms.
+- Command TTL is finite, positive and capped at 400 ms. Queued time is subtracted from it. A disconnected command socket releases the motor; silence also expires the watchdog.
+- Network messages retain the agreed `seq`, `cmd`, `ttl_ms` fields and never set motor power.
+
+### RPM
+
+The motor label is 120 rpm at 12 V. At 25% duty, the code logs a **rough, unmeasured 30 rpm estimate while powered**. PWM duty does not guarantee RPM under load; the pauses also lower average speed. There is no encoder in the current wiring.
+
+Mark the wheel, count output-shaft turns in a timed video, and calculate the actual average over that interval:
+
+```bash
+python3 rpm.py --turns 2 --seconds 4
+# 30 rpm for those supplied measurements
+```
+
+The calculator does not operate the motor. Use `--duty 0.15` to reduce power; values above 0.25 are capped. `--rated-rpm` changes the label-based estimate, not the measured speed or power cap.
+
+## Position steering modes
+
+The earlier position-steering controller is retained for a mechanism with a steering axis. Running without `--wheel-drive` selects it:
 
 - Connects to `ws://<GX10>:8766` and reconnects if the link drops.
 - Three positions: `LEFT`, `CENTER`, `RIGHT`.
@@ -28,7 +62,8 @@ Homing with no switch pressed: short pulses left, right, right, left until a swi
 | File | What it is |
 | --- | --- |
 | `cane.py` | The program to run |
-| `steering.py` | The steering rules. No GPIO, so it runs anywhere. |
+| `wheel_drive.py` | Direct wheel rotation, watchdog, pulse limits and reversal pause |
+| `steering.py` | Earlier position-steering rules and shared command validation |
 | `hardware.py` | The real motor and switches, and a simulated wheel |
 | `fake_gx10.py` | Stands in for the GX10's command port |
 | `test_steering.py` | Tests |
@@ -37,7 +72,11 @@ Homing with no switch pressed: short pulses left, right, right, left until a swi
 | `test_spin.py` | Tests for the bench test |
 | `test_with_gx10.py` | Runs the GX10's real pipeline against the steering rules |
 | `sightsense-cane.service` | Starts the controller when the Pi starts |
-| `sightsense.env.example` | The settings file the service reads |
+| `sightsense.env.example` | Direct wheel settings and GX10 address |
+| `stage_sd.py`, `install_from_boot.sh` | Back up and stage the update; install once on the Pi |
+| `sightsense-setup.service`, `prepare_runtime.sh` | Check/install the already declared Pi dependencies |
+| `test_network.py`, `test_wheel_drive.py`, `test_stage_sd.py` | Real local transport, mock motor and SD staging tests |
+| `rpm.py` | Calculate RPM from counted turns and elapsed time |
 
 ## Setup
 
@@ -97,7 +136,7 @@ Count the green light's blinks. Three long and one short means a bootloader erro
 On the Pi, from this folder:
 
 ```bash
-python3 cane.py --gx10 192.168.8.10
+python3 cane.py --wheel-drive --gx10 100.108.5.67:8766
 ```
 
 The address can also come from the `SIGHTSENSE_GX10` environment variable. Add `--swap` if "left" turns the wheel right, and `--duty 0.15` for less power.
@@ -107,18 +146,18 @@ The address can also come from the `SIGHTSENSE_GX10` environment variable. Add `
 The GX10's frame service ([`../gx10/ingest/`](../gx10/ingest/)) sends the Pi one command for every frame it processes. The command comes from the obstacle check on depth, steered toward what the navigator wants: an object found by the vision model and YOLO, a route, or straight ahead. The Pi only has to connect:
 
 ```bash
-python3 cane.py --gx10 169.233.72.156:8766
+python3 cane.py --wheel-drive --gx10 100.108.5.67:8766
 ```
 
-That was the GX10's address on the venue Wi-Fi on October 10, and 8766 is the service's default Pi port. Ask whoever started the service which address and port it is on.
+The GX10's Tailscale address and port 8766 were checked from the laptop on October 11. The dashboard is port 8000; it is not the Pi command port. The existing Pi Tailscale node is `100.75.181.48`. Preserve its login and network state.
 
-When the phone stops sending frames, the service stops sending commands, and the Pi switches the driver off 0.4 seconds later.
+The updated GX10 server discards expired frames and subtracts processing time from the command TTL. The Pi switches off when that TTL expires. The server update must also be run on the GX10 for this receive-time budget to apply; the running GX10 was not changed by staging the Pi SD card.
 
 What has been run: the service, its fake phone and this controller together on a laptop, with a simulated wheel, the vision model stubbed out and YOLO off. The wheel went centre, left, then back to centre for stop as the fake phone walked at a wall, and the driver went off when the frames stopped. `test_with_gx10.py` repeats that. It has not been run on the cane, or against the service on the GX10.
 
-## No limit switches yet
+## Timed position steering
 
-`--open-loop` is for a cane with no limit switches fitted. The controller works out where the wheel is from how long the motor has run, and reads no switches.
+`--open-loop` is for a position-steering mechanism with no limit switches fitted. The direct wheel uses `--wheel-drive` and does not need it. The controller works out where the wheel is from how long the motor has run, and reads no switches.
 
 ```bash
 python3 cane.py --gx10 169.233.72.156:8766 --open-loop
@@ -141,8 +180,8 @@ sudo systemctl enable --now sightsense-cane.service
 ```
 
 - Edit `/boot/firmware/sightsense.env` to set the address and any options. Delete it and the controller no longer starts by itself.
-- The wheel moves as soon as the controller starts. Do not enable this until the cane is ready for that.
-- Not yet installed on the team's Pi.
+- The direct wheel starts off and only runs while valid LEFT or RIGHT heartbeats arrive.
+- The SD installer enables this service after copying the new files. Physical boot and motor checks remain pending until the card is returned to the Pi.
 
 Watch what it is doing:
 
@@ -155,7 +194,7 @@ journalctl -u sightsense-cane.service -f
 Type the commands yourself. The last one typed is repeated 15 times a second, like the GX10 would:
 
 ```bash
-python3 cane.py --typed
+python3 cane.py --typed --wheel-drive
 ```
 
 Type `left`, `center`, `right`, `stop` or `free`. `silence` stops sending, as if the link had dropped. `quit` finishes.
@@ -167,7 +206,7 @@ python3 fake_gx10.py
 ```
 
 ```bash
-python3 cane.py --gx10 <laptop address>
+python3 cane.py --wheel-drive --gx10 <laptop address>
 ```
 
 ## Testing without the Pi
@@ -175,7 +214,7 @@ python3 cane.py --gx10 <laptop address>
 Add `--sim` to use a simulated wheel. This runs on any computer and needs no GPIO:
 
 ```bash
-python3 cane.py --typed --sim
+python3 cane.py --typed --sim --wheel-drive
 ```
 
 The tests use the same simulated wheel:
@@ -185,6 +224,8 @@ python3 -m unittest -v
 ```
 
 ## Start-up motor test
+
+The SD updater removes its enable marker, removes the old cloud-init bench commands and masks this service. The direct-drive wheel must not run the full-power boot ramp. The following describes the separate bench script.
 
 For the bench only. It is a way to see the motor turn without logging in to the Pi.
 
@@ -241,3 +282,28 @@ One 0.3 second pulse each way. Keep a hand on the stop: the kill switch, or the 
 ```bash
 python3 cane.py --bench motor
 ```
+
+## Updating the plugged-in SD card from Windows
+
+`stage_sd.py` works on the existing FAT32 boot partition. It does not format the card. First verify its physical disk and root PARTUUID; the tool rejects a boot command line for a different UUID.
+
+```powershell
+python pi/stage_sd.py --boot E:/ --backup C:/Users/Connor.Sawaya29/.cache/sightsense-sd-update-backup --expected-root-partuuid 3a83263b-02 --gx10 100.108.5.67:8766
+```
+
+It backs up bootfs outside the card, writes and reads back SHA-256 hashes for the payload, repairs an empty `cmdline.txt` using its matching backup, and disables the old boot spin test. A Pi 5 `config.txt` entry sets the four motor pins low during firmware boot. That setting takes effect after firmware starts and can be overridden later; it does not replace the hardware pull-downs described in the wiring guide. See the [Raspberry Pi GPIO documentation](https://www.raspberrypi.com/documentation/computers/config_txt.html#gpio-control).
+
+Safely eject the card, put it back in the Pi and power it. On its first boot, a one-time installer copies the code and services into the Linux partition, backs up the previous Pi files, masks the boot spin service and enables the controller. It then restores the normal boot command line and reboots. Dependency setup runs on the normal boot and installs only the packages already listed above if missing. Wi-Fi, SSH credentials and the existing Tailscale identity are preserved.
+
+Check after that reboot:
+
+```bash
+cat /boot/firmware/sightsense-install-status.txt
+cat /boot/firmware/sightsense-install.log
+systemctl status sightsense-setup sightsense-cane --no-pager
+tailscale status
+journalctl -u sightsense-cane -b --no-pager
+vcgencmd get_throttled
+```
+
+`STAGED` means files are on bootfs but not yet installed into Linux. `INSTALLED` means the copy completed, not that the physical motor has been measured. A failed install writes its status and returns to a normal boot so SSH remains available. The installer log and staged files are left on bootfs for inspection.

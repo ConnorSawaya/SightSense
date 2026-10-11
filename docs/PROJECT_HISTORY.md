@@ -95,6 +95,14 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - **Wiring.** The six wires between the Pi and the driver were fitted between about 8:00 and 8:45 PM and read back from photos. The limit switches, the fuse and the kill switch were not fitted, and nothing had been run through the driver.
 - **Motor controller.** Written from about 2:00 PM against a simulated wheel on a laptop, because the Pi was not yet running. Its tests passed on the Pi at about 4:25 PM. It had not yet driven a real motor.
 
+## 12. Direct wheel drive and the Pi update (October 11)
+
+- The user clarified that the 12 V 120 rpm motor is connected directly to the mecanum wheel. Opposite rotations are intended to produce left/right guidance. This supersedes the earlier three-position steering plan and the wheel ideas in the historical table below.
+- Added `--wheel-drive`: LEFT/RIGHT spin opposite ways; CENTER/STOP/FREE switch off. It has no homing or position switches. Duty stays capped at 25%, each pulse at 400 ms, with a 50 ms rest and a finite command watchdog.
+- Added tests using real local WebSockets, the GX10 depth pipeline, synthetic phone frames, the Pi control loop and mock GPIO. No physical motor or real AI model was exercised in those tests.
+- Prepared an SD update tool that backs up bootfs, restores an empty kernel command line from a matching backup, removes the old full-power bench startup, and installs the Pi files on its next boot. Network and login settings are preserved.
+- The laptop's Tailscale status showed the GX10 online at `100.108.5.67` and an existing Pi named `sightsense` offline at `100.75.181.48`. The GX10 accepted a command WebSocket on port 8766. Actual motor RPM and lateral direction remain physical measurements.
+
 ## Ideas considered and dropped
 
 | Idea | Why it was dropped |

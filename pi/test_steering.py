@@ -7,6 +7,7 @@ gpiozero's mock pins, and is skipped where gpiozero is not installed.
 """
 
 import unittest
+from unittest.mock import patch
 
 from hardware import (
     PIN_L_EN, PIN_LPWM, PIN_R_EN, PIN_RPWM, PIN_SWITCH, GpioHardware, OpenLoopHardware, SimHardware,
@@ -115,6 +116,18 @@ class StartUp(unittest.TestCase):
 
 
 class Commands(unittest.TestCase):
+    def test_stop_interrupts_left_pulse_and_returns_to_centre(self):
+        bench = Bench(x=0).started()
+        bench.run(0.08, LEFT)
+        x = bench.wheel.x
+        bench.steering.command("STOP", bench.now)
+        self.assertFalse(bench.wheel.on)
+        bench.run(0.08, "STOP")
+        self.assertGreater(bench.wheel.x, x)
+        bench.run(1, "STOP")
+        self.assertEqual(bench.wheel.pressed(), {CENTER})
+        bench.check_limits(self)
+
     def test_follows_left_centre_right(self):
         bench = Bench().started()
         for cmd, switch in ((LEFT, LEFT), (RIGHT, RIGHT), (CENTER, CENTER), (RIGHT, RIGHT)):
@@ -269,6 +282,24 @@ class Faults(unittest.TestCase):
 
 
 class Messages(unittest.TestCase):
+    def test_nonfinite_timeout_is_rejected(self):
+        for ttl in ("NaN", "Infinity", "-Infinity"):
+            with self.assertRaises(ValueError):
+                parse_command('{"cmd":"LEFT","ttl_ms":' + ttl + '}')
+
+    def test_direct_invalid_timeout_switches_off(self):
+        for ttl in (float("nan"), float("inf"), -1, False, "400"):
+            bench = Bench().started(slow=True)
+            bench.run(0.1, RIGHT)
+            bench.steering.command(LEFT, bench.now, ttl)
+            self.assertFalse(bench.wheel.on)
+            self.assertIsNone(bench.steering.want)
+
+    def test_very_large_integer_timeout_is_capped_without_overflow(self):
+        bench = Bench().started()
+        bench.steering.command(LEFT, bench.now, 10 ** 1000)
+        self.assertAlmostEqual(bench.steering.deadline, bench.now + 0.4)
+
     def test_reads_the_contract_message(self):
         text = '{"seq": 412, "cmd": "LEFT", "ttl_ms": 400}'
         self.assertEqual(parse_command(text), ("LEFT", 400, 412))
@@ -403,6 +434,19 @@ class Pins(unittest.TestCase):
         self.hw.drive(-1, 0.25)
         self.hw.off()
         self.assertEqual(self.state(), (0, 0, 0, 0))
+
+    def test_off_attempts_other_pins_when_one_write_fails(self):
+        self.hw.drive(-1, 0.25)
+        with patch.object(self.hw._enables[0], "off", side_effect=OSError("pin failed")):
+            with self.assertRaises(OSError):
+                self.hw.off()
+        self.assertEqual(self.state()[1:], (0, 0, 0))
+
+    def test_direct_wheel_does_not_open_switch_pins(self):
+        self.hw.close()
+        self.hw = GpioHardware(read_switches=False)
+        self.assertEqual(self.hw._switches, {})
+        self.assertEqual(self.hw.pressed(), set())
 
     def test_swap_reverses_the_motor(self):
         self.hw.close()

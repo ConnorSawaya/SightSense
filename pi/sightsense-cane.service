@@ -1,8 +1,8 @@
 [Unit]
 Description=SightSense cane motor controller: follows the GX10's commands
-After=network-online.target sightsense-spin-test.service
-# The bench test and the controller cannot both hold the motor pins.
-Wants=network-online.target
+After=network-online.target tailscaled.service sightsense-setup.service
+Conflicts=sightsense-spin-test.service
+Wants=network-online.target sightsense-setup.service
 # Only runs while this file exists. It holds the GX10's address.
 ConditionPathExists=/boot/firmware/sightsense.env
 
@@ -11,9 +11,12 @@ User=sightsense
 WorkingDirectory=/home/sightsense/SightSense/pi
 EnvironmentFile=/boot/firmware/sightsense.env
 Environment=PYTHONUNBUFFERED=1
+Environment=GPIOZERO_PIN_FACTORY=lgpio
+ExecStartPre=/usr/bin/python3 -c "import gpiozero, lgpio, websockets"
 ExecStart=/usr/bin/python3 /home/sightsense/SightSense/pi/cane.py $SIGHTSENSE_CANE_ARGS
 Restart=always
 RestartSec=2
+TimeoutStopSec=3
 
 [Install]
 WantedBy=multi-user.target

@@ -16,6 +16,7 @@ vision-language model only supply a desired bearing, speech and "within reach".
 import argparse
 import asyncio
 import json
+import math
 import os
 import statistics
 import threading
@@ -214,6 +215,7 @@ class Server:
         self.rx = deque(maxlen=60)
         self.proc_ms = deque(maxlen=60)
         self.dropped = 0
+        self.expired = 0
         self.received = 0
         self.phone_ws = None
         self.rec = None
@@ -260,6 +262,7 @@ class Server:
             "proc_ms": statistics.median(self.proc_ms) if self.proc_ms else None,
             "rtt_ms": rtt * 1000 if rtt else None,
             "dropped": self.dropped,
+            "expired": self.expired,
             "model": vlm.active_model(),
             "frame": self.pipe.status if now - self.pipe.last_frame < 2 else {},
             "heard": self.pipe.nav.heard,
@@ -305,6 +308,9 @@ class Server:
             self.new_frame.clear()
             raw, t_recv, ws = self.latest
             self.latest = None
+            if time.monotonic() - t_recv >= TTL_MS / 1000:
+                self.expired += 1
+                continue
             t0 = time.monotonic()
             try:
                 out, pi = await loop.run_in_executor(self.worker, self.pipe.process, raw, t_recv)
@@ -312,16 +318,32 @@ class Server:
                 print("frame error:", repr(e), flush=True)
                 continue
             self.proc_ms.append((time.monotonic() - t0) * 1000)
-            for p in list(self.pis):
-                try:
-                    await p.send(pi)
-                except ConnectionClosed:
-                    self.pis.discard(p)
+            if time.monotonic() - t_recv >= TTL_MS / 1000:
+                self.expired += 1
+            else:
+                await asyncio.gather(*(self._send_pi(p, pi, t_recv) for p in list(self.pis)))
             for text in out:
                 try:
                     await ws.send(text)
                 except ConnectionClosed:
                     break
+
+    async def _send_pi(self, peer, message, received):
+        """Send within the frame's original lifetime; a slow peer must not block others."""
+        remaining_ms = math.floor((received + TTL_MS / 1000 - time.monotonic()) * 1000)
+        if remaining_ms <= 0:
+            return
+        command = json.loads(message)
+        command["ttl_ms"] = min(command.get("ttl_ms", TTL_MS), remaining_ms)
+        try:
+            await asyncio.wait_for(peer.send(json.dumps(command)), remaining_ms / 1000)
+        except (ConnectionClosed, asyncio.TimeoutError):
+            self.pis.discard(peer)
+            # A cancelled send may be incomplete: close instead of reusing the peer.
+            try:
+                await asyncio.wait_for(peer.close(), 1)
+            except (ConnectionClosed, asyncio.TimeoutError):
+                pass
 
     async def report(self):
         while True:

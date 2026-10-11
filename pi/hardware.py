@@ -5,6 +5,7 @@ All offer drive(direction, duty), off(), pressed() and close().
 direction is -1 for left and +1 for right. Wiring is in ../hardware/wiring.md.
 """
 
+import math
 import time
 
 from steering import CENTER, LEFT, MAX_DUTY, RIGHT
@@ -25,7 +26,7 @@ class GpioHardware:
     way and on LPWM to turn the other. Enables low is driver off.
     """
 
-    def __init__(self, swap=False):
+    def __init__(self, swap=False, read_switches=True):
         from gpiozero import Button, DigitalOutputDevice, PWMOutputDevice
 
         self._swap = swap  # set if "left" turns the wheel right
@@ -34,9 +35,12 @@ class GpioHardware:
         self._lpwm = PWMOutputDevice(PIN_LPWM, frequency=PWM_HZ)
         self._switches = {
             name: Button(pin, pull_up=True) for name, pin in PIN_SWITCH.items()
-        }
+        } if read_switches else {}
 
     def drive(self, direction, duty):
+        if direction not in (-1, 1) or not math.isfinite(duty) or duty < 0:
+            self.off()
+            raise ValueError("bad motor direction or duty")
         rpwm = (direction < 0) != self._swap
         powered, idle = (self._rpwm, self._lpwm) if rpwm else (self._lpwm, self._rpwm)
         idle.value = 0
@@ -45,20 +49,33 @@ class GpioHardware:
         powered.value = max(0.0, min(duty, MAX_DUTY))
 
     def off(self):
-        self._rpwm.value = 0
-        self._lpwm.value = 0
-        for enable in self._enables:
-            enable.off()
+        errors = []
+        # Try every pin even if one write fails. Disable the bridge first.
+        for device in (*self._enables, self._rpwm, self._lpwm):
+            try:
+                device.off()
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            raise errors[0]
 
     def pressed(self):
         return {name for name, switch in self._switches.items() if switch.is_pressed}
 
     def close(self):
-        if self._rpwm.closed:
-            return
-        self.off()
+        errors = []
+        if not all(device.closed for device in (self._rpwm, self._lpwm, *self._enables)):
+            try:
+                self.off()
+            except Exception as e:
+                errors.append(e)
         for device in (self._rpwm, self._lpwm, *self._enables, *self._switches.values()):
-            device.close()
+            try:
+                device.close()
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            raise errors[0]
 
 
 class SimHardware:
