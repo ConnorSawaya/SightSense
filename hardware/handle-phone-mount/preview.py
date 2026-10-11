@@ -432,7 +432,7 @@ def drawing_handle():
     note(ax, (-55, 16 + 55 * 0.577 - 12), f"grip {ws.GRIP_W:.0f} wide x {ws.GRIP_H:.0f} tall,\nturned {ws.GRIP_TILT_DEG:.0f} deg nose-down", (-15, -40))
     note(ax, ((bore / 2 + ws.SOCKET_OD / 2) / 2, -d / 2), f"hole {ws.SET_SCREW_D} dia through one\nside wall: M3 screw cuts\nits own thread", (48, 8))
     b = (ws.button_location() * Pos(0, 0, 4)).position
-    note(ax, (b.X, b.Z), f"thumb button: {ws.BUTTON_HOLE_D} mm hole,\n{ws.BUTTON_SEAT_D:.0f} mm flat for its head,\n{ws.BUTTON_POCKET_D} mm pocket for the nut", (30, 42))
+    note(ax, (b.X, b.Z), f"thumb button: {ws.BUTTON_HOLE_D} mm hole for its 7 mm thread,\n{ws.BUTTON_SEAT_D:.0f} mm flat on top for its nut,\n{ws.BUTTON_POCKET_D:.0f} mm pocket underneath for its body", (30, 42))
     ax = axes[1]
     show(ax, [item(part, "handle")], (0, 0, -1), "stick_handle: seen from below", up=(0, 1, 0), margin=30, scale=7)
     dim(ax, (-bb.min.X, -ws.GRIP_W / 2), (-bb.min.X, ws.GRIP_W / 2), f"{ws.GRIP_W:.0f}", off=(12, 0), text_off=(6, 0))

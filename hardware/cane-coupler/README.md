@@ -105,6 +105,7 @@ The receiver stands behind the motor can, parallel to it, with its closed end le
 - The motor slides up into the band from below until the gearbox stops against the shelf. Two M3 screws then go through the front wall into the gearbox's own threaded holes.
 - The motor can sits off-centre on the gearbox. The mount has cut-outs for the can on both sides, so it fits whichever way the can is offset.
 - The wheel adapter's collar and clamp screw pass 2 mm below the band.
+- [`../motor-mount-2/`](../motor-mount-2/) is a sturdier version of this receiver. It takes the same v4 main insert and the same cross bolt.
 
 **Motor dimensions come from a published JGY-370 outline drawing, not from measuring this motor:** gearbox 46 × 32 × 21 mm (25.2 mm over the bosses), four M3 holes on 18 × 33 mm, bosses 7.4 mm diameter and 2 mm tall, thread 12 mm deep, shaft 31 mm below the gearbox's top end, motor can 24.4 × 30.8 mm. Source: <https://innovatorsguru.com/jgy-370-dc-motor/>.
 
