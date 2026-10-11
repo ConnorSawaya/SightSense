@@ -56,6 +56,7 @@
   .who { color: var(--dim); min-width: 3.2em; }
   .you .what { color: #8fb8ff; } .cane .what { color: var(--text); }
   h2 { font-size: 14px; margin: 0; color: var(--dim); font-weight: 600; }
+  .explain { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: var(--panel); font-variant-numeric: tabular-nums; min-height: 1.4em; }
   /* Manual steering */
   .toggle { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
   .toggle input { flex: 0; width: 18px; height: 18px; }
@@ -82,7 +83,8 @@
 <main>
   <section>
     <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
-    <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading; the square and number are the distance at the centre. Live stream from the GX10, newest frame only (up to 15 a second).</p>
+    <div class="explain" id="explain"></div>
+    <p class="dim">Left: phone picture, upright, with YOLO boxes (amber) and hazards (violet). Right: what the LiDAR obstacle check sees. Green floor; obstacles red under 1.2 m, amber under 2.5 m, yellow beyond; magenta too close to measure; dark blue no reading (both count as blocked); grey is beyond range or above the cane. Lines split the seven headings, each labelled with its clearance in metres. The side the wheel turns to, or the side you hold in manual steering, stays bright with its obstacles outlined.</p>
     <div class="panel"><h2>Objects (YOLO, distance from LiDAR)</h2><ul class="list" id="objects"><li class="dim">none</li></ul></div>
     <div class="panel"><h2>Conversation</h2><ul class="list" id="log"><li class="dim">nothing yet</li></ul></div>
   </section>
@@ -167,6 +169,7 @@ function show(s) {
     const wheel = s.manual ? s.manual.cmd : f.cmd;
     $("cmd").textContent = (s.manual ? "Wheel (manual): " : "Wheel: ") + (wheel || "-"); $("cmd").className = "decision wheel " + (wheel === "STOP" ? "STOP" : "");
     showManual(s);
+    $("explain").textContent = s.explain || "";
     showPi(s.pi_health);
     $("state").textContent = f.state ? f.state + (f.desired !== null && f.desired !== undefined ? " · wants " + f.desired + "°" : "") : "waiting for frames";
     const bars = $("bars"); bars.innerHTML = "";

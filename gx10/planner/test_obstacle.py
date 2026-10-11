@@ -2,10 +2,12 @@
 
 import unittest
 
+import numpy as np
+
 from navigator import fake
 
 from .fake_scene import arrays, render
-from .obstacle import FAR_M, Smoother, check
+from .obstacle import FAR_M, HEADINGS, MAP_FLOOR, MAP_OBSTACLE, Smoother, check
 
 
 def run(pose, boxes=(), glass=(), desired=0.0, last=0.0):
@@ -62,6 +64,42 @@ class Check(unittest.TestCase):
     def test_low_floor_items_ignored(self):
         mat = ((-0.5, 0, -2.5), (0.5, 0.05, -1.5))  # 5 cm high doormat
         self.assertEqual(run(CANE, [mat]).raw_cmd, "CENTER")
+
+
+
+class Maps(unittest.TestCase):
+    """The dashboard's per-pixel maps: same decision with or without them, and sensible contents."""
+
+    def run_maps(self, boxes=()):
+        f = render(CANE, boxes)
+        d, c = arrays(f)
+        plain = check(d, c, f.fx, f.fy, f.cx, f.cy, f.pose)
+        mapped = check(d, c, f.fx, f.fy, f.cx, f.cy, f.pose, want_maps=True)
+        return plain, mapped
+
+    def test_maps_do_not_change_the_decision(self):
+        for boxes in ((), [WALL_AHEAD], [((-0.1, 0, -2.3), (0.5, 1.2, -2.0))]):
+            plain, mapped = self.run_maps(boxes)
+            self.assertIsNone(plain.maps)
+            self.assertEqual((plain.clearance, plain.best, plain.raw_cmd), (mapped.clearance, mapped.best, mapped.raw_cmd))
+
+    def test_open_floor_is_floor(self):
+        m = self.run_maps()[1].maps
+        self.assertGreater((m["kind"] == MAP_FLOOR).mean(), 0.3)
+        self.assertEqual(int((m["kind"] == MAP_OBSTACLE).sum()), 0)
+
+    def test_wall_pixels_are_obstacles_in_the_centre_corridor(self):
+        m = self.run_maps([WALL_AHEAD])[1].maps
+        ob = m["kind"] == MAP_OBSTACLE
+        self.assertGreater(ob.sum(), 100)
+        centre_bit = 1 << HEADINGS.index(0)
+        self.assertTrue(((m["corridor"] & centre_bit) > 0)[ob].any())
+        self.assertAlmostEqual(float(np.median(m["along"][ob & ((m["corridor"] & centre_bit) > 0)])), 1.5, delta=0.3)
+
+    def test_headings_cover_the_middle(self):
+        m = self.run_maps()[1].maps
+        h, w = m["heading"].shape
+        self.assertEqual(int(m["heading"][h // 2, w // 2]), HEADINGS.index(0))
 
 
 class Smoothing(unittest.TestCase):

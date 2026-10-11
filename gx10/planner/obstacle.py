@@ -35,10 +35,20 @@ class Check:
     raw_cmd: str  # this frame's command before smoothing
     floor_seen: bool
     points: int
+    maps: Optional[dict] = None  # per depth pixel, for the dashboard only; see MAP_* below
 
 
-def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired: float = 0.0, last: float = 0.0) -> Check:
-    """One frame. depth_mm and conf are (h, w) arrays; pose is 16 numbers, column by column."""
+# maps["kind"]: what each depth pixel is, as the check saw it
+MAP_NONE, MAP_FLOOR, MAP_OBSTACLE, MAP_TOO_CLOSE, MAP_NO_READING, MAP_OUT = 0, 1, 2, 3, 4, 5
+# maps["heading"]: index into HEADINGS of the 10-degree wedge a pixel looks along, or -1
+# maps["corridor"]: bit i set if the pixel is an obstacle inside heading i's 0.7 m corridor
+# maps["along"]: metres ahead along the floor, for obstacle pixels (0 elsewhere)
+
+
+def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired: float = 0.0, last: float = 0.0,
+          want_maps: bool = False) -> Check:
+    """One frame. depth_mm and conf are (h, w) arrays; pose is 16 numbers, column by column.
+    want_maps: also return per-pixel maps for the dashboard (about 1 ms more)."""
     h, w = depth_mm.shape
     M = np.asarray(pose, dtype=np.float64).reshape(4, 4).T  # column by column -> matrix
     R, t = M[:3, :3], M[:3, 3]
@@ -51,7 +61,7 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
     fwd = -R[:, 2]
     f2 = np.array([fwd[0], fwd[2]])
     if np.linalg.norm(f2) < 1e-6:  # camera pointing straight up or down
-        return _nothing(raw_cmd="STOP")
+        return _nothing(raw_cmd="STOP")  # no maps: the dashboard shows depth only
     f2 /= np.linalg.norm(f2)
     r2 = np.array([-f2[1], f2[0]])  # forward turned 90 degrees clockwise seen from above
     ray_b = np.degrees(np.arctan2(rays[..., 0] * r2[0] + rays[..., 2] * r2[1], rays[..., 0] * f2[0] + rays[..., 2] * f2[1]))
@@ -73,14 +83,16 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
             guess = np.percentile(near[:, 1], 5)
             if cam_y - 1.6 <= guess <= cam_y - 0.3:
                 floor_y, floor_seen = guess, True
-    obst = p[(p[:, 1] > floor_y + FLOOR_MARGIN_M) & (p[:, 1] < cam_y + ABOVE_CAMERA_M)]
+    is_obst = (p[:, 1] > floor_y + FLOOR_MARGIN_M) & (p[:, 1] < cam_y + ABOVE_CAMERA_M)
+    obst = p[is_obst]
 
     # Obstacle points in the user's floor frame: a = metres right, b = metres ahead
     d = obst[:, [0, 2]] - t[[0, 2]]
     a, b = d @ r2, d @ f2
 
+    corridor = np.zeros(len(obst), np.uint8)
     clearance, usable = {}, []
-    for hd in HEADINGS:
+    for i, hd in enumerate(HEADINGS):
         wedge = np.abs(ray_b - hd) <= 5.0
         n = int(wedge.sum())
         if n < MIN_WEDGE_PX or good[wedge].mean() < MIN_VALID:
@@ -92,12 +104,35 @@ def check(depth_mm: np.ndarray, conf: np.ndarray, fx, fy, cx, cy, pose, desired:
         s, c = np.sin(np.radians(hd)), np.cos(np.radians(hd))
         along, side = a * s + b * c, a * c - b * s
         inside = (np.abs(side) <= CORRIDOR_W_M / 2) & (along > 0)
+        corridor[inside] |= np.uint8(1 << i)
         clearance[hd] = float(np.percentile(along[inside], 5)) if inside.sum() >= MIN_POINTS else FAR_M
         if clearance[hd] >= USABLE_M:
             usable.append(hd)
 
     best = min(usable, key=lambda hd: abs(hd - desired) + 0.5 * abs(hd - last)) if usable else None
-    return Check(clearance, usable, best, wheel(best), floor_seen, len(obst))
+    maps = _maps(h, w, good, keep, too_close, z, p, is_obst, floor_y, cam_y, ray_b, corridor, a, b) if want_maps else None
+    return Check(clearance, usable, best, wheel(best), floor_seen, len(obst), maps)
+
+
+def _maps(h, w, good, keep, too_close, z, p, is_obst, floor_y, cam_y, ray_b, corridor, a, b):
+    """What the check saw, pixel by pixel. Drawing only; the decision above does not use it."""
+    kind = np.full((h, w), MAP_OUT, np.uint8)  # good reading beyond range
+    kind[~good] = MAP_NO_READING
+    kind[too_close] = MAP_TOO_CLOSE
+    flat = np.flatnonzero(keep)
+    k = np.full(len(flat), MAP_NONE, np.uint8)  # too high above the camera
+    k[p[:, 1] <= floor_y + FLOOR_MARGIN_M] = MAP_FLOOR
+    k[is_obst] = MAP_OBSTACLE
+    kind.flat[flat] = k
+    obst_px = flat[is_obst]
+    corr = np.zeros(h * w, np.uint8)
+    corr[obst_px] = corridor
+    along = np.zeros(h * w, np.float32)
+    along[obst_px] = np.hypot(a, b)
+    idx = np.rint((ray_b - HEADINGS[0]) / 10.0)
+    heading = np.where((idx >= 0) & (idx < len(HEADINGS)) & (np.abs(ray_b - (HEADINGS[0] + 10 * idx)) <= 5.0), idx, -1)
+    return {"kind": kind, "heading": heading.astype(np.int8), "corridor": corr.reshape(h, w),
+            "along": along.reshape(h, w)}
 
 
 def wheel(heading: Optional[float]) -> str:

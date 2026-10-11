@@ -161,7 +161,8 @@ class Pipeline:
                 locate(d, f, depth, conf)
 
         g = self.nav.on_frame(f, dets)
-        c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading)
+        c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading,
+                  want_maps=True)  # the maps are for the dashboard's obstacle view only
         raw_cmd = c.raw_cmd
         if g.hold_center and raw_cmd != "STOP":
             raw_cmd = "CENTER"  # turning on the spot; depth still wins
@@ -194,7 +195,8 @@ class Pipeline:
             out.append(json.dumps({"lookup": g.lookup}))
         pi = json.dumps({"seq": f.seq, "cmd": cmd, "ttl_ms": TTL_MS})
         done = time.monotonic()
-        self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf}
+        self.view = {"jpeg": f.jpeg, "upright": upright, "turn": turn, "dets": dets, "depth": depth, "conf": conf,
+                     "maps": c.maps, "clearance": c.clearance, "best": c.best, "cmd": cmd}
         self.status = {
             "seq": f.seq, "cmd": cmd, "state": state, "turn": turn * 90, "best": c.best,
             "clearance": {k: (round(v, 2) if v is not None else None) for k, v in c.clearance.items()},
