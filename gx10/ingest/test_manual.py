@@ -38,6 +38,8 @@ class Manual(unittest.TestCase):
 
     def test_only_agreed_commands(self):
         self.assertFalse(self.s.manual_command("FASTER"))
+        for position in ("CENTER", "FREE"):  # positions mean nothing to a free-spinning motor
+            self.assertFalse(self.s.manual_command(position))
         self.assertIsNone(self.s.manual)
         self.assertTrue(self.s.manual_command("left"))
         self.assertEqual(self.s.manual[0], "LEFT")
@@ -51,19 +53,20 @@ class Manual(unittest.TestCase):
         self.assertEqual({m["cmd"] for m in self.pi.got}, {"RIGHT"})
         self.assertTrue(all(m["ttl_ms"] == srv.TTL_MS for m in self.pi.got))
 
-    def test_depth_stop_overrides_a_turn(self):
+    def test_spin_is_sent_whatever_the_free_space(self):
         self.s.pipe.last_frame = time.monotonic() + 10  # frames are arriving
-        self.s.pipe.status = {"cmd": "STOP"}
-        self.s.manual_command("LEFT")
-        run_loop(self.s, 0.25)
-        self.assertEqual({m["cmd"] for m in self.pi.got}, {"STOP"})
-        self.assertTrue(self.s.manual_sent["depth_stop"])
-
-    def test_old_depth_does_not_override_on_the_bench(self):
-        self.s.pipe.status = {"cmd": "STOP"}  # from a phone that left long ago
+        self.s.pipe.status = {"cmd": "STOP"}  # and the obstacle check says STOP
         self.s.manual_command("LEFT")
         run_loop(self.s, 0.25)
         self.assertEqual({m["cmd"] for m in self.pi.got}, {"LEFT"})
+        self.assertTrue(self.s.manual_sent["obstacle_ahead"])  # shown on the dashboard only
+
+    def test_old_depth_is_not_shown_as_an_obstacle(self):
+        self.s.pipe.status = {"cmd": "STOP"}  # from a phone that left long ago
+        self.s.manual_command("RIGHT")
+        run_loop(self.s, 0.25)
+        self.assertEqual({m["cmd"] for m in self.pi.got}, {"RIGHT"})
+        self.assertFalse(self.s.manual_sent["obstacle_ahead"])
 
     def test_back_to_automatic_when_the_dashboard_goes_quiet(self):
         old = srv.MANUAL_HOLD_S

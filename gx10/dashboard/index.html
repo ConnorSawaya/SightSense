@@ -60,12 +60,10 @@
   /* Manual steering */
   .toggle { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
   .toggle input { flex: 0; width: 18px; height: 18px; }
-  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .pad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
   .pad button { padding: 16px 0; font-size: 17px; background: #2a313a; user-select: none; touch-action: none; }
   .pad button.held { background: #3a7bd5; }
-  button.latched { outline: 2px solid var(--text); }
-  button.stopbtn { background: #7a2626; }
-  .manual-off .pad button, .manual-off .quick button { opacity: .35; pointer-events: none; }
+  .manual-off .pad button { opacity: .35; pointer-events: none; }
   #manualState { margin-top: 8px; color: var(--text); }
   #manualState.warn { color: var(--caution); }
   .ok { color: var(--clear); } .warnc { color: var(--caution); } .bad { color: var(--stop); }
@@ -101,19 +99,14 @@
       <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
     </div>
     <div class="panel manual-off" id="manualPanel">
-      <h2>Manual steering (motor on the Pi)</h2>
-      <label class="toggle"><input type="checkbox" id="manualOn"> Steer by hand</label>
+      <h2>Spin the motor (on the Pi)</h2>
+      <label class="toggle"><input type="checkbox" id="manualOn"> Control by hand</label>
       <div class="pad">
-        <button type="button" data-hold="LEFT">&#9664; Left</button>
-        <button type="button" data-hold="CENTER">&#9650; Centre</button>
-        <button type="button" data-hold="RIGHT">Right &#9654;</button>
-      </div>
-      <div class="quick">
-        <button type="button" class="stopbtn latched" data-latch="STOP">Stop</button>
-        <button type="button" data-latch="FREE">Free wheel</button>
+        <button type="button" data-hold="LEFT">&#8634; Counter-clockwise</button>
+        <button type="button" data-hold="RIGHT">Clockwise &#8635;</button>
       </div>
       <div id="manualState">Off: the wheel follows the obstacle check.</div>
-      <div class="dim" style="margin-top:6px">Hold a direction to drive; let go and it stops. Keys: &larr; &uarr; &rarr;, space to stop. Depth still wins: while the phone streams, an obstacle STOP overrides you. If this page closes, the wheel goes back to automatic within a second.</div>
+      <div class="dim" style="margin-top:6px">Hold a button to spin the motor that way; let go and it stops. No set positions, and free space is not checked while you control it. Keys: &larr; counter-clockwise, &rarr; clockwise. If the directions come out reversed on the cane, start the Pi with --swap. If this page closes, the wheel goes back to automatic within a second.</div>
     </div>
     <div class="panel">
       <h2>Raspberry Pi</h2>
@@ -234,54 +227,45 @@ setInterval(() => {
     $("live").src = "/stream.mjpg?" + Date.now();
   }
 }, 3000);
-// Manual steering: while it is on, the page tells the GX10 what to send about 7 times a second
-let manualOn = false, held = null, latched = "STOP";
+// Manual spin: while it is on, the page tells the GX10 what to send about 7 times a second.
+// Holding a button spins the motor that way (LEFT counter-clockwise, RIGHT clockwise); letting go sends STOP.
+let manualOn = false, held = null;
 function sendManual(cmd) {
   fetch("/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cmd }), keepalive: true }).catch(() => {});
 }
-setInterval(() => { if (manualOn) sendManual(held || latched); }, 150);
-function setLatch(cmd) {
-  latched = cmd;
-  for (const b of document.querySelectorAll("[data-latch]")) b.classList.toggle("latched", b.dataset.latch === cmd);
-}
-function hold(cmd) {
-  if (!manualOn) return;
-  held = cmd; setLatch("STOP"); sendManual(cmd);
-  for (const b of document.querySelectorAll("[data-hold]")) b.classList.toggle("held", b.dataset.hold === cmd);
-}
-function release() {
-  if (held === null) return;
-  held = null; sendManual(latched);
-  for (const b of document.querySelectorAll("[data-hold]")) b.classList.remove("held");
+setInterval(() => { if (manualOn) sendManual(held || "STOP"); }, 150);
+function spin(cmd) {  // LEFT, RIGHT, or null to let go
+  if (!manualOn || cmd === held) return;
+  held = cmd; sendManual(held || "STOP");
+  for (const b of document.querySelectorAll("[data-hold]")) b.classList.toggle("held", b.dataset.hold === held);
 }
 $("manualOn").addEventListener("change", (e) => {
-  manualOn = e.target.checked; held = null; setLatch("STOP");
+  manualOn = e.target.checked; held = null;
   $("manualPanel").classList.toggle("manual-off", !manualOn);
   sendManual(manualOn ? "STOP" : "AUTO");
 });
 for (const b of document.querySelectorAll("[data-hold]")) {
-  b.addEventListener("pointerdown", (e) => { b.setPointerCapture(e.pointerId); hold(b.dataset.hold); });
-  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, release);
+  b.addEventListener("pointerdown", (e) => { b.setPointerCapture(e.pointerId); spin(b.dataset.hold); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, () => { if (held === b.dataset.hold) spin(null); });
 }
-for (const b of document.querySelectorAll("[data-latch]")) b.addEventListener("click", () => { setLatch(b.dataset.latch); sendManual(latched); });
-const KEYS = { ArrowLeft: "LEFT", ArrowUp: "CENTER", ArrowRight: "RIGHT" };
+const KEYS = { ArrowLeft: "LEFT", ArrowRight: "RIGHT" };
 document.addEventListener("keydown", (e) => {
   if (!manualOn || e.target.tagName === "INPUT" && e.target.type === "text") return;
-  if (KEYS[e.key]) { e.preventDefault(); if (held !== KEYS[e.key]) hold(KEYS[e.key]); }
-  else if (e.key === " ") { e.preventDefault(); release(); setLatch("STOP"); sendManual("STOP"); }
+  if (KEYS[e.key]) { e.preventDefault(); spin(KEYS[e.key]); }
 });
-document.addEventListener("keyup", (e) => { if (KEYS[e.key] && held === KEYS[e.key]) release(); });
-window.addEventListener("blur", release);  // a key held while switching windows must not keep driving
+document.addEventListener("keyup", (e) => { if (KEYS[e.key] && held === KEYS[e.key]) spin(null); });
+window.addEventListener("blur", () => spin(null));  // a key held while switching windows must not keep spinning
 window.addEventListener("pagehide", () => { if (manualOn) sendManual("AUTO"); });
 function showManual(s) {
   const m = s.manual, el = $("manualState");
   if (!manualOn && !m) { el.textContent = "Off: the wheel follows the obstacle check."; el.className = ""; return; }
   if (!m) { el.textContent = "Starting…"; el.className = ""; return; }
   const notes = [];
-  if (m.depth_stop) notes.push("obstacle ahead: depth overrides your " + m.asked);
-  if (!m.depth_live) notes.push("no phone frames, so no depth check (bench test only)");
+  if (m.obstacle_ahead) notes.push("the obstacle check says STOP (not applied while you control it)");
+  if (!m.depth_live) notes.push("no phone frames");
   if (!s.pis) notes.push("no Pi connected");
-  el.textContent = "Sending to the Pi: " + m.cmd + (notes.length ? " · " + notes.join(" · ") : "");
+  const words = { LEFT: "counter-clockwise", RIGHT: "clockwise", STOP: "stopped" };
+  el.textContent = "Motor: " + (words[m.cmd] || m.cmd) + (notes.length ? " · " + notes.join(" · ") : "");
   el.className = notes.length ? "warn" : "";
   if (!manualOn) { el.textContent = "Another dashboard is steering: " + m.cmd; el.className = "warn"; }
 }
