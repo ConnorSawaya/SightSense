@@ -53,11 +53,15 @@ def remove_boot_spin(user_data):
     return user_data
 
 
-def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profile=None):
+def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profile=None, more_wifi_profiles=()):
     boot, backup, source = Path(boot).resolve(), Path(backup).resolve(), Path(source).resolve()
     # A private, prebuilt NetworkManager keyfile stays outside the repository.
     # Read before changing the card so a missing input fails without any writes.
     wifi_text = Path(wifi_profile).read_text(encoding="utf-8-sig") if wifi_profile else None
+    # Further profiles are installed beside the first, so the Pi has a network to fall back to.
+    more_wifi = [Path(p).read_text(encoding="utf-8-sig") for p in more_wifi_profiles]
+    if more_wifi and wifi_text is None:
+        raise ValueError("a further Wi-Fi profile needs a first one (--wifi-profile)")
     if not re.fullmatch(r"[A-Za-z0-9.-]+:[0-9]{1,5}", gx10):
         raise ValueError("GX10 must be host:port, without http:// or a path")
     if not 1 <= int(gx10.rsplit(":", 1)[1]) <= 65535:
@@ -96,6 +100,8 @@ def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profil
     write_text(target / "sightsense.env", environment)
     if wifi_text is not None:
         write_text(target / "wifi.nmconnection", wifi_text)
+    for n, text in enumerate(more_wifi, 2):
+        write_text(target / f"wifi-{n}.nmconnection", text)
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
     except (OSError, subprocess.CalledProcessError):
@@ -121,7 +127,9 @@ def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profil
     if user_data.is_file():
         write_text(user_data, remove_boot_spin(user_data.read_text(encoding="utf-8-sig")))
     config = (boot / "config.txt").read_text(encoding="utf-8-sig").rstrip()
-    config += "\n\n# SightSense motor outputs low during Pi 5 boot\n[pi5]\ngpio=18,23,24,25=op,dl,pd\n[all]\n"
+    if "gpio=18,23,24,25=op,dl,pd" not in config:  # already there on a card that has been staged before
+        config += "\n\n# SightSense motor outputs low during Pi 5 boot\n[pi5]\ngpio=18,23,24,25=op,dl,pd\n[all]"
+    config += "\n"
     write_text(boot / "config.txt", config)
     write_text(boot / "sightsense.env", environment)
     write_text(boot / "sightsense-install-status.txt", "STAGED: insert in Pi; installer runs once and reboots.\n")
@@ -143,6 +151,8 @@ if __name__ == "__main__":
     parser.add_argument("--expected-root-partuuid", required=True)
     parser.add_argument("--gx10", required=True)
     parser.add_argument("--wifi-profile", help="Private NetworkManager .nmconnection file; never commit it")
+    parser.add_argument("--more-wifi-profile", action="append", default=[],
+                        help="A further private profile, installed beside the first as a fallback; may be repeated")
     args = parser.parse_args()
     print(json.dumps(stage(args.boot, args.backup, args.expected_root_partuuid, args.gx10,
-                           wifi_profile=args.wifi_profile), indent=2))
+                           wifi_profile=args.wifi_profile, more_wifi_profiles=args.more_wifi_profile), indent=2))
