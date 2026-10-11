@@ -27,7 +27,7 @@ As of the commit that added this file, the repository holds structure and docume
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location); LiDAR-only Liquid Glass screen (iOS 26+). Run on an iPhone 15 Pro against `gx10/ingest` over Tailscale on October 10: 4–17 frames/s, guidance, describe and read worked. Heat cut (30 fps camera, lower rate when hot) on branch `ios-app-heat`; not yet measured on the phone |
 | GX10 software (`gx10/`) | First versions of all pieces: `ingest/` (frame service), `planner/` (7-heading obstacle check, steady phone state), `dashboard/`, `vlm/` (`qwen3-vl:30b-a3b-instruct`), `navigator/` (rules, then the model for voice it does not understand; status and picture questions), `detector/` (YOLO26s). Run live with the iPhone on October 10 (describe 0.9 s, read 0.8 s, stop at about 2.2 m on a walk); model voice tested on a replayed phone recording, not yet live |
-| Pi motor controller (`pi/`) | Written; tested on a simulated wheel on a laptop; not yet run on the Pi or with a real motor |
+| Pi motor controller (`pi/`) | Written; tests pass on the Pi and its GPIO pins open; not yet run with a real motor or switches |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
 | Motor bracket, Pi plate | Not designed |
@@ -65,7 +65,7 @@ These come from the hackathon and from the team. Breaking one can get the projec
 | Machine | Where | Notes |
 | --- | --- | --- |
 | ASUS Ascent GX10 | Venue, on the team's router by Ethernet | NVIDIA GB10, 128 GB shared memory, ARM64 Linux (DGX OS). Stays at the venue; closes 10 PM Saturday. |
-| Raspberry Pi 5 | On the cane, on the team's router | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. |
+| Raspberry Pi 5 | On the cane; on a phone hotspot since October 10 | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. Name `sightsense.local`, user `sightsense`, code in `~/SightSense/pi`. Details in [`pi/README.md`](pi/README.md). |
 | iPhone 16 Pro | On the cane | App built on a teammate's Mac with Xcode, free Apple ID (7-day signing). |
 | Mac | Venue | Only for building the iPhone app. |
 | Team laptops | Venue | Development, SSH to the Pi and GX10. |
@@ -79,14 +79,14 @@ Planned addresses (reserve in the router; the subnet depends on the router): GX1
 | --- | --- |
 | Transport | WebSocket. One binary message per camera frame holding picture, depth and position together. No WebRTC, no video codec. |
 | Capture | Own ARKit app. Fallback: the Record3D streaming app (no voice or maps on the fallback). |
-| Network | The team's own router, no internet needed. |
+| Network | Planned: the team's own router, no internet needed. The router was not at the venue; the Pi is on a phone hotspot and the network for the whole system is not settled. See Known traps. |
 | Depth | iPhone LiDAR (`sceneDepth`). No depth model. |
 | Vision-language model | `qwen3-vl:30b` through Ollama; `qwen3-vl:8b` as the fast fallback. Check what the preloaded Nemotron can do first. Exact Ollama tag names are unverified. |
 | Detector | Ultralytics YOLO (YOLO26s or YOLO11s) in the `ultralytics/ultralytics:latest-nvidia-arm64` container, exported to TensorRT. |
 | Obstacle check | Seven headings from −30° to +30°, chosen every frame from depth. |
 | Wheel | One 12 V 120 rpm gear motor steers a normal free-rolling wheel to three positions with limit switches. Not a mecanum wheel. |
-| Motor driver | L298N (about 2 A, loses about 2 V). |
-| Power | 12 V 3 Ah pack → fuse → kill switch → L298N. Pi on its own USB-C power bank. Grounds joined. |
+| Motor driver | IBT-2 board (BTS7960). The plan said L298N; the IBT-2 is what the team has. It passes the full 12 V, so the software limits are the only limits. |
+| Power | 12 V 3 Ah pack → fuse → kill switch → IBT-2. Pi from the same pack through a 12 V to 5 V USB-C converter; back to its own power bank if the motor makes it reset. Grounds joined. |
 | Voice | Push-to-talk, on-device speech recognition on the iPhone. A text box on the dashboard does the same job if voice is not ready. |
 | Places | Apple MapKit walking directions, looked up on the phone. |
 | Cane | 18 mm carbon-fibre tube sections joined by the printed keyed coupler. |
@@ -158,6 +158,9 @@ One request at a time, 6-second timeout, keep the model loaded.
 - **Empty is not clear.** No points in a corridor can mean open space or missing readings.
 - **Stale targets.** If ARKit tracking resets, stored positions are wrong. Clear them.
 - **Pi resets when the motor starts.** Keep the Pi on its own power bank and fit the capacitor.
+- **Venue Wi-Fi.** `AIHackathon@UCSC` dropped a laptop about a minute after each join, and `UCSC-Guest` has a sign-in page a headless Pi cannot pass. The fixed `192.168.8.x` addresses only exist on the team's own router.
+- **Pi will not start.** Count the green light's blinks before changing anything else. Three long and one short is a bootloader error; the fix is in [`pi/README.md`](pi/README.md).
+- **Pi under-voltage.** A weak supply or long cable makes the Pi throttle and can reset it. `vcgencmd get_throttled` should print `0x0`.
 
 ## Priorities
 
@@ -186,7 +189,8 @@ Sunday: test at 9:00 AM, code freeze 11:00 AM, submit on Devpost by 12:45 PM (de
 - Organizers: earlier code or parts, own router, 3D printer, whether finalists keep the GX10 past 3:45 PM, which Nemotron is preloaded.
 - Does the iPhone keep cellular internet while on the no-internet router (needed for the place lookup)?
 - Do MapKit directions work under a free Apple ID?
-- Can the L298N and the battery pack handle the motor at stall?
+- Can the battery pack handle the motor at stall, and does the Pi stay up when it shares that pack?
+- The motor has a worm gear and holds its position with the driver off. Is "driver off" still the right response to a dropped link, or should the wheel be centred first?
 - All delays: typical estimates are 0.3–0.45 s for a stop beep and 1.5–3 s for a model answer. Replace with measurements.
 
 ## Where to find more

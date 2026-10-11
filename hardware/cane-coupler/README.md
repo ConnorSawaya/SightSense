@@ -57,3 +57,80 @@ These are suggestions, not tested settings.
 2. Test-fit both inserts dry, with the cord threaded through.
 3. Apply epoxy to the barrel and its grooves, push the insert in, and wipe off the excess. Keep epoxy out of the socket and the cord hole.
 4. Let it cure fully before loading the joint.
+
+## v4: M3 cross bolt and motor receiver
+
+Two new parts for the tip of the cane. The v3 files above are unchanged and kept.
+
+Experimental prototype. Neither v4 part has been printed, fitted or load tested.
+
+![Motor receiver, assembled and in section](PathSense_MotorReceiver_v4_preview.png)
+
+| File | What it is |
+| --- | --- |
+| `PathSense_Keyed_ShockCord_Main_v4.stl` | The v3 male insert with one M3 hole across its tongue. |
+| `PathSense_Keyed_ShockCord_MotorReceiver_v4.stl` | The v3 receiver with the same M3 hole, standing on a band that holds the JGY-370 gearmotor beside it. |
+| `*_v4.step` | The same parts for CAD. |
+| `coupler_motor_mount.py` | build123d source for both. Running it exports the parts and runs the geometric checks; `--preview` also renders the drawing. It imports helpers from `../handle-phone-mount/`. |
+
+### Same coupler geometry as v3
+
+The socket, tongue, grooves and cord hole are rebuilt from the values in the `.scad` file. The rebuilt v3 parts were compared with the v3 STL files: the sizes are identical and the volumes agree to within 0.06% (receiver 4438.0 against 4435.5 mm³, main 8869.4 against 8867.2 mm³).
+
+### The cross bolt
+
+| Feature | Value |
+| --- | --- |
+| Hole | 3.2 mm, for M3, through the receiver and the tongue |
+| Position | 11.7 mm below the receiver's mouth and the same distance up the tongue from its root, between two glue grooves |
+| Direction | Through the tongue's 8.5 mm side, leaving 3.4 mm of tongue each side of the hole |
+| Seats | 6.6 mm flat for the screw head on one side, 5.8 mm hex pocket for the nut on the other, each 1 mm deep |
+| Screw | M3 × 20, with an M3 nut (an M3 × 16 only just reaches through the nut) |
+
+The holes line up when the tongue is fully seated. The screw crosses the cord hole, so the shock cord can no longer pass through this joint.
+
+### The motor mount
+
+The receiver stands behind the motor can, parallel to it, with its closed end level with the top of the gearbox and the output shaft pointing away from it.
+
+| Feature | Value |
+| --- | --- |
+| Receiver axis | 33.3 mm behind the gearbox's front face, 0.6 mm off the motor can |
+| Band | Wraps the top 16 mm of the gearbox; 33.0 × 40.6 mm outside |
+| Gearbox pocket | 23.5 × 32.6 mm (0.3 mm clearance per side; the front wall rests on the two mounting bosses) |
+| Front wall | 5 mm thick, with two 3.4 mm holes 18 mm apart, 7 mm below the gearbox's top end |
+| Shelf | 4 mm thick; the gearbox's top end stops against it |
+| Overall | 48.3 × 40.6 × 50.0 mm |
+
+- The motor slides up into the band from below until the gearbox stops against the shelf. Two M3 screws then go through the front wall into the gearbox's own threaded holes.
+- The motor can sits off-centre on the gearbox. The mount has cut-outs for the can on both sides, so it fits whichever way the can is offset.
+- The wheel adapter's collar and clamp screw pass 2 mm below the band.
+
+**Motor dimensions come from a published JGY-370 outline drawing, not from measuring this motor:** gearbox 46 × 32 × 21 mm (25.2 mm over the bosses), four M3 holes on 18 × 33 mm, bosses 7.4 mm diameter and 2 mm tall, thread 12 mm deep, shaft 31 mm below the gearbox's top end, motor can 24.4 × 30.8 mm. Source: <https://innovatorsguru.com/jgy-370-dc-motor/>.
+
+### Hardware
+
+| Qty | Item | Where |
+| --- | --- | --- |
+| 1 | M3 × 20 screw + M3 nut | Cross bolt through receiver and tongue |
+| 2 | M3 × 12 to 16 screw | Front wall into the gearbox. A longer screw bottoms out in the 12 mm deep thread |
+
+### Assembly
+
+1. Glue the main insert into the tube as for v3.
+2. Slide the motor up into the band and fit the two screws through the front wall.
+3. Fit the wheel adapter and wheel on the shaft. Do this after step 2, because the wheel covers the two motor screws.
+4. Push the receiver onto the tongue until it seats, then fit the cross bolt and nut.
+
+### Printing notes
+
+These are suggestions, not tested settings.
+
+- **Orientation:** both parts are exported standing upright, which needs no supports. Layer lines then run across the receiver barrel and the tongue, their weakest direction, as noted for v3 above.
+- **Weakest point:** the tongue is still the thinnest section between the tube and the wheel, and the cross hole removes some of it.
+
+### Still to check
+
+1. The gearbox thickness and the position of its two upper mounting holes, against the motor.
+2. That the motor can clears the receiver once the motor is seated.
+3. That the cross bolt's holes line up with the tongue fully seated.

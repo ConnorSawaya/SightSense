@@ -4,11 +4,11 @@ Printable parts, wiring and build notes for the cane.
 
 | Folder / file | Contents | Status |
 | --- | --- | --- |
-| [`cane-coupler/`](cane-coupler/) | Keyed two-piece insert that joins 18 mm carbon-fibre tube sections | Design in, not yet printed |
-| [`wiring.md`](wiring.md) | Raspberry Pi, L298N motor driver, motor, switches and power | Planned wiring |
-| [`wheel-adapter/`](wheel-adapter/) | Hub that puts the omni wheel's hex onto the gearmotor's 6 mm D-shaft | Design in, not printed; hex and shaft sizes are estimates |
+| [`cane-coupler/`](cane-coupler/) | Keyed two-piece insert that joins 18 mm carbon-fibre tube sections. v4 adds an M3 cross bolt and a receiver that holds the gearmotor at the tip | v3: design in, not yet printed. v4: design in, not printed; motor sizes from a published drawing |
+| [`wiring.md`](wiring.md) | Raspberry Pi, IBT-2 motor driver, motor, switches and power | Planned wiring |
+| [`wheel-adapter/`](wheel-adapter/) | Hub and cap that put the omni wheel onto the gearmotor's 6 mm D-shaft | Design in, not printed; wheel hex and centre hole measured, shaft sizes from a published drawing |
 | `motor-bracket/` | Holds the 12 V motor above the steering fork | To design |
-| `pi-plate/` | Carries the Pi and the L298N on the tube | To design |
+| `pi-plate/` | Carries the Pi and the motor driver on the tube | To design |
 | [`handle-phone-mount/`](handle-phone-mount/) | Tilted handle, pole collar and adjustable phone cradle (camera forward) | Design in, not yet printed; cradle is oversize and the phone is strapped in |
 
 ## Conventions

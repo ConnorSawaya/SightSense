@@ -84,6 +84,16 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - It turned out the planning session was running on the home desktop, which cannot reach the Pi or the GX10. Work that needs those devices moves to a session on a laptop at the venue.
 - Two earlier project folders (`PathSense`, `PathSense-iOS`, dated October 7–8) were found on the home desktop. They were not imported, pending the organizers' answer on earlier work.
 
+## 11. Getting the Pi running (October 10, afternoon)
+
+- **No router.** The team's own router was not at the venue, so the planned private network and its fixed addresses did not exist.
+- **Venue Wi-Fi did not work for the Pi.** `AIHackathon@UCSC` dropped the team lead's laptop about a minute after each join, four times in a row. `UCSC-Guest` showed a sign-in page, which a Pi with no screen cannot pass.
+- **Phone hotspot.** From about 3:30 PM the laptop, and later the Pi, used a phone hotspot. The network for the whole system was still to be settled.
+- **The Pi would not start.** Its green light blinked three long and one short: a bootloader error, reported before it reads the SD card. Copying the official bootloader recovery files onto the card fixed it at about 4:15 PM. Time had already been lost to a Wi-Fi password with one wrong capital letter, which looked like the cause until the blink code was read.
+- **First login** at about 4:25 PM. The Pi reported under-voltage on its supply.
+- **The parts differed from the plan.** The motor driver is an IBT-2 (BTS7960) board, not an L298N, and the motor has a worm gear, so it holds its position when unpowered. A 12 V to 5 V converter powers the Pi from the motor's battery. The wiring notes and the controller were changed to match at about 5:00 PM.
+- **Motor controller.** Written from about 2:00 PM against a simulated wheel on a laptop, because the Pi was not yet running. Its tests passed on the Pi at about 4:25 PM. It had not yet driven a real motor.
+
 ## Ideas considered and dropped
 
 | Idea | Why it was dropped |
