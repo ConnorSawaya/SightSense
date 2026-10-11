@@ -14,6 +14,7 @@ struct LiDARFeed: View {
                 if running, let image = depth.image {
                     Image(uiImage: image)
                         .resizable()
+                        .interpolation(.high)  // smooth, like a regular depth view; the depth is only 256 x 192
                         .scaledToFill()
                 }
             }
