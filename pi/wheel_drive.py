@@ -6,7 +6,11 @@ or homing moves. Network messages never set motor power.
 
 import math
 
-from steering import COMMANDS, MAX_DUTY, MAX_TTL_S, MOVE_LIMIT_S, PAUSE_S, command_ttl
+from steering import COMMANDS, MAX_DUTY, MAX_TTL_S, PAUSE_S, command_ttl
+
+# Longest single run before a short rest. Was 0.4 s (MOVE_LIMIT_S), which made the wheel stutter. The motor still
+# stops MAX_TTL_S (0.4 s) after the last command, whatever this is.
+RUN_S = 2.0
 
 
 class WheelDrive:
@@ -23,6 +27,7 @@ class WheelDrive:
         self.deadline = 0.0
         self._run_until = None
         self._rest_until = 0.0
+        self._driven = None
         self._now = 0.0
         self.hw.off()
 
@@ -75,12 +80,16 @@ class WheelDrive:
                 return
             if self._run_until is not None:
                 if now < self._run_until:
+                    if self.duty != self._driven:  # the speed slider moved: change it now, not at the next run
+                        self.hw.drive(self.want, self.duty)
+                        self._driven = self.duty
                     return
                 self._stop(now)
             if now < self._rest_until or self.duty == 0:
                 return
             self.hw.drive(self.want, self.duty)
-            self._run_until = now + MOVE_LIMIT_S
+            self._driven = self.duty
+            self._run_until = now + RUN_S
             self.log(f"wheel {'LEFT' if self.want < 0 else 'RIGHT'}: duty {self.duty:.0%}, "
                      f"estimated {self.estimated_rpm:g} rpm (unmeasured)")
         except Exception:

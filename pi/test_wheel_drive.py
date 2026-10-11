@@ -5,7 +5,7 @@ import unittest
 
 from steering import MAX_DUTY, MOVE_LIMIT_S, PAUSE_S, parse_command
 from test_steering import Motor
-from wheel_drive import WheelDrive
+from wheel_drive import RUN_S, WheelDrive
 
 
 class WheelTests(unittest.TestCase):
@@ -56,13 +56,13 @@ class WheelTests(unittest.TestCase):
         self.assertGreaterEqual(self.motor._on[2], changed + PAUSE_S)
 
     def test_heartbeat_drives_repeated_bounded_pulses(self):
-        self.advance(2, "LEFT")
+        self.advance(5, "LEFT")  # runs of up to RUN_S (2 s) with a short rest between, no longer 0.4 s bursts
         self.wheel.command("STOP", self.now)
-        self.assertGreater(len(self.motor.runs), 3)
+        self.assertGreater(len(self.motor.runs), 1)
         for direction, duty, seconds in self.motor.runs:
             self.assertEqual(direction, -1)
             self.assertLessEqual(duty, MAX_DUTY)
-            self.assertLessEqual(seconds, MOVE_LIMIT_S + 0.0021)
+            self.assertLessEqual(seconds, RUN_S + 0.0021)
 
     def test_silence_expires_even_while_connection_is_open(self):
         self.advance(0.1, "RIGHT")
@@ -97,9 +97,9 @@ class WheelTests(unittest.TestCase):
         self.assertIsNone(self.motor._on)
 
     def test_rpm_is_an_estimate_and_power_is_capped(self):
-        wheel = WheelDrive(self.motor, duty=1, rated_rpm=120, log=self.lines.append)
-        self.assertEqual(wheel.duty, 0.25)
-        self.assertEqual(wheel.estimated_rpm, 30)
+        wheel = WheelDrive(self.motor, duty=2, rated_rpm=120, log=self.lines.append)
+        self.assertEqual(wheel.duty, 1.0)  # full power allowed since October 11, nothing above it
+        self.assertEqual(wheel.estimated_rpm, 120)
         wheel.command("LEFT", self.now)
         wheel.tick(self.now)
         self.assertTrue(any("unmeasured" in line for line in self.lines))

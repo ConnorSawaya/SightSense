@@ -96,7 +96,7 @@ def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profil
             write_text(payload / item.name, text.replace("\r\n", "\n"))
     write_text(target / "install.sh", (source / "install_from_boot.sh").read_text())
     write_text(target / "normal-cmdline.txt", clean)
-    environment = f"SIGHTSENSE_GX10={gx10}\nSIGHTSENSE_CANE_ARGS=--wheel-drive --duty 0.25 --rated-rpm 120\n"
+    environment = f"SIGHTSENSE_GX10={gx10}\nSIGHTSENSE_CANE_ARGS=--wheel-drive --duty 1.0 --rated-rpm 120\n"
     write_text(target / "sightsense.env", environment)
     if wifi_text is not None:
         write_text(target / "wifi.nmconnection", wifi_text)
@@ -107,7 +107,7 @@ def stage(boot, backup, expected_partuuid, gx10, source=ROOT / "pi", wifi_profil
     except (OSError, subprocess.CalledProcessError):
         commit = "unknown"
     release = {"source_commit": commit, "staged_utc": datetime.now(timezone.utc).isoformat(),
-               "mode": "wheel-drive", "gx10": gx10, "duty": 0.25, "rated_rpm": 120,
+               "mode": "wheel-drive", "gx10": gx10, "duty": 1.0, "rated_rpm": 120,
                "rpm_estimate": 30, "rpm_measured": False, "root_partuuid": expected_partuuid}
     write_text(target / "release.json", json.dumps(release, indent=2) + "\n")
     manifest = {}

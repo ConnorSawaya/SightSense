@@ -12,7 +12,8 @@ LEFT, CENTER, RIGHT = "LEFT", "CENTER", "RIGHT"
 POSITIONS = (LEFT, CENTER, RIGHT)
 COMMANDS = (LEFT, CENTER, RIGHT, "STOP", "FREE")
 
-MAX_DUTY = 0.25  # motor power cap
+MAX_DUTY = 1.0  # motor power cap. Was 0.25; removed October 11 at the user's request (the motor is 120 rpm at full
+               # power). The IBT-2 passes the full 12 V: this and --duty are the only limits, so test with a hand on the stop
 MOVE_LIMIT_S = 0.4  # longest single motor run
 MAX_TTL_S = 0.4  # longest silence before the driver goes off
 PAUSE_S = 0.05  # motor rests this long between runs
