@@ -20,6 +20,7 @@ import sys
 import threading
 import time
 
+import health
 from steering import MAX_DUTY, Steering, command_ttl, parse_command
 from wheel_drive import WheelDrive
 
@@ -89,7 +90,22 @@ def control_loop(hw, inbox, stop, duty, wheel_drive=False, rated_rpm=120):
         log("driver off, stopped")
 
 
-async def listen_gx10(url, inbox, stop):
+async def send_health(link, stop, about):
+    """Temperature, input voltage and settings to the GX10 dashboard every 2 s.
+    Runs beside the command reader; a failure here never reaches the motor."""
+    while not stop.is_set():
+        try:
+            report = await asyncio.to_thread(health.read, about)  # vcgencmd takes a few ms
+            await link.send(json.dumps({"health": report}))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log(f"health report failed: {e!r}")
+            return
+        await asyncio.sleep(health.HEALTH_S)
+
+
+async def listen_gx10(url, inbox, stop, about=None):
     """Keep a WebSocket open to the GX10's command port, reconnecting forever."""
     import websockets
     status = None
@@ -99,12 +115,16 @@ async def listen_gx10(url, inbox, stop):
                                           max_size=4096, max_queue=1,
                                           ping_interval=2, ping_timeout=3) as link:
                 log(status := f"connected to {url}")
-                while not stop.is_set():
-                    try:
-                        message = await asyncio.wait_for(link.recv(), 0.1)
-                    except asyncio.TimeoutError:
-                        continue
-                    inbox.put(message)
+                reporter = asyncio.create_task(send_health(link, stop, about))
+                try:
+                    while not stop.is_set():
+                        try:
+                            message = await asyncio.wait_for(link.recv(), 0.1)
+                        except asyncio.TimeoutError:
+                            continue
+                        inbox.put(message)
+                finally:
+                    reporter.cancel()
             problem = "link closed"
         except Exception as e:
             problem = f"no link to {url}: {e!r}"
@@ -114,8 +134,8 @@ async def listen_gx10(url, inbox, stop):
         await asyncio.sleep(RETRY_S)
 
 
-def follow_gx10(url, inbox, stop):
-    asyncio.run(listen_gx10(url, inbox, stop))
+def follow_gx10(url, inbox, stop, about=None):
+    asyncio.run(listen_gx10(url, inbox, stop, about))
 
 
 def follow_keyboard(inbox, stop):
@@ -226,7 +246,9 @@ def main():
         source = threading.Thread(target=follow_keyboard, args=(inbox, stop), daemon=True)
     else:
         host = args.gx10 if ":" in args.gx10 else f"{args.gx10}:{COMMAND_PORT}"
-        source = threading.Thread(target=follow_gx10, args=(f"ws://{host}", inbox, stop), daemon=True)
+        about = {"mode": "wheel-drive" if args.wheel_drive else "open-loop" if args.open_loop else "steering",
+                 "duty": duty, "max_duty": MAX_DUTY, "rated_rpm": args.rated_rpm, "swap": args.swap}
+        source = threading.Thread(target=follow_gx10, args=(f"ws://{host}", inbox, stop, about), daemon=True)
     if args.wheel_drive:
         log(f"direct wheel drive; LEFT uses {'LPWM GPIO24' if args.swap else 'RPWM GPIO23'}, "
             f"RIGHT uses {'RPWM GPIO23' if args.swap else 'LPWM GPIO24'}")
