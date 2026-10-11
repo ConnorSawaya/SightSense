@@ -14,7 +14,7 @@ All numbers are starting values at the top of `obstacle.py`, to tune on real rec
 
 ```bash
 ../../venv-yolo/bin/python -m unittest planner.test_obstacle   # ray-cast scenes (fake_scene.py)
-python3 -m unittest planner.test_state                          # state hold, no numpy scenes needed
+../../venv-yolo/bin/python -m unittest planner.test_state   # state hold (imports obstacle.py, so needs numpy)
 ```
 
 Tested on ray-cast scenes: open floor, a wall 1.5 m ahead, a box to go round, glass, a wall nearer than 0.3 m, a doormat, a phone turned sideways. On one real phone frame (the phone 0.23 m from a laptop) it gave `STOP` in 14.6 ms. Not yet tested on a real walk.
