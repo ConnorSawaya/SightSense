@@ -49,6 +49,7 @@ g.mode, g.state, g.distance_m   # for the dashboard
 | Any other question ("is there a chair here?", "what colour is the door?") | `vlm.ask`: the model answers in under 20 words; it is told not to give distances or judge safety, and any sentence with a distance is dropped |
 | "yes" / "no" | Answer "Say yes to go." |
 | "stop", "cancel", "never mind" | Stop guiding |
+| Anything the rules cannot place, and requests worded as questions ("could you point me toward the exit") | `vlm.interpret` (text only, about 0.4 s) picks one of the commands above: "bring me over toward the red cup" → object, "I need to get to the Starbucks on Main Street" → place, "hold on stop for a second" → cancel. It only picks a command; it never steers, and "path" is still answered from depth |
 | Anything else | "Sorry, I didn't catch that. You can say: what's in front of me, read the sign, or guide me to the apple." |
 
 "Am I going the right way" got "didn't catch that" three times in the first iPhone test (October 10); that is why status, path and free questions were added.

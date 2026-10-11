@@ -61,6 +61,9 @@ class UprightVLM:
     def ask(self, jpeg, question):
         return vlm.ask(rotate_jpeg(jpeg, self.turn), question)
 
+    def interpret(self, text):
+        return vlm.interpret(text)  # text only, no picture
+
 
 def path_answer(cmd, ahead):
     """ "Is the path clear?" from this frame's LiDAR obstacle check only. Never calls it safe.
