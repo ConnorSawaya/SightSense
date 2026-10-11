@@ -76,7 +76,7 @@ def read(about=None):
     h = {"cpu_c": cpu_temp_c(), "in_v": input_volts(), "wifi_dbm": wifi_dbm(), "uptime_s": uptime_s()}
     try:
         h["load"] = round(os.getloadavg()[0], 2)
-    except OSError:
+    except (AttributeError, OSError):  # Windows has no load average
         pass
     bits = throttled_bits()
     if bits is not None:

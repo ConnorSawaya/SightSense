@@ -13,6 +13,7 @@ As of the evening of October 10, 2026.
 | Six wires, Pi end | Fitted. Read from photos; all six are on the pins on this page. |
 | Six wires, driver end | Fitted. Read from photos by five independent readers, who all placed every wire on its planned pin, with the second column empty. Three checkers then tried to disprove that and could not. No photo shows a housing on a named pin: the columns are seen, the rows are worked out from the camera angle. Check black and yellow by eye before the first power-on. |
 | Limit switches | Not fitted |
+| Talk button | Not fitted. The Pi's code for it passes its tests on mock pins; not tried with a real button. |
 | Fuse and kill switch | Not fitted |
 | Battery, converter, motor | Not checked |
 | Anything under power | Not tested |
@@ -37,6 +38,8 @@ October 11 update: the user reports the motor is connected directly to the mecan
 | Barrel-to-screw adapter | The green one. This is where the battery's power splits two ways. |
 | Jumper wires | Six, with a socket on each end |
 | Limit switches | Three microswitches. Not fitted yet. |
+| Talk button | 7 mm momentary push button with two leads, for the handle's nose. Not fitted yet. |
+| Wire for the talk button | Two wires long enough to reach from the handle to the Pi, with a socket on the Pi end of each |
 | Fuse and kill switch | 5 A fuse, and a switch rated for it. Not fitted yet. |
 
 ## Power
@@ -103,6 +106,7 @@ With the cane's wires fitted, that should be:
 - Pin 1 is at the SD card end of the board, on the row nearer the middle. Pin 2 is beside it, on the row at the board's edge.
 - Odd numbers run down the inner row, even numbers down the edge row. Pins 39 and 40 are at the USB ports end.
 - Pins 12, 16, 18, 20 and 22 are close together on the edge row. Pin 17 is on the inner row, directly beside pin 18.
+- Pins 9 and 11, for the talk button, are on the inner row. Pin 11 is directly beside pin 12.
 - Pins 2 and 4 are 5 V. Nothing on the cane uses them. A wire from either to a GPIO pin can damage the Pi.
 
 Three ways to check the Pi end by eye:
@@ -127,10 +131,42 @@ Not fitted yet. Without them the controller cannot find left, centre or right. A
 - Use each switch's COM and NO legs: NO to the GPIO pin, COM to ground. The Pi's built-in pull-up holds the pin high, and pressing the switch pulls it low.
 - Pins 25, 30 and 34 are also ground, if each switch gets its own ground wire.
 
+## Talk button
+
+Not fitted yet. A momentary push button in the handle's nose. Press it, then say a command: "what's in front of me", "take me to the grocery store".
+
+![The talk button's two leads on the Pi's header](diagrams/talk-button.svg)
+
+| Pi header pin | What that pin is | Connects to |
+| --- | --- | --- |
+| 9 | Ground | One lead of the button |
+| 11 | GPIO17 | The other lead |
+
+- Either lead can go on either pin. A push button has no positive or negative side.
+- No resistor. The Pi's built-in pull-up holds pin 11 high, and pressing the button pulls it to ground.
+- Both pins are on the inner row, the 5th and 6th from the SD card end. Pin 11 is directly beside the brown wire on pin 12.
+- Keep both leads off pins 1 and 17 (3.3 V) and pins 2 and 4 (5 V). A button between a supply pin and ground shorts the Pi's supply every time it is pressed.
+- The button's own leads are short. Extend each with a wire long enough to reach from the handle to the Pi. Solder or crimp each join and cover it, so the two cannot touch each other or the carbon tube, which can conduct.
+- Twist the two wires together and tape them to the tube. Leave a little slack at each joint if the cane comes apart there.
+
+Check it before the Pi is powered, with a multimeter on continuity across the two sockets at the Pi end: silent until the button is pressed, a beep while it is held.
+
+Then check it from the Pi. Nothing else needs to be connected:
+
+```bash
+python3 cane.py --bench button
+```
+
+Each press should print `talk button down`, then `talk button up` when it is let go.
+
+How it works: the Pi tells the GX10 when the button goes down and up, the GX10 tells the phone to listen, and the phone sends back what it heard. The Pi does no listening. The messages are in [`../contracts/MESSAGES.md`](../contracts/MESSAGES.md).
+
+If it ever reports presses by itself while the motor runs, the long wire is picking up noise. A 10 kΩ resistor between pin 11 and a 3.3 V pin makes the pull-up stronger. This has not been needed or tried.
+
 ## Wiring order
 
 1. Unplug the Pi, unplug the battery, kill switch off.
-2. The six wires from the Pi's header to the IBT-2's pins.
+2. The six wires from the Pi's header to the IBT-2's pins. The talk button's two leads to pins 9 and 11.
 3. The three switches.
 4. Motor to M+ and M−.
 5. Find the adapter's positive screw. With only the battery plugged into the green adapter and no wires under its screws, set a multimeter to DC volts and put one probe on each screw. It should read about 12 V. If there is no minus sign, the red probe is on the positive screw. Mark that screw, then unplug the battery.
@@ -145,8 +181,9 @@ Do these with everything unplugged.
 2. The second column of the driver's header from the printed table, R_IS and L_IS, is empty.
 3. No wire is on Pi pin 2 or pin 4.
 4. Nothing metal is touching the Pi's header or the underside of the driver. The driver's heatsink is metal.
-5. With a multimeter on continuity, if there is one: Pi pin 17 to driver VCC, and Pi pin 20 to driver GND. Then check there is no continuity between VCC and GND.
-6. If the housings cover the driver's pins, use the screw terminals instead. Pi pin 6 (ground) to the driver's B− screw should beep. Pi pin 1 (3.3 V) to B− should not beep steadily; a short chirp that stops is fine. This relies on the driver's GND pin being joined to B− on the board, which is usual for an IBT-2 and has not been measured on this one.
+5. Neither of the talk button's leads is on pin 1, 2, 4 or 17.
+6. With a multimeter on continuity, if there is one: Pi pin 17 to driver VCC, and Pi pin 20 to driver GND. Then check there is no continuity between VCC and GND.
+7. If the housings cover the driver's pins, use the screw terminals instead. Pi pin 6 (ground) to the driver's B− screw should beep. Pi pin 1 (3.3 V) to B− should not beep steadily; a short chirp that stops is fine. This relies on the driver's GND pin being joined to B− on the board, which is usual for an IBT-2 and has not been measured on this one.
 
 ## First tests from the Pi
 
@@ -222,3 +259,4 @@ Not yet tried. When the controller exits, the Pi's motor pins go back to inputs 
 - The IBT-2's pin names, pin jobs and layout: the [Handson Technology user guide](https://cdn.hackaday.io/files/1936598285506656/BTS7960%20Motor%20Driver.pdf) (pin table, pin photo and mechanical drawing), and a photo of the team's own board.
 - The Pi's header pins: gpiozero's board data for the Pi 5, which is what the `pinout` command prints.
 - The wire colours: photos of the team's Pi and driver taken on October 10, 2026.
+- The talk button's pins: chosen on October 11 because they are free, side by side, and one of them is a ground. The button's size is from its listing, as in [`handle-phone-mount/`](handle-phone-mount/).

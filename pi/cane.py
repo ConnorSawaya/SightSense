@@ -5,6 +5,7 @@
     python3 cane.py --typed --sim           same, with a simulated wheel (any computer)
     python3 cane.py --gx10 ADDRESS --open-loop   no limit switches fitted: positions by timing
     python3 cane.py --bench switches        print each switch as it is pressed
+    python3 cane.py --bench button          print the talk button as it is pressed
     python3 cane.py --bench motor           one short pulse each way
 
 See README.md.
@@ -21,6 +22,7 @@ import threading
 import time
 
 import health
+import talk_button
 from steering import MAX_DUTY, Steering, command_ttl, parse_command
 from wheel_drive import WheelDrive
 
@@ -105,7 +107,25 @@ async def send_health(link, stop, about):
         await asyncio.sleep(health.HEALTH_S)
 
 
-async def listen_gx10(url, inbox, stop, about=None):
+async def send_button(link, stop, button):
+    """Tells the GX10 when the talk button goes down and up, so the phone can listen.
+    Runs beside the command reader; a failure here never reaches the motor."""
+    presses = talk_button.Debounce()
+    while not stop.is_set():
+        try:
+            event = presses.update(button.is_pressed(), time.monotonic())
+            if event:
+                log(f"talk button {event}")
+                await link.send(json.dumps({"button": event}))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log(f"talk button stopped: {e!r}")
+            return
+        await asyncio.sleep(talk_button.POLL_S)
+
+
+async def listen_gx10(url, inbox, stop, about=None, button=None):
     """Keep a WebSocket open to the GX10's command port, reconnecting forever."""
     import websockets
     status = None
@@ -115,7 +135,9 @@ async def listen_gx10(url, inbox, stop, about=None):
                                           max_size=4096, max_queue=1,
                                           ping_interval=2, ping_timeout=3) as link:
                 log(status := f"connected to {url}")
-                reporter = asyncio.create_task(send_health(link, stop, about))
+                senders = [asyncio.create_task(send_health(link, stop, about))]
+                if button is not None:
+                    senders.append(asyncio.create_task(send_button(link, stop, button)))
                 try:
                     while not stop.is_set():
                         try:
@@ -124,7 +146,8 @@ async def listen_gx10(url, inbox, stop, about=None):
                             continue
                         inbox.put(message)
                 finally:
-                    reporter.cancel()
+                    for sender in senders:
+                        sender.cancel()
             problem = "link closed"
         except Exception as e:
             problem = f"no link to {url}: {e!r}"
@@ -134,8 +157,8 @@ async def listen_gx10(url, inbox, stop, about=None):
         await asyncio.sleep(RETRY_S)
 
 
-def follow_gx10(url, inbox, stop, about=None):
-    asyncio.run(listen_gx10(url, inbox, stop, about))
+def follow_gx10(url, inbox, stop, about=None, button=None):
+    asyncio.run(listen_gx10(url, inbox, stop, about, button))
 
 
 def follow_keyboard(inbox, stop):
@@ -174,6 +197,17 @@ def bench(hw, what, duty):
                 time.sleep(0.3)
                 hw.off()
                 time.sleep(1.0)
+        elif what == "button":
+            log(f"press the talk button (GPIO{talk_button.PIN_TALK}, header pin 11 to ground); Ctrl+C to finish")
+            button, presses = talk_button.TalkButton(), talk_button.Debounce()
+            try:
+                while True:
+                    event = presses.update(button.is_pressed(), time.monotonic())
+                    if event:
+                        log(f"talk button {event}")
+                    time.sleep(talk_button.POLL_S)
+            finally:
+                button.close()
         else:
             log("press each switch; Ctrl+C to finish")
             seen = None
@@ -196,8 +230,9 @@ def main():
                         help="GX10 address, as host or host:port")
     parser.add_argument("--typed", action="store_true", help="take commands from the keyboard")
     parser.add_argument("--sim", action="store_true", help="simulated wheel, no GPIO")
-    parser.add_argument("--bench", choices=("motor", "switches"), help="wiring check")
+    parser.add_argument("--bench", choices=("motor", "switches", "button"), help="wiring check")
     parser.add_argument("--swap", action="store_true", help="reverse the motor direction")
+    parser.add_argument("--no-button", action="store_true", help="do not read the talk button on GPIO17")
     parser.add_argument("--open-loop", action="store_true",
                         help="no limit switches: work out the position from run time; centre the wheel by hand first")
     parser.add_argument("--wheel-drive", action="store_true",
@@ -248,7 +283,13 @@ def main():
         host = args.gx10 if ":" in args.gx10 else f"{args.gx10}:{COMMAND_PORT}"
         about = {"mode": "wheel-drive" if args.wheel_drive else "open-loop" if args.open_loop else "steering",
                  "duty": duty, "max_duty": MAX_DUTY, "rated_rpm": args.rated_rpm, "swap": args.swap}
-        source = threading.Thread(target=follow_gx10, args=(f"ws://{host}", inbox, stop, about), daemon=True)
+        button = None
+        if not args.sim and not args.no_button:
+            try:
+                button = talk_button.TalkButton()
+            except Exception as e:  # the cane still steers without it
+                log(f"talk button not read: {e!r}")
+        source = threading.Thread(target=follow_gx10, args=(f"ws://{host}", inbox, stop, about, button), daemon=True)
     if args.wheel_drive:
         log(f"direct wheel drive; LEFT uses {'LPWM GPIO24' if args.swap else 'RPWM GPIO23'}, "
             f"RIGHT uses {'RPWM GPIO23' if args.swap else 'LPWM GPIO24'}")

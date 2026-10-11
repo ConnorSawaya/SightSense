@@ -25,6 +25,11 @@ SWITCH_WIRES = [
     (33, "GPIO13", "Centre switch"),
     (39, "Ground", "All 3 switches"),
 ]
+# Pi header pin, what the pin is: the two leads of the talk button in the handle. Must match ../../pi/talk_button.py
+BUTTON_WIRES = [
+    (9, "Ground"),
+    (11, "GPIO17"),
+]
 PIN_NAMES = {
     1: "3.3 V", 2: "5 V", 3: "GPIO2 (I2C data)", 4: "5 V", 5: "GPIO3 (I2C clock)",
     6: "Ground", 7: "GPIO4", 8: "GPIO14 (serial out)", 9: "Ground",
@@ -45,11 +50,13 @@ DARK_TEXT_ON = {"orange", "yellow"}  # wire colours that need dark lettering
 BG, CARD, EDGE = "#161616", "#1E1E1E", "#5F5E5A"
 TEXT, MUTED, PIN = "#E8E6DF", "#B4B2A9", "#2C2C2A"
 SWITCH, GROUND, PLUS12, USB5, MOTOR = "#7F77DD", "#888780", "#E24B4A", "#378ADD", "#D85A30"
+BUTTON, BUTTON_PIN, BUTTON_EDGE = "#3BC9DB", "#0B5563", "#66D9E8"
 FONT = "Segoe UI, Helvetica, Arial, sans-serif"
 
 by_pin = {pin: colour for pin, _, _, colour in DRIVER_WIRES}
 by_driver_pin = {name: colour for _, _, name, colour in DRIVER_WIRES}
 switch_pins = {pin for pin, _, _ in SWITCH_WIRES}
+button_pins = {pin for pin, _ in BUTTON_WIRES}
 
 
 def text(x, y, s, size=12, fill=TEXT, anchor="middle", weight=400):
@@ -131,7 +138,7 @@ def ibt2_board():
     return b
 
 
-def pi_board(top):
+def pi_board(top, button=False):
     """The Pi 5 from above with the header along the top edge and the USB ports on the right."""
     b = [rect(60, top, 560, 330, CARD, EDGE, 12)]
     for i in range(20):
@@ -141,6 +148,9 @@ def pi_board(top):
             if colour:
                 b.append(rect(x, y, 22, 20, WIRE[colour], "#FFFFFF", 3, 1.2))
                 b.append(text(x + 11, y + 10, pin, fill=lettering(colour)))
+            elif button and pin in button_pins:
+                b.append(rect(x, y, 22, 20, BUTTON_PIN, BUTTON_EDGE, 3, 1.6))
+                b.append(text(x + 11, y + 10, pin, fill="#FFFFFF", weight=500))
             else:
                 b.append(rect(x, y, 22, 20, PIN, EDGE, 3, 0.8))
                 b.append(text(x + 11, y + 10, pin, fill="#D3D1C7"))
@@ -186,7 +196,7 @@ def full_wiring():
     b += [line("M395 96 L395 130 L430 130", PLUS12, 3.5), rect(430, 116, 80, 28, extra='stroke-dasharray="4 3"'), text(470, 130, "5 A fuse"),
           line("M510 130 L530 130", PLUS12, 3.5), rect(530, 116, 100, 28, extra='stroke-dasharray="4 3"'), text(580, 130, "Kill switch"),
           line("M630 130 L660 130 L660 225 L640 225", PLUS12, 3.5), line("M375 96 L375 156 L652 156 L652 250 L640 250", GROUND, 3.5)]
-    b += [rect(40, 170, 190, 330, rx=8), text(105, 192, "Raspberry Pi 5", 14, weight=500),
+    b += [rect(40, 170, 190, 395, rx=8), text(105, 192, "Raspberry Pi 5", 14, weight=500),
           rect(450, 170, 190, 240, rx=8), text(545, 192, "IBT-2 driver", 14, weight=500)]
     for i, (pin, _, name, colour) in enumerate(DRIVER_WIRES):
         y = 225 + 25 * i
@@ -202,12 +212,17 @@ def full_wiring():
             b += [rect(280, y - 10, 130, 20, PIN, extra='stroke-dasharray="4 3"'), text(345, y, name), line(f"M230 {y} L280 {y}", SWITCH, 2),
                   line(f"M410 {y} L430 {y}", GROUND, 2)]
     b.append(line("M430 400 L430 475 L230 475", GROUND, 2))
+    for (pin, _), y, colour in zip(reversed(BUTTON_WIRES), (520, 545), (BUTTON, GROUND)):
+        b += [rect(170, y - 10, 60, 20, PIN), text(200, y, f"Pin {pin}"), line(f"M230 {y} L280 {y}", colour, 2)]
+    b += [rect(280, 508, 130, 49, PIN, extra='stroke-dasharray="4 3"'), text(345, 525, "Talk button"),
+          text(345, 542, "in the handle", 11, MUTED)]
     b += [rect(450, 450, 190, 56, rx=8), text(545, 478, "12 V gear motor", 14, weight=500),
           line("M640 325 L664 325 L664 485 L640 485", MOTOR, 3.5), line("M640 350 L652 350 L652 470 L640 470", MOTOR, 3.5)]
     key = [(PLUS12, "12 V positive (thick)"), (GROUND, "Negative or ground"), (USB5, "5 V USB-C"), (MOTOR, "Motor wires"),
-           (SWITCH, "Switch signal"), (None, "Thin wires: real colours"), ("dash", "Dashed box: not fitted yet")]
+           (SWITCH, "Switch signal"), (BUTTON, "Talk button signal"), (None, "Thin wires: real colours"),
+           ("dash", "Dashed box: not fitted yet")]
     for i, (colour, label) in enumerate(key):
-        x, y = 40 + 215 * (i % 3), 540 + 24 * (i // 3)
+        x, y = 40 + 215 * (i % 3), 600 + 24 * (i // 3)
         if colour == "dash":
             b.append(rect(x, y - 7, 18, 14, CARD, EDGE, 3, extra='stroke-dasharray="4 3"'))
         elif colour:
@@ -215,11 +230,12 @@ def full_wiring():
         else:
             b += [line(f"M{x + 6 * k} {y - 6} L{x + 6 * k} {y + 6}", WIRE[c], 2.5) for k, c in enumerate(("brown", "orange", "green"))]
         b.append(text(x + 26, y, label, anchor="start"))
-    return svg(680, 620, "Full wiring of the cane",
+    return svg(680, 690, "Full wiring of the cane",
                "The 12 volt battery feeds the green screw adapter. One pair of wires goes to the 12 volt to 5 volt converter, whose "
                "USB-C plug powers the Raspberry Pi. The other goes through a 5 amp fuse and a kill switch to B plus and B minus on the "
                "IBT-2 driver. Six wires join the Pi's header to the driver, three limit switches go to Pi pins 29, 31 and 33 with their "
-               "other legs on pin 39, and the driver's M plus and M minus go to the motor.", b)
+               "other legs on pin 39, the talk button in the handle goes to pins 11 and 9, and the driver's M plus and M minus "
+               "go to the motor.", b)
 
 
 def pi_pinout():
@@ -237,20 +253,53 @@ def pi_pinout():
             label, fill, edge, ink, weight = f"{label} · driver {name} · {colour}", WIRE[colour], "#FFFFFF", lettering(colour), 500
         elif pin in switches:
             label, fill, edge, ink, weight = f"{label} · {switches[pin].lower()}", "#3C3489", "#AFA9EC", "#FFFFFF", 500
+        elif pin in button_pins:
+            label, fill, edge, ink, weight = f"{label} · talk button", BUTTON_PIN, BUTTON_EDGE, "#FFFFFF", 500
         b += [rect(label_x, y, 250, 18, fill, edge, 3), rect(pin_x, y, 30, 18, fill, edge, 3),
               text(label_x + 125, y + 9, label, 12 if weight == 400 else 13, ink, weight=weight),
               text(pin_x + 15, y + 9, pin, 12 if weight == 400 else 13, ink, weight=weight)]
     b.append(text(340, 556, "USB ports end of the board", fill=MUTED))
-    for x, fill, edge, label in ((60, WIRE["orange"], "#FFFFFF", "Wire to the driver, in its colour"),
-                                 (300, "#3C3489", "#AFA9EC", "Wire to a limit switch"), (490, PIN, EDGE, "Leave empty")):
-        b += [rect(x, 576, 14, 12, fill, edge, 2), text(x + 22, 582, label, anchor="start")]
-    return svg(680, 606, "Raspberry Pi 5 header pins used by the cane",
+    for x, y, fill, edge, label in ((60, 576, WIRE["orange"], "#FFFFFF", "Wire to the driver, in its colour"),
+                                    (340, 576, "#3C3489", "#AFA9EC", "Wire to a limit switch"),
+                                    (60, 598, BUTTON_PIN, BUTTON_EDGE, "Wire to the talk button"),
+                                    (340, 598, PIN, EDGE, "Leave empty")):
+        b += [rect(x, y, 14, 12, fill, edge, 2), text(x + 22, y + 6, label, anchor="start")]
+    return svg(680, 628, "Raspberry Pi 5 header pins used by the cane",
                "All 40 header pins. The cane uses pin 12 for driver R_EN, 16 for RPWM, 17 for VCC, 18 for LPWM, 20 for GND, 22 for L_EN, "
-               "29, 31 and 33 for the left, right and centre limit switches, and 39 as the switches' ground. Pins 2 and 4 are 5 volts.", b)
+               "29, 31 and 33 for the left, right and centre limit switches, 39 as the switches' ground, and 11 and 9 for the "
+               "talk button. Pins 2 and 4 are 5 volts.", b)
+
+
+def talk_button():
+    """The talk button's two leads on the Pi's header."""
+    top = 150
+    b = pi_board(top, button=True)
+    # the switch, seen from the side: cap, threaded neck, nut, body, two leads
+    b += [rect(120, 26, 20, 12, "#D8484F", "#F09595", 3), rect(123, 38, 14, 10, "#C8C9CC", "#8D9096", 1),
+          rect(112, 48, 36, 6, "#C8C9CC", "#8D9096", 1), rect(115, 54, 30, 32, "#2A2A2A", "#5F5E5A", 3)]
+    b += [text(160, 34, "Talk button, in the handle", 14, anchor="start", weight=500),
+          text(160, 54, "7 mm momentary push button with two leads", fill=MUTED, anchor="start"),
+          text(160, 72, "Either lead can go to either pin", fill=MUTED, anchor="start")]
+    ground_x, signal_x = (80 + 24 * ((pin - 1) // 2) + 11 for pin, _ in BUTTON_WIRES)
+    foot = top + 54  # bottom edge of the inner row of pins
+    b.append(line(f"M138 86 L138 124 L44 124 L44 {foot + 12} L{ground_x} {foot + 12} L{ground_x} {foot}", GROUND, 3))
+    b.append(line(f"M122 86 L122 112 L32 112 L32 {foot + 26} L{signal_x} {foot + 26} L{signal_x} {foot}", BUTTON, 3))
+    for y, colour, label in ((96, GROUND, f"One lead to pin {BUTTON_WIRES[0][0]}: ground"),
+                             (118, BUTTON, f"The other lead to pin {BUTTON_WIRES[1][0]}: {BUTTON_WIRES[1][1]}")):
+        b += [line(f"M400 {y} L424 {y}", colour, 3), text(432, y, label, anchor="start")]
+    b += [text(240, top + 72, "Inner row, 5th and 6th pins from the SD card end.", anchor="start"),
+          text(240, top + 90, "Pin 11 is directly beside the brown wire on pin 12.", anchor="start"),
+          text(240, top + 108, "No resistor: the Pi supplies its own pull-up.", fill=MUTED, anchor="start")]
+    b.append(text(340, top + 356, "Keep both leads off pins 1 and 17 (3.3 V) and pins 2 and 4 (5 V).", 13, PLUS12, weight=500))
+    return svg(680, top + 380, "The talk button on the Raspberry Pi 5",
+               "A momentary push button in the handle. One lead goes to header pin 9, which is ground. The other goes to header "
+               "pin 11, which is GPIO17. Both are on the inner row, the fifth and sixth pins from the SD card end. Pin 11 is beside "
+               "pin 12, which carries the brown driver wire. Neither lead may go on pin 1, 2, 4 or 17.", b)
 
 
 if __name__ == "__main__":
     here = Path(__file__).parent
-    for name, draw in (("pi-to-driver", pi_to_driver), ("full-wiring", full_wiring), ("pi-pinout", pi_pinout)):
+    for name, draw in (("pi-to-driver", pi_to_driver), ("full-wiring", full_wiring), ("pi-pinout", pi_pinout),
+                       ("talk-button", talk_button)):
         (here / f"{name}.svg").write_text(draw(), encoding="utf-8", newline="\n")
         print("wrote", name + ".svg")
