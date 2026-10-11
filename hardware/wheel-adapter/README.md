@@ -36,6 +36,8 @@ One seller's photo gives the flat as 5.5 mm across. The bore takes either; the c
 | `export/wheel_cap.stl` | Cap for the far side of the wheel; the nut tightens against it |
 | `export/wheel_adapter_fit_test.stl` | Short hex and pilot with the bore through the hex, to check the fits |
 | `export/*.step` | The same parts for CAD |
+| `wheel_adapter_viewer.html` | Interactive 3D view of the adapter, the cap, the shaft and the screws. One self-contained file: download it and open it in a browser, because GitHub does not display it |
+| `wheel_adapter_viewer.py` | Rebuilds that page. It uses `viewer.py` from `../handle-phone-mount/` |
 
 ## Dimensions (from the source)
 
