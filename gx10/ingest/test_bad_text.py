@@ -96,7 +96,7 @@ class ManualRead(unittest.TestCase):
             s = srv.Server(srv.Pipeline(False))
         try:
             s.manual = None  # the dashboard's thread cleared it after the loop's check
-            self.assertEqual(s._manual_for_pi(0.0, "LEFT"), ("LEFT", False))
+            self.assertFalse(s._obstacle_ahead(0.0))  # does not read s.manual again, so no crash
         finally:
             s.worker.shutdown(wait=True)
             s.writer.shutdown(wait=True)
