@@ -21,7 +21,7 @@ Experimental prototype. Nothing here has been printed, fitted or load tested. Th
 
 | Part | Printed? | Source |
 | --- | --- | --- |
-| Handle, camera collar, phone cradle | Yes | [`../handle-phone-mount/`](../handle-phone-mount/) |
+| Handle, the plug glued in the tube under it, camera collar, phone cradle | Yes | [`../handle-phone-mount/`](../handle-phone-mount/) |
 | Coupler main insert v3 and receiver v3, three of each | Yes | [`../cane-coupler/`](../cane-coupler/) |
 | Main insert v4 | Yes | [`../cane-coupler/`](../cane-coupler/) |
 | Motor mount 2 | Yes | [`../motor-mount-2/`](../motor-mount-2/) |

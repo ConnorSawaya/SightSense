@@ -72,6 +72,7 @@ def top_items():
     at = ws.cradle_location(T)
     return [
         ("Handle", (0.20, 0.47, 0.80), True, True, parts["stick_handle"]),
+        ("Handle plug, in the tube", (0.55, 0.75, 0.30), True, True, parts["socket_plug"]),
         ("Camera collar", (0.95, 0.55, 0.15), True, True, ws.collar_location() * parts["camera_collar"]),
         ("Phone cradle", (0.25, 0.68, 0.45), True, True, at * parts["phone_cradle"]),
         ("Thumb button, 7 mm", (0.80, 0.25, 0.30), True, False, ws.ref_button()),

@@ -44,6 +44,7 @@ def build():
     at = ws.cradle_location(T)
     scene = [
         ("Handle", (0.20, 0.47, 0.80), True, parts["stick_handle"]),
+        ("Handle plug, glued in the tube", (0.86, 0.30, 0.55), True, parts["socket_plug"]),
         ("Camera collar", (0.95, 0.55, 0.15), True, ws.collar_location() * parts["camera_collar"]),
         ("Thumb button, 7 mm switch (reference)", (0.80, 0.25, 0.30), True, ws.ref_button()),
         ("Phone cradle", (0.25, 0.68, 0.45), True, at * parts["phone_cradle"]),

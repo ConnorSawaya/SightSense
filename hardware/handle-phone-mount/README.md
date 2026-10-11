@@ -15,11 +15,12 @@ Experimental prototype. Nothing here has been printed, fitted or load tested, an
 | `handle_button_view.py` | Renders the picture of the thumb button and how the switch goes in. |
 | `viewer.py`, `viewer.html` | Builds, and is, a self-contained 3D viewer. Open `viewer.html` in a browser. |
 | `export/stick_handle.stl` | Handle, with the hole and pocket for the thumb button |
+| `export/socket_plug.stl` | Plug that is glued into the top of the tube, inside the handle's socket |
 | `export/camera_collar.stl` | Collar that clamps on the pole and carries the tilt joint |
 | `export/phone_cradle.stl` | Phone cradle (generic phone size; the phone is strapped in) |
 | `export/handle_fit_test.stl` | Short slice of the handle socket, to check the tube fit |
 | `export/cradle_fit_test.stl` | Bottom slice of the cradle, to check the phone and joint fit |
-| `export/*.step`, `export/assembly.step` | The same parts for CAD, and the three parts in place |
+| `export/*.step`, `export/assembly.step` | The same parts for CAD, and the handle, plug, collar and cradle in place |
 
 The STL files are already turned to their print orientation. File names follow the script's part names and carry no version suffix yet.
 
@@ -102,6 +103,7 @@ The STLs in `export/` are already turned this way.
 | Part | On the bed | Supports |
 |---|---|---|
 | `stick_handle` | on its side | under the grip and socket |
+| `socket_plug` | standing up, chamfered end down | none |
 | `camera_collar` | upright, bore vertical | none |
 | `phone_cradle` | back plate down | under the side lips and bottom lip only |
 | `cradle_fit_test` | back plate down | under the lips only |
@@ -109,19 +111,24 @@ The STLs in `export/` are already turned this way.
 
 Print `handle_fit_test` first, then `cradle_fit_test` to see how the phone and the joint fit.
 
+**Why the plug is its own part.** The tube's thin wall is held between the socket's bore outside it and a plug inside it. Until October 11 the plug was part of the handle. With the handle lying on its side, as it prints, that plug hung over a 1.3 mm gap along the whole 43 mm socket: either support filled the slot and could not be got out, or the plastic sagged into it, and the tube would not go in. The plug is now a 15.7 × 43 mm peg printed on its own and glued into the tube, which leaves the handle a plain bore. `handle_fit_test` still has both in one piece, standing up, so it checks both fits.
+
 ## Assembly
 
-1. Press the handle onto the tube with the grip's long end towards the user,
-   and lock it with the M3 screw in the socket.
-2. Open the collar slightly, slide it onto the pole below the handle with the
+1. Glue the socket plug into the top end of the tube, level with the tube's end,
+   chamfered end in first. Let it set.
+2. Press the handle onto the tube with the grip's long end towards the user,
+   and lock it with the M3 screw in the socket. The screw pinches the tube
+   against the plug inside it.
+3. Open the collar slightly, slide it onto the pole below the handle with the
    tongue pointing forward, and fit two M3 screws and nuts loosely.
-3. Push two M3 nuts into the pockets in the cradle's -Y cheek.
-4. Fit the cradle's cheeks over the collar's tongue and pass an M3 screw
+4. Push two M3 nuts into the pockets in the cradle's -Y cheek.
+5. Fit the cradle's cheeks over the collar's tongue and pass an M3 screw
    through the centre hole. Leave it loose.
-5. Swing the cradle to the tilt you want and fit another M3 screw through whichever
+6. Swing the cradle to the tilt you want and fit another M3 screw through whichever
    outer cheek hole lines up with a tongue hole, then tighten both.
-6. Set the collar's height and aim, then tighten the two clamp screws.
-7. Slide the phone down into the cradle from above, wrap the strap around the
+7. Set the collar's height and aim, then tighten the two clamp screws.
+8. Slide the phone down into the cradle from above, wrap the strap around the
    phone and back plate in the notches, and clip a tether to the eyelet.
 
 ## What has and has not been checked
