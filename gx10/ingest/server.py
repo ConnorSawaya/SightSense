@@ -153,7 +153,8 @@ class Pipeline:
                 locate(d, f, depth, conf)
 
         g = self.nav.on_frame(f, dets)
-        c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading)
+        c = check(depth, conf, f.fx, f.fy, f.cx, f.cy, f.pose, g.desired_bearing or 0.0, self.smoother.last_heading,
+                  stopped=self.smoother.cmd == "STOP")
         raw_cmd = c.raw_cmd
         if g.hold_center and raw_cmd != "STOP":
             raw_cmd = "CENTER"  # turning on the spot; depth still wins
