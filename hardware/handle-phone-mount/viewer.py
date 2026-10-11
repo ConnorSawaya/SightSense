@@ -16,14 +16,22 @@ import walking_stick as ws
 T = ws.PHONE_TILT_DEG
 
 
-def mesh(shape):
+def triangles(shape, tolerance=0.08, angular=0.3):
+    """One shape or a list of shapes as an (n, 3, 3) array of triangle corners."""
     shapes = shape if isinstance(shape, (list, tuple)) else [shape]
     tris = []
     for s in shapes:
-        verts, faces = s.tessellate(0.08, 0.3)
+        verts, faces = s.tessellate(tolerance, angular)
         v = np.array([(p.X, p.Y, p.Z) for p in verts], dtype=np.float32)
         tris.append(v[np.array(faces)])
-    tris = np.concatenate(tris)
+    return np.concatenate(tris)
+
+
+def mesh(shape):
+    return encode(triangles(shape))
+
+
+def encode(tris):
     n = np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0])
     n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
     pos = tris.reshape(-1, 3).astype(np.float32)
