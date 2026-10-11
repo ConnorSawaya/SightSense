@@ -103,6 +103,42 @@ class Staging(unittest.TestCase):
         self.assertNotIn("example$only%", (target / "release.json").read_text())
         self.assertEqual((self.boot / "network-config").read_text(), "example-network-unchanged\n")
 
+    def test_further_wifi_profiles_are_staged_beside_the_first_as_fallbacks(self):
+        texts = [f"[connection]\nid=net{n}\n[wifi-security]\npsk=secret{n}\n" for n in (1, 2, 3)]
+        files = []
+        for n, text in enumerate(texts, 1):
+            files.append(self.root / f"net{n}.nmconnection")
+            files[-1].write_text(text)
+        result = stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766",
+                       wifi_profile=files[0], more_wifi_profiles=files[1:])
+        target = self.boot / "sightsense-update"
+        self.assertEqual((target / "wifi.nmconnection").read_text(), texts[0])
+        self.assertEqual((target / "wifi-2.nmconnection").read_text(), texts[1])
+        self.assertEqual((target / "wifi-3.nmconnection").read_text(), texts[2])
+        sums = (target / "SHA256SUMS").read_text()
+        self.assertIn("  wifi-2.nmconnection", sums)
+        self.assertIn("  wifi-3.nmconnection", sums)
+        self.assertNotIn("secret", json.dumps(result))
+
+    def test_a_further_wifi_profile_needs_a_first_one(self):
+        extra = self.root / "extra.nmconnection"
+        extra.write_text("[connection]\nid=extra\n")
+        with self.assertRaises(ValueError):
+            stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766", more_wifi_profiles=[extra])
+        self.assertFalse((self.boot / "sightsense-update").exists())
+
+    def test_staging_twice_does_not_repeat_the_boot_settings(self):
+        stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766")
+        (self.boot / "sightsense-update").rename(self.root / "previous-update")  # as after an install, moved aside
+        (self.boot / "cmdline.txt").write_text("console=tty1 root=PARTUUID=12345678-02 rootfstype=ext4 rootwait\n")  # as the installer leaves it
+        stage(self.boot, self.root / "backup2", "12345678-02", "100.108.5.67:8766")
+        self.assertEqual((self.boot / "config.txt").read_text().count("gpio=18,23,24,25=op,dl,pd"), 1)
+
+    def test_the_installer_installs_further_profiles(self):
+        script = (Path(__file__).parent / "install_from_boot.sh").read_text()
+        self.assertIn('for extra in "$STAGE"/wifi-[0-9]*.nmconnection; do', script)
+        self.assertIn('install -D -m 600 -o root -g root "$extra"', script)
+
     def test_missing_wifi_profile_fails_before_card_or_backup_changes(self):
         backup = self.root / "backup"
         with self.assertRaises(FileNotFoundError):

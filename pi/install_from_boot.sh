@@ -60,6 +60,16 @@ if [ -f "$STAGE/wifi.nmconnection" ]; then
     install -D -m 600 -o root -g root "$STAGE/wifi.nmconnection" "$WIFI_DEST"
     echo 'Wi-Fi profile installed for the next normal boot.'
 fi
+# Further profiles, staged as wifi-2.nmconnection, wifi-3.nmconnection: networks to fall back to.
+for extra in "$STAGE"/wifi-[0-9]*.nmconnection; do
+    [ -f "$extra" ] || continue
+    EXTRA_DEST="/etc/NetworkManager/system-connections/sightsense-$(basename "$extra")"
+    if [ -f "$EXTRA_DEST" ]; then
+        cp -a "$EXTRA_DEST" "$BACKUP/$(basename "$extra")"
+    fi
+    install -D -m 600 -o root -g root "$extra" "$EXTRA_DEST"
+    echo "Further Wi-Fi profile installed: $(basename "$extra")"
+done
 if getent group gpio >/dev/null; then
     usermod -a -G gpio sightsense
 fi
