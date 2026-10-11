@@ -44,8 +44,10 @@ class Detector:
         import numpy as np
 
         img = cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_COLOR)
-        if img is None:
-            return []
+        return self.detect_image(img, conf) if img is not None else []
+
+    def detect_image(self, img, conf: float = CONF) -> list:
+        """Same as detect(), on a BGR image array that is already decoded."""
         r = self.model.predict(img, conf=conf, verbose=False)[0]
         out = []
         for box, c, k in zip(r.boxes.xyxy.tolist(), r.boxes.conf.tolist(), r.boxes.cls.tolist()):

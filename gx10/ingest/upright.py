@@ -24,6 +24,14 @@ def turn_for(pose) -> int:
     return 1 if du > 0 else 3  # down on the right: turn clockwise
 
 
+def decode_upright(jpeg: bytes, turn: int):
+    """The phone's JPEG decoded once and turned upright, as a BGR image array (None if it will not decode)."""
+    img = cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_COLOR)
+    if img is None or turn == 0:
+        return img
+    return cv2.rotate(img, _CV[turn])
+
+
 def rotate_jpeg(jpeg: bytes, turn: int, quality: int = 85) -> bytes:
     if turn == 0:
         return jpeg
