@@ -258,6 +258,11 @@ def start(server, port: int):
                 text = json.loads(self.rfile.read(n) or b"{}").get("text", "")
                 server.text_command(text)
                 return self._send(b'{"ok": true}', "application/json")
+            if self.path == "/manual":  # manual steering: LEFT CENTER RIGHT STOP FREE, or AUTO to hand back
+                n = int(self.headers.get("Content-Length", 0))
+                cmd = json.loads(self.rfile.read(n) or b"{}").get("cmd", "")
+                ok = server.manual_command(cmd)
+                return self._send(b'{"ok": true}' if ok else b'{"ok": false}', "application/json", 200 if ok else 400)
             self._send(b"not found", "text/plain", 404)
 
     httpd = ThreadingHTTPServer(("0.0.0.0", port), Handler)
