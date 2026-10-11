@@ -33,6 +33,7 @@ import vlm
 from navigator import Navigator, decode
 from planner.obstacle import HEADINGS, Smoother, check
 from planner.cue import DirectionCue
+from planner.speech import ANSWER, GUIDE, SAFETY, SpeechPlan
 from planner.state import StateSmoother
 
 from .upright import box_back, decode_upright, rotate_jpeg, turn_for
@@ -151,7 +152,7 @@ class Pipeline:
         self.smoother = Smoother()
         self.states = StateSmoother()
         self.cue = DirectionCue()
-        self.speech = deque()
+        self.voice = SpeechPlan()  # every sentence goes through it: one at a time, most important first
         self.said = (None, -1e9)
         self.checks, self.next_check = deque(), 0.0  # a sound check under way
         self.last_frame = -1e9
@@ -194,23 +195,24 @@ class Pipeline:
         cue = self.cue.update(cmd, c.clearance.get(0), now, quiet_stop=raw_cmd != "STOP" and not g.stop)
 
         if self.nav.take_path_question():
-            self.speech.appendleft(path_answer(raw_cmd, c.clearance.get(0)))
+            self.voice.add(path_answer(raw_cmd, c.clearance.get(0)), ANSWER, now)
         if self.nav.take_repeat():
-            self.speech.appendleft(self.said[0] or "I haven't said anything yet.")
+            self.voice.add(self.said[0] or "I haven't said anything yet.", ANSWER, now)
         if g.speech:
-            self.speech.append(g.speech)
+            self.voice.add(g.speech, g.speech_kind, now)
+        if obstacle_speech:  # "Obstacle ahead. Stop." is safety; "Path blocked. Turn slowly to scan." is guidance
+            self.voice.add(obstacle_speech, SAFETY if obstacle_speech.startswith("Obstacle") else GUIDE, now)
+        if cue.speech:
+            self.voice.add(cue.speech, GUIDE, now)
         if self.nav.take_sound_check():
             self.checks, self.next_check = deque(SOUND_CHECK), now
         msg = {"seq": f.seq, "state": state, "direction": cue.direction}
         if cue.earcon:
             msg["earcon"] = cue.earcon
-        if obstacle_speech:
-            msg["speech"] = obstacle_speech  # safety speech goes first
-        elif cue.speech:
-            msg["speech"] = cue.speech
-        elif self.speech:
-            msg["speech"] = self.speech.popleft()
-        if self.checks and now >= self.next_check and "earcon" not in msg and "speech" not in msg:
+        speech = self.voice.next(now, thinking=self.nav.thinking)  # see planner/speech.py
+        if speech:
+            msg["speech"] = speech
+        if self.checks and now >= self.next_check and "earcon" not in msg and "speech" not in msg and self.voice.idle(now):
             msg["earcon"], msg["speech"] = self.checks.popleft()  # real guidance always goes first
             self.next_check = now + SOUND_CHECK_GAP_S
         if msg.get("speech"):
@@ -382,6 +384,9 @@ class Server:
         if self.rec:
             self.writer.submit(self._append, "text.jsonl", json.dumps({"t": time.monotonic(), "msg": m}) + "\n")
         if "text" in m:
+            voice = getattr(self.pipe, "voice", None)
+            if voice is not None:
+                voice.heard()  # the user has finished speaking
             self.pipe.log.append((time.strftime("%H:%M:%S"), "you", str(m["text"])))
             cmd = self.pipe.nav.on_voice(str(m["text"]))
             print(f'voice: {m["text"]!r} -> {cmd.kind} {cmd.target or ""}', flush=True)
@@ -424,6 +429,9 @@ class Server:
         now = time.monotonic()
         if event == "down":
             self.talk_down, listen = now, True
+            voice = getattr(self.pipe, "voice", None)
+            if voice is not None:
+                voice.listening(now)  # nothing but safety is said while the user speaks
         else:
             held, self.talk_down = (now - self.talk_down if self.talk_down is not None else 0.0), None
             if held < TALK_HOLD_S:

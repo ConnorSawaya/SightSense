@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Optional
 
+from planner.speech import ANSWER, GUIDE, INFO
+
 from . import commands
 from .frame import Frame
 from .object_guide import ARRIVED, CONFIRMING, GUIDING, IDLE, SEARCHING, ObjectGuide, direction_words, distance_words
@@ -40,6 +42,16 @@ class Guidance:
     speech: Optional[str] = None
     lookup: Optional[str] = None
     distance_m: Optional[float] = None
+    speech_kind: int = ANSWER  # planner/speech.py priority of speech: ANSWER, GUIDE or INFO
+
+
+def guide_speech_kind(text: str) -> int:
+    """What a sentence from the object guide is: a reply the user waits for, guidance, or a hint."""
+    if re.search(r"Turn slowly to scan|can't tell how far|again\.$", text):
+        return INFO
+    if re.search(r"Say yes|couldn't find|I lost|within reach|Cancelled|Going to", text):
+        return ANSWER
+    return GUIDE
 
 
 HELP = ("I can tell you what is in front of you, read signs, answer a question about what the camera sees, "
@@ -212,7 +224,7 @@ class Navigator:
                 self._last_obj = step
                 g.state, g.desired_bearing, g.stop, g.distance_m = step.state, step.desired_bearing, step.stop, step.distance_m
                 if step.speech:
-                    self._say(step.speech)
+                    self._say(step.speech, guide_speech_kind(step.speech))
                 if step.state == IDLE:
                     self.mode = "idle"
             elif self.mode == "route":
@@ -223,7 +235,7 @@ class Navigator:
                         self._last_route = now
                         self._route_step = self.route.update(f.lat, f.lon, f.gps_acc_m, f.heading_deg)
                         if self._route_step.speech:
-                            self._say(self._route_step.speech)
+                            self._say(self._route_step.speech, GUIDE)
                         if self._route_step.lookup:
                             self._lookup = self._route_step.lookup
                         if self._route_step.arrived:
@@ -233,7 +245,8 @@ class Navigator:
                     if s is not None and self.route is not None:
                         g.desired_bearing, g.hold_center, g.distance_m = s.desired_bearing, s.hold_center, s.remaining_m
 
-            g.speech = self._speech.popleft() if self._speech else None
+            if self._speech:
+                g.speech, g.speech_kind = self._speech.popleft()
             g.lookup, self._lookup = self._lookup, None
             return g
 
@@ -322,9 +335,14 @@ class Navigator:
             return f"Yes, you're on the route to {self.route.dest}.{left}"
         return "No destination yet. Say guide me to the apple, or take me to a place."
 
-    def _say(self, text):
+    def _say(self, text, kind=ANSWER):
         if text:
-            self._speech.append(text)
+            self._speech.append((text, kind))
+
+    @property
+    def thinking(self) -> bool:
+        """The model is still working on something the user asked: other talk should wait."""
+        return self._asking or self._interpreting or self._ask is not None
 
     def _stop_route(self):
         self.route = self._route_confirm = self._route_step = self._place = None
