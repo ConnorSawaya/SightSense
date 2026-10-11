@@ -369,9 +369,10 @@ def view_sections():
 
     ax = axes[2]
     keep = box(-300, 500, 0, 200, -500, 300)
-    items = [item(cut(PARTS["stick_handle"]), "handle"), item(cut(ws.ref_stick()), "stick")]
+    items = [item(cut(PARTS["stick_handle"]), "handle"), item(cut(ws.ref_stick()), "stick"), item(cut(PARTS["socket_plug"]), "collar")]
     proj = show(ax, items, (0, -1, 0), "5c. Handle on the tube, section on the centre plane", window=(-125, 45, -65, 95), scale=8)
     label(ax, proj, (9, 0, -30), "tube wall between\nbore and plug", (45, -25))
+    label(ax, proj, (0, 0, -18), "plug: a separate part,\nglued in the tube", (48, 22))
     label(ax, proj, (-60, 0, 50), f"grip turned {ws.GRIP_TILT_DEG:.0f} deg", (20, 35))
     save(fig, "5_sections_joint.png")
 
@@ -379,14 +380,17 @@ def view_sections():
 def view_print_orientation():
     notes = {
         "stick_handle": "on its side; supports under the grip and socket",
+        "socket_plug": "standing up; no supports",
         "camera_collar": "upright; no supports",
         "phone_cradle": "back plate down; supports under the lips only",
         "cradle_fit_test": "back plate down; supports under the lips only",
         "handle_fit_test": "socket mouth up; no supports",
         "motor_mount": "motor plate down; supports in the collar",
     }
-    colors = {"stick_handle": "handle", "camera_collar": "collar", "phone_cradle": "cradle", "cradle_fit_test": "cradle", "handle_fit_test": "handle", "motor_mount": "motor"}
-    fig, axes = plt.subplots(2, 3, figsize=(18, 11))
+    colors = {"stick_handle": "handle", "socket_plug": "collar", "camera_collar": "collar", "phone_cradle": "cradle", "cradle_fit_test": "cradle", "handle_fit_test": "handle", "motor_mount": "motor"}
+    fig, axes = plt.subplots(2, 4, figsize=(24, 11))
+    for ax in axes.flat[len(PARTS):]:
+        ax.axis("off")
     for ax, (name, part) in zip(axes.flat, PARTS.items()):
         laid = ws.as_printed(name, part)
         bb = laid.bounding_box()
@@ -421,7 +425,9 @@ def drawing_handle():
     bore, plug = ws.STICK_OD + ws.STICK_FIT, ws.STICK_ID - ws.PLUG_FIT
     fig, axes = plt.subplots(1, 2, figsize=(18, 10))
     ax = axes[0]
-    show(ax, [item(part & box(-300, 300, 0, 100, -300, 300), "handle")], SIDE, "stick_handle: section on the centre plane", margin=38, scale=7)
+    keep = box(-300, 300, 0, 100, -300, 300)
+    show(ax, [item(part & keep, "handle"), item(PARTS["socket_plug"] & keep, "collar")], SIDE,
+         "stick_handle: section on the centre plane, with the separate plug (orange) where it sits in the tube", margin=38, scale=7)
     dim(ax, (bb.min.X, bb.max.Z), (bb.max.X, bb.max.Z), f"{bb.size.X:.1f} overall", off=(0, 14))
     dim(ax, (bb.max.X, bb.min.Z), (bb.max.X, bb.max.Z), f"{bb.size.Z:.1f}\noverall", off=(16, 0), text_off=(8, 0))
     d = ws.SOCKET_DEPTH

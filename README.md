@@ -10,19 +10,19 @@ Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the AS
 
 ```
 iPhone (on the cane)        ASUS GX10 (on the table)           Raspberry Pi (on the cane)
-camera + LiDAR + position ─► obstacle check, AI models, ─────► drives the steering motor
+camera + LiDAR + position ─► obstacle check, AI models, ─────► drives the wheel motor
         ▲                    route following                    │
         └── beeps and speech ◄──────┘                           ▼
-                                                          steering wheel
+                                                          mecanum wheel
 ```
 
 1. The iPhone sends a picture, a LiDAR distance map and its position about 15 times a second.
 2. The GX10 checks seven directions for clear space and picks the one closest to where you want to go.
 3. The GX10 sends one word to the Pi: `LEFT`, `CENTER`, `RIGHT` or `STOP`.
-4. The Pi turns the wheel. If it hears nothing for 0.4 seconds, it switches the motor off.
+4. The Pi directly drives the mecanum wheel in opposite directions for LEFT/RIGHT. CENTER/STOP/FREE switch it off. If it hears nothing for 0.4 seconds, it switches the motor off.
 5. A vision-language model on the GX10 finds named objects, reads signs and answers questions. It never controls the wheel.
 
-Everything runs on a private router with no internet. The one exception is the "take me to a place" lookup, which uses Apple Maps.
+AI and guidance run locally on the GX10. The current devices communicate through the existing Tailscale network; a private router was the original plan. Place lookup uses Apple Maps.
 
 ## Repository layout
 
@@ -40,13 +40,13 @@ Everything runs on a private router with no internet. The one exception is the "
 - iPhone 16 Pro (camera, LiDAR, ARKit)
 - ASUS Ascent GX10 (borrowed from ASUS for the event)
 - Raspberry Pi 5
-- 12 V 120 rpm DC gear motor, L298N motor driver, limit switches
+- 12 V 120 rpm DC worm gear motor driving the mecanum wheel, IBT-2 (BTS7960) motor driver
 - 12 V 3 Ah battery pack, fuse, kill switch
 - 18 mm carbon-fibre tube cane with a printed keyed coupler (see [`hardware/cane-coupler/`](hardware/cane-coupler/))
 
 ## Status
 
-Repository structure and the cane coupler are in. Code for each folder is being written during the event.
+The iPhone and GX10 application code is in. The Pi has direct wheel mode and a one-time SD installer. Software tests use synthetic phone frames, real local WebSockets and mock GPIO. Actual wheel direction, RPM and updated Pi boot remain physical checks; see [`pi/README.md`](pi/README.md).
 
 ## Team
 

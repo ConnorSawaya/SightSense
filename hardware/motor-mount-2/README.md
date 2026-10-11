@@ -28,6 +28,9 @@ The tongue socket and the cross bolt's position are unchanged, so it takes the s
 | `motor_mount_2.py` | build123d source. Running it exports the part and runs the geometric checks; `--preview` also renders the drawing. It imports the coupler from `../cane-coupler/`, the wheel adapter from `../wheel-adapter/`, the battery and Pi mount from `../electronics-mount/` and helpers from `../handle-phone-mount/`. |
 | `export/motor_mount_2.stl` | The part, standing upright as it prints |
 | `export/motor_mount_2.step` | The same part for CAD |
+| `export/motor_mount_2_tube_fit_test.stl` | The top 27 mm of the mount: half the sleeve, the tongue socket and the cross-bolt hole. Print it first and try it on the tube's end |
+| `export/motor_mount_2_motor_fit_test.stl` | The 10 mm band round the top of the gearbox, without the shelf above it. Print it first and slide it over the gearbox |
+| `export/*_fit_test.step` | The two fit-test pieces for CAD |
 
 ## Dimensions (from the source)
 
@@ -59,10 +62,21 @@ The tongue socket and the cross bolt's position are unchanged, so it takes the s
 
 ## Assembly
 
-1. Glue the v4 main insert into the tube as for v3, with the tube's end flush with the root of the tongue.
+1. Glue the v4 main insert into the tube as for v3, with the tube's end flush with the root of the tongue, to within about half a millimetre. The cross-bolt holes only line up if it is. The sure way is to let the glue set with the mount (or the tube fit-test piece) pushed on and the bolt through; keep glue off the tongue.
 2. Slide the motor up into the pocket and fit the two screws through the front wall.
 3. Fit the wheel adapter and wheel on the shaft. Do this after step 2, because the wheel covers the two motor screws.
 4. Push the mount onto the tube: the tongue goes into the socket and the sleeve goes over the tube's end. Then fit the cross bolt and its nut.
+
+## Fit tests
+
+The mount is a six-hour print on the team's printer and three of its fits are unconfirmed, so two slices of it are exported to print first. They are cut from the mount itself, so what fits them fits the mount.
+
+| Piece | What it settles |
+| --- | --- |
+| `motor_mount_2_tube_fit_test` | Whether the 18.3 mm sleeve goes over the tube, the tongue goes into the socket, and the M3 bolt passes through both with the tube's end seated |
+| `motor_mount_2_motor_fit_test` | Whether the gearbox goes into its 23.5 × 32.6 mm pocket, the motor can clears its channel, and the two screws meet the gearbox's holes. Hold the piece's top face level with the gearbox's top end when trying the screws |
+
+If the sleeve is tight on the tube, raise `SLEEVE_FIT` in `motor_mount_2.py`. If the gearbox does not fit, correct the motor's sizes at the top of `../cane-coupler/coupler_motor_mount.py`. Then export again.
 
 ## Printing notes
 
@@ -72,6 +86,8 @@ These are suggestions, not tested settings.
 - **Bridges:** the shelf above the gearbox pocket spans about 24 mm, and the lower edge of the front wall spans about 33 mm between the side walls. If the printer does not bridge those cleanly, add supports inside the pocket only.
 - **Layer direction:** printed upright, the layers run across the sleeve and the receiver body, which is their weakest direction for bending. The sleeve is there so that the tube carries that load.
 - **Material:** PETG-CF, as for the other rigid parts.
+- **Supports:** switching tree supports on costs about 20 minutes and takes the guesswork out of the two bridges. They sit in the gearbox pocket and under the front wall, and come out from below.
+- **Time:** a slicer's estimates for a Creality Ender-3 S1 (0.4 mm nozzle, generic PETG, 0.2 mm layers): the mount at 4 walls and 40% infill, 5 h 55 min and 54 g, or 6 h 16 min with supports; at the slicer's stock 2 walls and 15%, 3 h 45 min. The tube fit test 39 min and the motor fit test 49 min at the stock settings, which is enough for a fit test. Not timed prints.
 
 ## Still to check
 

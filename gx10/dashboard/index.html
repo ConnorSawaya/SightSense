@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SightSense GX10</title>
+<style>
+  :root { --bg: #111418; --panel: #1b2027; --text: #e8eaed; --dim: #9aa3ad; --clear: #34c46a; --caution: #f2b233; --stop: #ef4b4b; --unknown: #6b7480; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid #2a313a; flex-wrap: wrap; }
+  h1 { font-size: 18px; margin: 0; }
+  .pill { padding: 2px 10px; border-radius: 999px; background: var(--panel); color: var(--dim); font-size: 13px; }
+  .pill.on { color: var(--clear); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .live { width: 100%; max-height: 72vh; object-fit: contain; background: #000; border-radius: 8px; display: block; min-height: 160px; }
+  .panel { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .decision { font-size: 44px; font-weight: 700; letter-spacing: 1px; }
+  .decision.wheel { font-size: 24px; }  /* the motor command; the banner above is what the user hears */
+  .state { font-size: 16px; color: var(--dim); }
+  .STOP { color: var(--stop); } .CAUTION { color: var(--caution); } .CLEAR { color: var(--clear); } .UNCERTAIN, .NO_DATA { color: var(--unknown); }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 8px; }
+  .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+  .bar div { width: 100%; border-radius: 4px 4px 0 0; }
+  .bar span { font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .bar.chosen span { color: var(--text); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 3px 0; } td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .dim { color: var(--dim); font-size: 13px; }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid #39424d; background: #0d1014; color: var(--text); font-size: 15px; }
+  button { padding: 8px 14px; border-radius: 6px; border: 0; background: #3a7bd5; color: white; font-size: 15px; cursor: pointer; }
+  .said { margin-top: 8px; min-height: 1.4em; }
+  /* Guidance as the phone used to show it: tinted banner, sentence underneath */
+  .guidance { border-radius: 14px; padding: 16px; margin-bottom: 12px; text-align: center; background: var(--panel);
+              border: 1px solid #2a313a; transition: background .3s, border-color .3s; }
+  .guidance .big { font-size: 40px; font-weight: 800; letter-spacing: 3px; }
+  .guidance .line { font-size: 17px; min-height: 1.4em; margin-top: 4px; }
+  .guidance .ahead { font-size: 14px; color: var(--dim); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .guidance.CLEAR { background: rgba(52,196,106,.14); border-color: var(--clear); }
+  .guidance.CAUTION { background: rgba(242,178,51,.14); border-color: var(--caution); }
+  .guidance.STOP { background: rgba(239,75,75,.18); border-color: var(--stop); }
+  .guidance.UNCERTAIN, .guidance.NO_DATA { background: rgba(107,116,128,.16); border-color: var(--unknown); }
+  .quick { display: flex; gap: 8px; margin-top: 10px; }
+  .quick button { flex: 1; background: #2a313a; }
+  .heard { margin-top: 8px; }
+  .heard b { color: var(--text); }
+  /* Red edge on STOP, like the phone */
+  #edge { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 0 transparent; transition: box-shadow .2s; }
+  #edge.STOP { animation: pulse .9s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: inset 0 0 40px 10px rgba(239,75,75,.35); } 50% { box-shadow: inset 0 0 60px 18px rgba(239,75,75,.9); } }
+  .list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
+  .list li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #262c34; font-variant-numeric: tabular-nums; }
+  .list li:last-child { border-bottom: 0; }
+  .who { color: var(--dim); min-width: 3.2em; }
+  .you .what { color: #8fb8ff; } .cane .what { color: var(--text); }
+  h2 { font-size: 14px; margin: 0; color: var(--dim); font-weight: 600; }
+  /* Manual steering */
+  .toggle { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
+  .toggle input { flex: 0; width: 18px; height: 18px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .pad button { padding: 16px 0; font-size: 17px; background: #2a313a; user-select: none; touch-action: none; }
+  .pad button.held { background: #3a7bd5; }
+  button.latched { outline: 2px solid var(--text); }
+  button.stopbtn { background: #7a2626; }
+  .manual-off .pad button, .manual-off .quick button { opacity: .35; pointer-events: none; }
+  #manualState { margin-top: 8px; color: var(--text); }
+  #manualState.warn { color: var(--caution); }
+  .ok { color: var(--clear); } .warnc { color: var(--caution); } .bad { color: var(--stop); }
+  button.qwen { width: 100%; margin-top: 10px; background: #6b4fd8; }
+</style>
+</head>
+<body>
+<div id="edge"></div>
+<header>
+  <h1>SightSense GX10</h1>
+  <span class="pill" id="phone">phone</span>
+  <span class="pill" id="pi">Pi</span>
+  <span class="dim" id="time"></span>
+</header>
+<main>
+  <section>
+    <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
+    <p class="dim">Left: phone picture, turned upright, YOLO boxes. Right: LiDAR depth, red near, blue far, grey no good reading; the square and number are the distance at the centre. Live stream from the GX10, newest frame only (up to 15 a second).</p>
+    <div class="panel"><h2>Objects (YOLO, distance from LiDAR)</h2><ul class="list" id="objects"><li class="dim">none</li></ul></div>
+    <div class="panel"><h2>Conversation</h2><ul class="list" id="log"><li class="dim">nothing yet</li></ul></div>
+  </section>
+  <section>
+    <div class="guidance" id="guidance">
+      <div class="big" id="gstate">STANDBY</div>
+      <div class="line" id="gline"></div>
+      <div class="ahead" id="ahead"></div>
+    </div>
+    <div class="panel">
+      <div class="decision" id="cmd">-</div>
+      <div class="state" id="state">waiting for frames</div>
+      <div class="bars" id="bars"></div>
+      <div class="dim">Clearance per heading, metres (4.5 = clear to range, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
+    </div>
+    <div class="panel manual-off" id="manualPanel">
+      <h2>Manual steering (motor on the Pi)</h2>
+      <label class="toggle"><input type="checkbox" id="manualOn"> Steer by hand</label>
+      <div class="pad">
+        <button type="button" data-hold="LEFT">&#9664; Left</button>
+        <button type="button" data-hold="CENTER">&#9650; Centre</button>
+        <button type="button" data-hold="RIGHT">Right &#9654;</button>
+      </div>
+      <div class="quick">
+        <button type="button" class="stopbtn latched" data-latch="STOP">Stop</button>
+        <button type="button" data-latch="FREE">Free wheel</button>
+      </div>
+      <div id="manualState">Off: the wheel follows the obstacle check.</div>
+      <div class="dim" style="margin-top:6px">Hold a direction to drive; let go and it stops. Keys: &larr; &uarr; &rarr;, space to stop. Depth still wins: while the phone streams, an obstacle STOP overrides you. If this page closes, the wheel goes back to automatic within a second.</div>
+    </div>
+    <div class="panel">
+      <h2>Raspberry Pi</h2>
+      <table>
+        <tr><td>CPU temperature</td><td id="piTemp">-</td></tr>
+        <tr><td>Power in (5 V)</td><td id="piVolts">-</td></tr>
+        <tr><td>Throttling</td><td id="piThrottle">-</td></tr>
+        <tr><td>Load / Wi-Fi</td><td id="piLoad">-</td></tr>
+        <tr><td>Motor mode / power</td><td id="piMotor">-</td></tr>
+        <tr><td>Up for</td><td id="piUp">-</td></tr>
+      </table>
+      <div class="dim" id="piNote">No battery gauge on the cane: the 5 V input sags as the supply runs down, so it stands in for battery level. Speed is the motor's label scaled by power, not measured.</div>
+    </div>
+    <div class="panel">
+      <form id="say"><input id="text" placeholder="guide me to the apple" autocomplete="off"><button>Send</button></form>
+      <div class="quick">
+        <button type="button" data-say="what's in front of me">Describe</button>
+        <button type="button" data-say="read the sign">Read</button>
+        <button type="button" data-say="am I going the right way">Status</button>
+        <button type="button" data-say="stop">Stop</button>
+      </div>
+      <button type="button" class="qwen" id="askQwen">Ask Qwen</button>
+      <div class="dim heard" id="heard"></div>
+      <div class="said" id="speech"></div>
+      <div class="dim" id="nav"></div>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><td>Frames in</td><td id="fps">-</td></tr>
+        <tr><td>GX10 processing (median)</td><td id="ms">-</td></tr>
+        <tr><td>Network round trip (ping)</td><td id="rtt">-</td></tr>
+        <tr><td>Stop smoothing (2 frames)</td><td id="smooth">-</td></tr>
+        <tr><td>Frames dropped (stale)</td><td id="dropped">-</td></tr>
+        <tr><td>GPU use / power / temp</td><td id="gpu">-</td></tr>
+        <tr><td>Vision model</td><td id="model">-</td></tr>
+        <tr><td>Tracking / phone heat</td><td id="track">-</td></tr>
+      </table>
+      <div class="dim">Phone capture-to-send time is not included; it is not measured yet.</div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let lastSpeech = "", lastStatus = 0;
+function color(v) { return v === null ? "var(--unknown)" : v >= 1.5 ? "var(--clear)" : v >= 0.8 ? "var(--caution)" : "var(--stop)"; }  // planner/obstacle.py: USABLE_M, STOP_AHEAD_M
+function show(s) {
+  lastStatus = Date.now();
+  try {
+    $("phone").textContent = s.phone ? "phone " + s.phone : "phone not connected"; $("phone").className = "pill" + (s.phone ? " on" : "");
+    $("pi").textContent = s.pis ? "Pi connected" : "Pi not connected"; $("pi").className = "pill" + (s.pis ? " on" : "");
+    $("time").textContent = new Date().toLocaleTimeString();
+    const f = s.frame || {};
+    const wheel = s.manual ? s.manual.cmd : f.cmd;
+    $("cmd").textContent = (s.manual ? "Wheel (manual): " : "Wheel: ") + (wheel || "-"); $("cmd").className = "decision wheel " + (wheel === "STOP" ? "STOP" : "");
+    showManual(s);
+    showPi(s.pi_health);
+    $("state").textContent = f.state ? f.state + (f.desired !== null && f.desired !== undefined ? " · wants " + f.desired + "°" : "") : "waiting for frames";
+    const bars = $("bars"); bars.innerHTML = "";
+    for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
+      const b = document.createElement("div"); b.className = "bar" + (String(f.best) === h ? " chosen" : "");
+      const fill = document.createElement("div"); fill.style.height = (v === null ? 100 : Math.max(4, v / 4.5 * 100)) + "%"; fill.style.background = color(v);
+      const lab = document.createElement("span"); lab.textContent = (h > 0 ? "+" : "") + h + "° " + (v === null ? "?" : v.toFixed(1));
+      b.append(fill, lab); bars.append(b);
+    }
+    if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
+    const st = s.phone ? (f.state || "NO_DATA") : "";
+    $("guidance").className = "guidance " + st;
+    // The direction the phone is told (planner/cue.py); the colour is still the state.
+    const words = {LEFT: "\u2190 BEAR LEFT", STRAIGHT: "\u2191 STRAIGHT", RIGHT: "BEAR RIGHT \u2192", STOP: "STOP", UNKNOWN: "CAN'T SEE AHEAD"};
+    $("gstate").textContent = st ? (words[f.direction] || st.replace("_", " ")) : "STANDBY"; $("gstate").className = "big " + st;
+    $("gline").textContent = s.phone ? (s.said || "") : "Waiting for the phone";
+    if (s.said) $("speech").textContent = "Says: " + s.said;
+    $("ahead").textContent = s.centre_m != null ? "Ahead (LiDAR, centre): " + s.centre_m.toFixed(2) + " m" : "";
+    $("edge").className = st === "STOP" ? "STOP" : "";
+    const h = s.heard;
+    $("heard").innerHTML = "";
+    if (h) {
+      const how = h.kind === "interpret" ? "understanding…" : h.kind + (h.target && h.kind !== "ask" ? " " + h.target : "");
+      $("heard").append("Heard: ");
+      const b = document.createElement("b"); b.textContent = "“" + h.text + "”"; $("heard").append(b);
+      $("heard").append(" → " + how + " (" + (h.kind === "interpret" ? "model" : h.by) + ")");
+    }
+    const objs = f.objects || [];
+    $("objects").replaceChildren(...(objs.length ? objs.map((o) => {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); a.textContent = o.label + " " + o.conf.toFixed(2);
+      const b = document.createElement("span"); b.textContent = (o.dist_m === null ? "no depth" : o.dist_m.toFixed(1) + " m") + (o.side ? " · " + o.side : "");
+      li.append(a, b); return li;
+    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "none" })]));
+    const log = (s.log || []).slice().reverse();
+    $("log").replaceChildren(...(log.length ? log.map(([t, who, text]) => {
+      const li = document.createElement("li"); li.className = who;
+      const w = document.createElement("span"); w.className = "who"; w.textContent = who === "you" ? "You" : "Cane";
+      const x = document.createElement("span"); x.className = "what"; x.textContent = text; x.style.flex = "1";
+      const tt = document.createElement("span"); tt.className = "dim"; tt.textContent = t;
+      li.append(w, x, tt); return li;
+    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "nothing yet" })]));
+    $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "")
+      + (f.clearance ? " · floor: " + (f.cam_h != null ? f.cam_h.toFixed(2) + " m below the phone" : "not seen") : "");
+    $("fps").textContent = s.fps + " / s";
+    $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";
+    $("rtt").textContent = s.rtt_ms !== null ? s.rtt_ms.toFixed(0) + " ms" : "-";
+    $("smooth").textContent = s.fps ? "about " + Math.round(2000 / Math.max(s.fps, 1)) + " ms" : "-";
+    $("dropped").textContent = s.dropped;
+    $("gpu").textContent = s.gpu && s.gpu.util_pct !== undefined ? s.gpu.util_pct + "% · " + s.gpu.power_w.toFixed(0) + " W · " + s.gpu.temp_c + " °C" : "-";
+    $("model").textContent = s.model || "-";
+    $("track").textContent = (f.tracking || "-") + " / " + (f.thermal || "-");
+  } catch (e) { console.error(e); }
+}
+// Status is pushed by the GX10 about 5 times a second; EventSource reconnects by itself
+const events = new EventSource("/events");
+events.onmessage = (e) => show(JSON.parse(e.data));
+// If the stream or status stops (GX10 restarted, link dropped), say so and reconnect the picture
+setInterval(() => {
+  if (Date.now() - lastStatus > 3000) {
+    $("state").textContent = "no contact with the GX10 - reconnecting";
+    $("live").src = "/stream.mjpg?" + Date.now();
+  }
+}, 3000);
+// Manual steering: while it is on, the page tells the GX10 what to send about 7 times a second
+let manualOn = false, held = null, latched = "STOP";
+function sendManual(cmd) {
+  fetch("/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cmd }), keepalive: true }).catch(() => {});
+}
+setInterval(() => { if (manualOn) sendManual(held || latched); }, 150);
+function setLatch(cmd) {
+  latched = cmd;
+  for (const b of document.querySelectorAll("[data-latch]")) b.classList.toggle("latched", b.dataset.latch === cmd);
+}
+function hold(cmd) {
+  if (!manualOn) return;
+  held = cmd; setLatch("STOP"); sendManual(cmd);
+  for (const b of document.querySelectorAll("[data-hold]")) b.classList.toggle("held", b.dataset.hold === cmd);
+}
+function release() {
+  if (held === null) return;
+  held = null; sendManual(latched);
+  for (const b of document.querySelectorAll("[data-hold]")) b.classList.remove("held");
+}
+$("manualOn").addEventListener("change", (e) => {
+  manualOn = e.target.checked; held = null; setLatch("STOP");
+  $("manualPanel").classList.toggle("manual-off", !manualOn);
+  sendManual(manualOn ? "STOP" : "AUTO");
+});
+for (const b of document.querySelectorAll("[data-hold]")) {
+  b.addEventListener("pointerdown", (e) => { b.setPointerCapture(e.pointerId); hold(b.dataset.hold); });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, release);
+}
+for (const b of document.querySelectorAll("[data-latch]")) b.addEventListener("click", () => { setLatch(b.dataset.latch); sendManual(latched); });
+const KEYS = { ArrowLeft: "LEFT", ArrowUp: "CENTER", ArrowRight: "RIGHT" };
+document.addEventListener("keydown", (e) => {
+  if (!manualOn || e.target.tagName === "INPUT" && e.target.type === "text") return;
+  if (KEYS[e.key]) { e.preventDefault(); if (held !== KEYS[e.key]) hold(KEYS[e.key]); }
+  else if (e.key === " ") { e.preventDefault(); release(); setLatch("STOP"); sendManual("STOP"); }
+});
+document.addEventListener("keyup", (e) => { if (KEYS[e.key] && held === KEYS[e.key]) release(); });
+window.addEventListener("blur", release);  // a key held while switching windows must not keep driving
+window.addEventListener("pagehide", () => { if (manualOn) sendManual("AUTO"); });
+function showManual(s) {
+  const m = s.manual, el = $("manualState");
+  if (!manualOn && !m) { el.textContent = "Off: the wheel follows the obstacle check."; el.className = ""; return; }
+  if (!m) { el.textContent = "Starting…"; el.className = ""; return; }
+  const notes = [];
+  if (m.depth_stop) notes.push("obstacle ahead: depth overrides your " + m.asked);
+  if (!m.depth_live) notes.push("no phone frames, so no depth check (bench test only)");
+  if (!s.pis) notes.push("no Pi connected");
+  el.textContent = "Sending to the Pi: " + m.cmd + (notes.length ? " · " + notes.join(" · ") : "");
+  el.className = notes.length ? "warn" : "";
+  if (!manualOn) { el.textContent = "Another dashboard is steering: " + m.cmd; el.className = "warn"; }
+}
+function showPi(h) {
+  const set = (id, text, cls) => { $(id).textContent = text; $(id).className = cls || ""; };
+  if (!h) {
+    for (const id of ["piTemp", "piVolts", "piThrottle", "piLoad", "piMotor", "piUp"]) set(id, "-");
+    return;
+  }
+  if (h.cpu_c != null) set("piTemp", h.cpu_c.toFixed(1) + " °C", h.cpu_c >= 80 ? "bad" : h.cpu_c >= 65 ? "warnc" : "ok");  // a Pi 5 slows itself at 85 °C
+  if (h.in_v != null) {
+    const dip = h.undervolt_now ? " · too low now" : h.undervolt_since_boot ? " · dipped since boot" : "";
+    set("piVolts", h.in_v.toFixed(2) + " V" + dip, h.undervolt_now || h.in_v < 4.8 ? "bad" : dip || h.in_v < 5.0 ? "warnc" : "ok");
+  }
+  if (h.throttled_now != null) set("piThrottle", h.throttled_now ? "slowed now" : h.throttled_since_boot ? "none now (earlier since boot)" : "none", h.throttled_now ? "bad" : h.throttled_since_boot ? "warnc" : "ok");
+  set("piLoad", (h.load != null ? h.load.toFixed(2) : "-") + " / " + (h.wifi_dbm != null ? h.wifi_dbm + " dBm" : "-"));
+  if (h.mode) set("piMotor", h.mode + " · " + Math.round((h.duty || 0) * 100) + "% (max " + Math.round((h.max_duty || 0) * 100) + "%) · about " + Math.round((h.rated_rpm || 0) * (h.duty || 0)) + " rpm est.");
+  if (h.uptime_s != null) set("piUp", Math.floor(h.uptime_s / 3600) + " h " + Math.floor(h.uptime_s % 3600 / 60) + " min");
+}
+// Ask Qwen: placeholder; the team will wire it to the model soon
+$("askQwen").addEventListener("click", () => { $("speech").textContent = "Ask Qwen is not connected yet."; });
+async function say(text) {
+  await fetch("/say", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+}
+for (const b of document.querySelectorAll("[data-say]")) b.addEventListener("click", () => say(b.dataset.say));
+$("say").addEventListener("submit", async (e) => {
+  e.preventDefault(); const text = $("text").value.trim(); if (!text) return;
+  await fetch("/say", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+  $("text").value = "";
+});
+</script>
+</body>
+</html>

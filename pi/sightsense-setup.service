@@ -1,0 +1,13 @@
+[Unit]
+Description=SightSense Pi Python dependencies
+After=network-online.target
+Wants=network-online.target
+Before=sightsense-cane.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/sightsense/SightSense/pi/prepare_runtime.sh
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=300

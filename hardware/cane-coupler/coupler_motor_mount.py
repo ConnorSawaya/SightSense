@@ -72,7 +72,7 @@ GROOVE_START = 7.0
 GROOVE_PITCH = 8.0
 
 # --- new: M3 cross bolt through the receiver and the tongue ---
-BOLT_D = 3.2  # M3 close fit
+BOLT_D = 3.6  # M3 with room to spare: screws would not go through 3.2 mm holes as printed (wheel adapter, first test print)
 BOLT_FROM_MOUTH = 11.7  # measured from the receiver's mouth = from the tongue's root; between two glue grooves
 SEAT_DEPTH = 1.0  # flats cut into the round barrel so the head and nut sit square
 HEAD_SEAT_D = 6.6

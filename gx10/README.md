@@ -6,12 +6,12 @@ Everything that runs on the ASUS Ascent GX10. All AI and all guidance decisions 
 
 | Piece | What it does | Owner |
 | --- | --- | --- |
-| `ingest/` | Receives frames from the phone on port 8765, keeps only the newest, records and replays sessions | Obstacle check |
-| `planner/` | Seven-direction obstacle check, smoothing, command stream to the Pi on port 8766 | Obstacle check |
-| `dashboard/` | Web page on port 8000: live picture, depth, chosen direction, delay, GPU use | Obstacle check |
+| `ingest/` | Receives frames from the phone on port 8765 (8775 as started for the cane; see `ingest/README.md`), keeps only the newest, records and replays sessions. First version in; runs YOLO, navigator and planner on each frame | Obstacle check (first version by GX10 + models) |
+| `planner/` | Seven-direction obstacle check, smoothing, command stream to the Pi on port 8766. First version in | Obstacle check (first version by GX10 + models) |
+| `dashboard/` | Web page on port 8000: live picture, depth, chosen direction, delay, GPU use. First version in | Obstacle check (first version by GX10 + models) |
 | `vlm/` | Describe, read and find, using the vision-language model through Ollama | GX10 + models |
 | `detector/` | YOLO on every frame | GX10 + models |
-| `navigator/` | Follows a walking route; guides to a found object | GX10 + models |
+| `navigator/` | Voice commands; guides to a found object; follows a walking route | GX10 + models |
 
 Message formats are in [`../contracts/MESSAGES.md`](../contracts/MESSAGES.md).
 

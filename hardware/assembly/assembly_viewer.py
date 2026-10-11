@@ -1,12 +1,17 @@
 """Writes assembly_viewer.html: a self-contained 3D viewer for the whole cane with
-every printed part in place (handle, phone mount, main insert, motor mount 2,
-wheel adapter and cap, battery and Raspberry Pi mount).
+every printed part in place (handle, phone mount, the keyed coupler at each tube
+joint, main insert, motor mount 2, wheel adapter and cap, battery and Raspberry
+Pi mount).
 
 Run:  python assembly_viewer.py     then open assembly_viewer.html in a browser.
 
 Stick frame, as in walking_stick.py: +Z up the pole with z=0 at the top end of
 the tube, +X the pole's forward normal. The viewer leans the pole back by
 STICK_LEAN_DEG, as it is held.
+
+The pole is TUBE_SECTIONS tubes of SECTION_LEN, meeting end to end. At each joint
+the tube above carries a v3 main insert, tongue down, and the tube below a v3
+receiver, mouth up, both glued in flush with the tube's end.
 
 The Pi is held by M2.5 x 12 screws and nuts. The v4 motor receiver is left out:
 motor mount 2 goes in the same place.
@@ -29,9 +34,11 @@ import motor_mount_2 as mm2  # noqa: E402
 import viewer  # noqa: E402
 import walking_stick as ws  # noqa: E402
 import wheel_adapter as wa  # noqa: E402
-from walking_stick import Pos, Rot  # noqa: E402
+from walking_stick import Pos, Rot, overlap  # noqa: E402
 
-TUBE_LEN = 900.0  # NOMINAL: the tube is cut to suit the user; this puts the handle about 0.9 m above the ground
+TUBE_SECTIONS = 4  # the team's carbon tubes
+SECTION_LEN = 400.0
+TUBE_LEN = TUBE_SECTIONS * SECTION_LEN  # the sections meet end to end; the couplers are inside them
 WHEEL_D = 58.0  # NOT MEASURED: the omni wheel looked 50 to 60 mm across in the team's photos
 WHEEL_HUB_W = wa.wheel_screw_len() - 8.0  # as the wheel adapter's drawings assume
 GROUND_R = 230.0
@@ -65,6 +72,7 @@ def top_items():
     at = ws.cradle_location(T)
     return [
         ("Handle", (0.20, 0.47, 0.80), True, True, parts["stick_handle"]),
+        ("Handle plug, in the tube", (0.55, 0.75, 0.30), True, True, parts["socket_plug"]),
         ("Camera collar", (0.95, 0.55, 0.15), True, True, ws.collar_location() * parts["camera_collar"]),
         ("Phone cradle", (0.25, 0.68, 0.45), True, True, at * parts["phone_cradle"]),
         ("Thumb button, 7 mm", (0.80, 0.25, 0.30), True, False, ws.ref_button()),
@@ -72,6 +80,30 @@ def top_items():
         ("Phone strap", (0.75, 0.25, 0.30), False, False, at * ws.ref_strap()),
         ("Screws and nuts, top", (0.82, 0.80, 0.72), True, False, ws.ref_hardware(T)),
     ]
+
+
+def pole_items():
+    """The tube sections and the keyed coupler at each joint, in the stick frame."""
+    wall = Cylinder(ws.STICK_OD / 2, SECTION_LEN) - Cylinder(ws.STICK_ID / 2, SECTION_LEN)
+    tubes = [Pos(0, 0, -(i + 0.5) * SECTION_LEN) * wall for i in range(TUBE_SECTIONS)]
+    flip = Rot(180, 0, 0)
+    mains, receivers = [], []
+    for j in range(1, TUBE_SECTIONS):
+        z = -j * SECTION_LEN  # where tube j meets tube j + 1
+        mains.append(Pos(0, 0, z + cm.MAIN_BARREL_LEN) * flip * cm.make_main_v3())  # barrel in the tube above, tongue below
+        receivers.append(Pos(0, 0, z) * flip * cm.make_receiver_v3())  # in the tube below, mouth up
+        above, below = tubes[j - 1], tubes[j]
+        hit = overlap(mains[-1], receivers[-1]) + overlap(mains[-1], above) + overlap(mains[-1], below) + overlap(receivers[-1], below)
+        print(f"  joint {j}, {-z:.0f} mm below the top: " + ("the tongue seats in the socket and both inserts sit inside their tubes"
+                                                         if hit < 1e-6 else f"parts overlap by {hit:.1f} mm3"))
+    out = [
+        (f"Coupler main inserts v3, {len(mains)}", (0.86, 0.30, 0.55), True, True, mains),
+        (f"Coupler receivers v3, {len(receivers)}", (0.93, 0.62, 0.78), True, True, receivers),
+    ]
+    for i, section in enumerate(tubes):  # two greys in turn, so the joints show
+        shade = (0.22, 0.22, 0.25) if i % 2 == 0 else (0.31, 0.31, 0.35)
+        out.append((f"Tube {i + 1} of {TUBE_SECTIONS}, {SECTION_LEN:.0f} mm", shade, True, False, section))
+    return out
 
 
 def tip_items():
@@ -145,7 +177,8 @@ def build():
     print(f"  drawn with the wheel end turned {turn:.0f} degrees; the wheel touches the ground with {margin:.1f} mm to spare, for a {WHEEL_D:.0f} mm wheel")
     tip = [(name, color, visible, printed, "tip", onto_tube(t, turn)) for name, color, visible, printed, t in raw]
 
-    tube = (f"Cane tube, drawn {TUBE_LEN:.0f} mm", (0.22, 0.22, 0.25), True, False, "pole", viewer.triangles(ws.ref_stick(TUBE_LEN), 0.2))
+    pole = [(name, color, visible, printed, "pole", viewer.triangles(shape, 0.05 if printed else 0.2, 0.15))
+            for name, color, visible, printed, shape in pole_items()]
 
     # ground under the wheel, level once the pole leans
     wheel_tris = next(t for name, *_, t in tip if name.startswith("Omni wheel"))
@@ -157,7 +190,7 @@ def build():
     reach = -ground_h
     print(f"  top of the tube is {reach:.0f} mm above the ground with the pole leaning {ws.STICK_LEAN_DEG:.0f} degrees")
 
-    scene = top + tip + [tube, ground]
+    scene = top + tip + pole + [ground]
     scene.sort(key=lambda item: not item[3])  # printed parts first
     out = []
     for name, color, visible, printed, group, tris in scene:
@@ -204,7 +237,8 @@ SWAPS = (
     ("sizeText(); fit();\n</script>", "sizeText(); fit({'#handle': 'top', '#wheel': 'tip'}[location.hash] || null);\n</script>"),
 )
 
-NOTE = (f"Tube drawn {TUBE_LEN:.0f} mm long; it is cut to suit the user. The wheel and the phone are stand-ins: their sizes are not measured. "
+NOTE = (f"{TUBE_SECTIONS} tubes of {SECTION_LEN:.0f} mm, joined by the keyed coupler: hide a tube to see the inserts inside it. "
+        "The wheel and the phone are stand-ins: their sizes are not measured. "
         "Motor sizes are from a published drawing. Research prototype: nothing here has been printed or load tested.")
 
 
