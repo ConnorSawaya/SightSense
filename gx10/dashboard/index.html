@@ -4,154 +4,402 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SightSense GX10</title>
+<!-- Everything is in this file, no CDN: the GX10 may be on a network without internet.
+     The effects follow 21st.dev / Magic UI / Aceternity patterns (dot pattern, glowing border,
+     travelling border light, shimmer button, number ticker, animated list), redone in plain CSS and JS. -->
 <style>
-  :root { --bg: #111418; --panel: #1b2027; --text: #e8eaed; --dim: #9aa3ad; --clear: #34c46a; --caution: #f2b233; --stop: #ef4b4b; --unknown: #6b7480; }
+  :root {
+    --bg: #06080c; --card: rgba(255,255,255,.035); --card2: rgba(255,255,255,.06); --line: rgba(255,255,255,.08);
+    --text: #eef1f5; --dim: #8d96a3; --faint: #5b6470;
+    --accent: #5ad8ff; --violet: #8b7bff;
+    --clear: #34d27a; --caution: #f5b83d; --stop: #ff5468; --unknown: #8a93a0;
+    --radius: 18px;
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, sans-serif; }
-  header { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid #2a313a; flex-wrap: wrap; }
-  h1 { font-size: 18px; margin: 0; }
-  .pill { padding: 2px 10px; border-radius: 999px; background: var(--panel); color: var(--dim); font-size: 13px; }
-  .pill.on { color: var(--clear); }
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  .live { width: 100%; max-height: 72vh; object-fit: contain; background: #000; border-radius: 8px; display: block; min-height: 160px; }
-  .panel { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
-  .decision { font-size: 44px; font-weight: 700; letter-spacing: 1px; }
-  .decision.wheel { font-size: 24px; }  /* the motor command; the banner above is what the user hears */
-  .state { font-size: 16px; color: var(--dim); }
-  .STOP { color: var(--stop); } .CAUTION { color: var(--caution); } .CLEAR { color: var(--clear); } .UNCERTAIN, .NO_DATA { color: var(--unknown); }
-  .bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 8px; }
-  .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
-  .bar div { width: 100%; border-radius: 4px 4px 0 0; }
-  .bar span { font-size: 11px; color: var(--dim); margin-top: 4px; }
-  .bar.chosen span { color: var(--text); font-weight: 700; }
-  table { width: 100%; border-collapse: collapse; }
-  td { padding: 3px 0; } td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-  .dim { color: var(--dim); font-size: 13px; }
-  form { display: flex; gap: 8px; }
-  input { flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid #39424d; background: #0d1014; color: var(--text); font-size: 15px; }
-  button { padding: 8px 14px; border-radius: 6px; border: 0; background: #3a7bd5; color: white; font-size: 15px; cursor: pointer; }
-  .said { margin-top: 8px; min-height: 1.4em; }
-  /* Guidance as the phone used to show it: tinted banner, sentence underneath */
-  .guidance { border-radius: 14px; padding: 16px; margin-bottom: 12px; text-align: center; background: var(--panel);
-              border: 1px solid #2a313a; transition: background .3s, border-color .3s; }
-  .guidance .big { font-size: 40px; font-weight: 800; letter-spacing: 3px; }
-  .guidance .line { font-size: 17px; min-height: 1.4em; margin-top: 4px; }
-  .guidance .ahead { font-size: 14px; color: var(--dim); margin-top: 6px; font-variant-numeric: tabular-nums; }
-  .guidance.CLEAR { background: rgba(52,196,106,.14); border-color: var(--clear); }
-  .guidance.CAUTION { background: rgba(242,178,51,.14); border-color: var(--caution); }
-  .guidance.STOP { background: rgba(239,75,75,.18); border-color: var(--stop); }
-  .guidance.UNCERTAIN, .guidance.NO_DATA { background: rgba(107,116,128,.16); border-color: var(--unknown); }
-  .quick { display: flex; gap: 8px; margin-top: 10px; }
-  .quick button { flex: 1; background: #2a313a; }
-  .heard { margin-top: 8px; }
-  .heard b { color: var(--text); }
-  /* Red edge on STOP, like the phone */
-  #edge { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 0 transparent; transition: box-shadow .2s; }
+  html { color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; overflow-x: hidden; }
+  /* Background: dot pattern fading out from the top, and two slow aurora glows */
+  .bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .bg::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.09) 1px, transparent 1px); background-size: 22px 22px;
+                -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%); mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%); }
+  .aurora { position: absolute; width: 46vw; height: 46vw; border-radius: 50%; filter: blur(90px); opacity: .22; animation: drift 24s ease-in-out infinite alternate; transition: background 1s; }
+  .aurora.a { background: var(--accent); top: -22vw; left: -8vw; }
+  .aurora.b { background: var(--violet); top: -18vw; right: -12vw; animation-delay: -12s; opacity: .16; }
+  body.s-STOP .aurora.a { background: var(--stop); } body.s-CAUTION .aurora.a { background: var(--caution); } body.s-CLEAR .aurora.a { background: var(--clear); }
+  @keyframes drift { to { transform: translate(6vw, 4vw) scale(1.15); } }
+
+  /* Header */
+  header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 12px 20px; flex-wrap: wrap;
+           background: rgba(6,8,12,.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+  .brand svg { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 0 24px rgba(90,216,255,.25); }
+  h1 { font-size: 15px; margin: 0; letter-spacing: .14em; font-weight: 800; }
+  h1 small { display: block; font-size: 10px; letter-spacing: .2em; color: var(--accent); font-weight: 600; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--dim); font-size: 12.5px; transition: color .3s, border-color .3s; }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+  .pill.on { color: var(--text); border-color: rgba(52,210,122,.35); }
+  .pill.on::before { background: var(--clear); box-shadow: 0 0 0 0 rgba(52,210,122,.6); animation: ping 1.8s ease-out infinite; }
+  @keyframes ping { 70% { box-shadow: 0 0 0 7px rgba(52,210,122,0); } 100% { box-shadow: 0 0 0 0 rgba(52,210,122,0); } }
+  #time { color: var(--dim); font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 6.5em; text-align: right; }
+
+  /* Bento grid */
+  main { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; padding: 18px 20px 28px; max-width: 1600px; margin: 0 auto; }
+  .span-8 { grid-column: span 8; } .span-4 { grid-column: span 4; } .rows-2 { grid-row: span 2; }
+  @media (max-width: 1100px) { .span-8, .span-4 { grid-column: span 12; } .rows-2 { grid-row: auto; } }
+  @media (min-width: 700px) and (max-width: 1100px) { .span-4.half { grid-column: span 6; } }
+
+  /* Card with a border glow that follows the pointer (Aceternity "glowing effect" / glow card grid) */
+  .card { position: relative; background: linear-gradient(180deg, var(--card2), var(--card)); border: 1px solid var(--line); border-radius: var(--radius);
+          padding: 16px; min-width: 0; animation: rise .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+  .card::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+                  background: radial-gradient(360px circle at var(--x, -100px) var(--y, -100px), rgba(90,216,255,.7), rgba(139,123,255,.35) 30%, transparent 60%);
+                  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+                  opacity: 0; transition: opacity .4s; }
+  .card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+                 background: radial-gradient(500px circle at var(--x, -100px) var(--y, -100px), rgba(90,216,255,.05), transparent 45%); opacity: 0; transition: opacity .4s; }
+  main:hover .card::before, main:hover .card::after { opacity: 1; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  h2 { font-size: 11.5px; margin: 0; color: var(--dim); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  h2 svg { width: 15px; height: 15px; color: var(--accent); }
+  .badge { font-size: 11.5px; color: var(--dim); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: rgba(0,0,0,.25); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dim { color: var(--dim); font-size: 12.5px; }
+
+  /* Live view */
+  .live { width: 100%; max-height: 70vh; object-fit: contain; background: #000; border-radius: 12px; display: block; min-height: 180px; border: 1px solid var(--line); }
+  .rec { display: inline-flex; align-items: center; gap: 6px; color: var(--stop); font-weight: 700; letter-spacing: .1em; }
+  .rec::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--stop); animation: blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .explain { margin-top: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(0,0,0,.3); border: 1px solid var(--line); font-variant-numeric: tabular-nums; min-height: 1.4em; }
+  details { margin-top: 10px; color: var(--dim); font-size: 12.5px; }
+  summary { cursor: pointer; color: var(--dim); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "›"; display: inline-block; transition: transform .2s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  details p { margin: 8px 0 0; line-height: 1.55; }
+
+  /* Guidance: travelling light around the border, in the state's colour */
+  @property --angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  .guidance { --tone: var(--accent); overflow: hidden; text-align: center; padding: 22px 18px 18px; transition: background .4s; }
+  .guidance > .ring { position: absolute; inset: -1px; border-radius: inherit; padding: 1.5px; pointer-events: none;
+                      background: conic-gradient(from var(--angle), transparent 0 62%, var(--tone) 78%, transparent 92%);
+                      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+                      animation: around 4s linear infinite; }
+  @keyframes around { to { --angle: 360deg; } }
+  .guidance.CLEAR { --tone: var(--clear); background: linear-gradient(180deg, rgba(52,210,122,.13), var(--card)); }
+  .guidance.CAUTION { --tone: var(--caution); background: linear-gradient(180deg, rgba(245,184,61,.13), var(--card)); }
+  .guidance.STOP { --tone: var(--stop); background: linear-gradient(180deg, rgba(255,84,104,.2), var(--card)); }
+  .guidance.STOP > .ring { animation-duration: 1.2s; }
+  .guidance.UNCERTAIN, .guidance.NO_DATA { --tone: var(--unknown); }
+  .gicon { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; color: var(--tone);
+           background: color-mix(in srgb, var(--tone) 14%, transparent); border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+           box-shadow: 0 0 34px color-mix(in srgb, var(--tone) 30%, transparent); transition: color .4s, background .4s, border-color .4s, box-shadow .4s; }
+  .gicon svg { width: 30px; height: 30px; transition: transform .45s cubic-bezier(.3,1.5,.5,1); }
+  .guidance .big { font-size: 34px; font-weight: 800; letter-spacing: .06em; line-height: 1.1; transition: color .4s; color: var(--dim); }
+  .guidance .big.STOP { color: var(--stop); } .guidance .big.CAUTION { color: var(--caution); } .guidance .big.CLEAR { color: var(--clear); }
+  .guidance .big.UNCERTAIN, .guidance .big.NO_DATA { color: var(--unknown); }
+  .pop { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes pop { from { transform: scale(.88); opacity: .4; } }
+  .guidance .line { font-size: 15.5px; min-height: 1.45em; margin-top: 6px; color: var(--text); }
+  .guidance .ahead { font-size: 12.5px; color: var(--dim); margin-top: 10px; font-variant-numeric: tabular-nums; min-height: 1.2em; }
+  .prox { margin-top: 14px; }
+  .prox .track { position: relative; display: flex; gap: 3px; height: 10px; }
+  .prox .zone { border-radius: 999px; opacity: .25; transition: opacity .3s; }
+  .prox .zone.lit { opacity: .95; }
+  .prox .mark { position: absolute; top: -3px; width: 4px; height: 16px; border-radius: 3px; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.6); transition: left .3s ease-out; }
+  .prox .ticks { position: relative; height: 14px; margin-top: 5px; font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .prox .ticks span { position: absolute; transform: translateX(-50%); }
+  #edge { position: fixed; inset: 0; pointer-events: none; z-index: 10; box-shadow: inset 0 0 0 0 transparent; transition: box-shadow .2s; }
   #edge.STOP { animation: pulse .9s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { box-shadow: inset 0 0 40px 10px rgba(239,75,75,.35); } 50% { box-shadow: inset 0 0 60px 18px rgba(239,75,75,.9); } }
-  .list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
-  .list li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #262c34; font-variant-numeric: tabular-nums; }
-  .list li:last-child { border-bottom: 0; }
-  .who { color: var(--dim); min-width: 3.2em; }
-  .you .what { color: #8fb8ff; } .cane .what { color: var(--text); }
-  h2 { font-size: 14px; margin: 0; color: var(--dim); font-weight: 600; }
-  .explain { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: var(--panel); font-variant-numeric: tabular-nums; min-height: 1.4em; }
-  /* Manual steering */
-  .toggle { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
-  .toggle input { flex: 0; width: 18px; height: 18px; }
-  .pad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
-  .pad button { padding: 16px 0; font-size: 17px; background: #2a313a; user-select: none; touch-action: none; }
-  .pad button.held { background: #3a7bd5; }
-  .manual-off .pad button { opacity: .35; pointer-events: none; }
-  #manualState { margin-top: 8px; color: var(--text); }
+  @keyframes pulse { 0%,100% { box-shadow: inset 0 0 40px 10px rgba(255,84,104,.3); } 50% { box-shadow: inset 0 0 70px 20px rgba(255,84,104,.85); } }
+
+  /* Wheel and clearance */
+  .decision { font-size: 22px; font-weight: 800; letter-spacing: .03em; transition: color .3s; }
+  .state { font-size: 13px; color: var(--dim); margin-top: 2px; }
+  .STOP { color: var(--stop); } .CAUTION { color: var(--caution); } .CLEAR { color: var(--clear); } .UNCERTAIN, .NO_DATA { color: var(--unknown); }
+  .bars { display: flex; align-items: flex-end; gap: 7px; height: 132px; margin: 14px 0 6px; }
+  .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+  .bar .fill { width: 100%; border-radius: 7px 7px 3px 3px; transition: height .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; min-height: 4px;
+               background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 30%, transparent)); }
+  .bar.chosen .fill { box-shadow: 0 0 18px var(--c), inset 0 0 0 1px rgba(255,255,255,.6); }
+  .bar span { font-size: 10.5px; color: var(--dim); margin-top: 6px; text-align: center; line-height: 1.25; font-variant-numeric: tabular-nums; white-space: pre; }
+  .bar.chosen span { color: var(--text); font-weight: 700; }
+
+  /* Lists that animate new rows in (Magic UI "animated list") */
+  .list { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; scrollbar-width: thin; }
+  .list li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 10px; margin-bottom: 5px; border-radius: 10px;
+             background: rgba(255,255,255,.025); border: 1px solid transparent; font-variant-numeric: tabular-nums; }
+  .list li.dim { background: none; padding-left: 0; }
+  .list li.new { animation: slidein .45s cubic-bezier(.2,.9,.2,1); border-color: rgba(90,216,255,.25); }
+  @keyframes slidein { from { opacity: 0; transform: translateY(-8px) scale(.97); } }
+  .who { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; min-width: 3.4em; color: var(--dim); }
+  .you .who { color: #8fb8ff; } .cane .who { color: var(--accent); }
+  .you .what { color: #c6dbff; } .cane .what { color: var(--text); }
+
+  /* Inputs and buttons */
+  form { display: flex; gap: 8px; }
+  #text { flex: 1; min-width: 0; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: var(--text); font-size: 14px; outline: none; transition: border-color .2s, box-shadow .2s; }
+  #text:focus { border-color: rgba(90,216,255,.6); box-shadow: 0 0 0 4px rgba(90,216,255,.12); }
+  button { font: inherit; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); cursor: pointer;
+           transition: transform .12s, background .2s, border-color .2s, box-shadow .2s; }
+  button:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.16); }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--accent); color: #031018; border-color: transparent; font-weight: 700; }
+  button.primary:hover { background: var(--accent); box-shadow: 0 0 24px rgba(90,216,255,.45); }
+  /* Shimmer button (Magic UI): a light sweeping across */
+  button.shimmer { position: relative; overflow: hidden; width: 100%; margin-top: 10px; font-weight: 700; border-color: rgba(139,123,255,.5);
+                   background: linear-gradient(110deg, #5a43c9 40%, #9d8dff 50%, #5a43c9 60%); background-size: 250% 100%; animation: shimmer 3s linear infinite; }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+  .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .quick button { padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12.5px; }
+  .quick button svg { width: 18px; height: 18px; color: var(--accent); }
+  .quick button[data-say="stop"] svg { color: var(--stop); }
+  .heard { margin-top: 10px; } .heard b { color: var(--text); }
+  .said { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(90,216,255,.06); border: 1px solid rgba(90,216,255,.15); }
+  .said:empty { display: none; }
+
+  /* Manual motor */
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,.25); border: 1px solid var(--line); }
+  .switch input { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; border-radius: 999px; background: #2a313a; position: relative; cursor: pointer; transition: background .25s; flex: none; margin: 0; }
+  .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .25s cubic-bezier(.3,1.4,.5,1); }
+  .switch input:checked { background: var(--accent); }
+  .switch input:checked::after { transform: translateX(18px); }
+  .pad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+  .pad button { padding: 18px 0; font-size: 14px; font-weight: 700; user-select: none; touch-action: none; display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 14px; }
+  .pad button svg { width: 26px; height: 26px; }
+  .pad button.held { background: rgba(90,216,255,.18); border-color: var(--accent); box-shadow: 0 0 28px rgba(90,216,255,.35); }
+  .pad button.held[data-hold=LEFT] svg { animation: spinL .8s linear infinite; } .pad button.held[data-hold=RIGHT] svg { animation: spinR .8s linear infinite; }
+  @keyframes spinL { to { transform: rotate(-360deg); } } @keyframes spinR { to { transform: rotate(360deg); } }
+  .manual-off .pad button { opacity: .3; pointer-events: none; }
+  #manualState { margin-top: 10px; color: var(--text); font-size: 13px; }
   #manualState.warn { color: var(--caution); }
+
+  /* Tables as stat rows */
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--dim); } td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
   .ok { color: var(--clear); } .warnc { color: var(--caution); } .bad { color: var(--stop); }
-  button.qwen { width: 100%; margin-top: 10px; background: #6b4fd8; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat { padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,.25); border: 1px solid var(--line); }
+  .stat b { display: block; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .stat span { font-size: 10.5px; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<div class="bg"><div class="aurora a"></div><div class="aurora b"></div></div>
 <div id="edge"></div>
 <header>
-  <h1>SightSense GX10</h1>
+  <div class="brand">
+    <!-- The app's logo: a cane whose tip sends out rings in the LiDAR colours -->
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <defs><linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d2138"/><stop offset="1" stop-color="#03080f"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#tile)"/>
+      <g fill="none" stroke-linecap="round">
+        <path d="M39.4 58.3 A20 20 0 0 1 49.4 80.8" stroke="#ff8c26" stroke-width="5.2"/>
+        <path d="M45.9 46 A34 34 0 0 1 63 84.2" stroke="#5ad8ff" stroke-width="4.4"/>
+        <path d="M52.5 33.6 A48 48 0 0 1 76.6 87.6" stroke="#7361ff" stroke-width="3.6"/>
+        <path d="M30 76 L40 24 Q34 10 24 25" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+      </g>
+      <circle cx="30" cy="76" r="5" fill="#fff"/>
+    </svg>
+    <h1>SIGHTSENSE<small>GX10 CONTROL</small></h1>
+  </div>
   <span class="pill" id="phone">phone</span>
   <span class="pill" id="pi">Pi</span>
-  <span class="dim" id="time"></span>
+  <span id="time"></span>
 </header>
-<main>
-  <section>
+<main id="grid">
+  <section class="card span-8 rows-2" style="--i:0">
+    <div class="head">
+      <h2><span class="rec">LIVE</span> Picture and LiDAR</h2>
+      <span class="badge" id="liveFps">0 fps</span>
+    </div>
     <img class="live" id="live" src="/stream.mjpg" alt="Live phone picture with YOLO boxes, and LiDAR depth">
     <div class="explain" id="explain"></div>
-    <p class="dim">Left: phone picture, upright, with YOLO boxes (amber) and hazards (violet). Right: what the LiDAR obstacle check sees. Green floor; obstacles red under 0.8 m, amber under 1.5 m (what a heading needs to be usable), yellow beyond; magenta too close to measure; dark blue no reading (both count as blocked); grey is beyond range or above the cane. Lines split the seven headings, each labelled with its clearance in metres. The side the wheel turns to, or the side you hold in manual steering, stays bright with its obstacles outlined.</p>
-    <div class="panel"><h2>Objects (YOLO, distance from LiDAR)</h2><ul class="list" id="objects"><li class="dim">none</li></ul></div>
-    <div class="panel"><h2>Conversation</h2><ul class="list" id="log"><li class="dim">nothing yet</li></ul></div>
+    <details>
+      <summary>What the colours mean</summary>
+      <p>Left: phone picture, upright, with YOLO boxes (amber) and hazards (violet). Right: what the LiDAR obstacle check sees. Green floor; obstacles red under 0.8 m, amber under 1.5 m (what a heading needs to be usable), yellow beyond; magenta too close to measure; dark blue no reading (both count as blocked); grey is beyond range or above the cane. Lines split the seven headings, each labelled with its clearance in metres. The side the wheel turns to, or the side you hold in manual steering, stays bright with its obstacles outlined.</p>
+    </details>
   </section>
-  <section>
-    <div class="guidance" id="guidance">
-      <div class="big" id="gstate">STANDBY</div>
-      <div class="line" id="gline"></div>
-      <div class="ahead" id="ahead"></div>
-    </div>
-    <div class="panel">
-      <div class="decision" id="cmd">-</div>
-      <div class="state" id="state">waiting for frames</div>
-      <div class="bars" id="bars"></div>
-      <div class="dim">Clearance per heading, metres (10 = clear as far as it can see, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
-    </div>
-    <div class="panel manual-off" id="manualPanel">
-      <h2>Spin the motor (on the Pi)</h2>
-      <label class="toggle"><input type="checkbox" id="manualOn"> Control by hand</label>
-      <div class="pad">
-        <button type="button" data-hold="LEFT">&#8634; Counter-clockwise</button>
-        <button type="button" data-hold="RIGHT">Clockwise &#8635;</button>
+
+  <section class="card guidance span-4" id="guidance" style="--i:1">
+    <div class="ring"></div>
+    <div class="gicon" id="gicon"></div>
+    <div class="big" id="gstate">STANDBY</div>
+    <div class="line" id="gline"></div>
+    <div class="prox">
+      <div class="track">
+        <div class="zone" style="flex:0.8;background:var(--stop)"></div>
+        <div class="zone" style="flex:0.7;background:var(--caution)"></div>
+        <div class="zone" style="flex:3.5;background:var(--clear)"></div>
+        <div class="mark" id="proxMark" style="left:-10px"></div>
       </div>
-      <div id="manualState">Off: the wheel follows the obstacle check.</div>
-      <div class="dim" style="margin-top:6px">Hold a button to spin the motor that way; let go and it stops. No set positions, and free space is not checked while you control it. Keys: &larr; counter-clockwise, &rarr; clockwise. If the directions come out reversed on the cane, start the Pi with --swap. If this page closes, the wheel goes back to automatic within a second.</div>
+      <div class="ticks"><span style="left:2%">0</span><span style="left:16%">0.8</span><span style="left:30%">1.5</span><span style="left:95%">5 m</span></div>
     </div>
-    <div class="panel">
-      <h2>Raspberry Pi</h2>
-      <table>
-        <tr><td>CPU temperature</td><td id="piTemp">-</td></tr>
-        <tr><td>Power in (5 V)</td><td id="piVolts">-</td></tr>
-        <tr><td>Throttling</td><td id="piThrottle">-</td></tr>
-        <tr><td>Load / Wi-Fi</td><td id="piLoad">-</td></tr>
-        <tr><td>Motor mode / power</td><td id="piMotor">-</td></tr>
-        <tr><td>Up for</td><td id="piUp">-</td></tr>
-      </table>
-      <div class="dim" id="piNote">No battery gauge on the cane: the 5 V input sags as the supply runs down, so it stands in for battery level. Speed is the motor's label scaled by power, not measured.</div>
+    <div class="ahead" id="ahead"></div>
+  </section>
+
+  <section class="card span-4" style="--i:2">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7M12 14v7"/></svg>Wheel</h2></div>
+    <div class="decision" id="cmd">-</div>
+    <div class="state" id="state">waiting for frames</div>
+    <div class="bars" id="bars"></div>
+    <div class="dim">Clearance per heading, metres (the longest = clear as far as it can see, ? = unknown, counted as blocked). Usable from 1.5 m.</div>
+  </section>
+
+  <section class="card span-4 half" style="--i:3">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Voice</h2></div>
+    <form id="say"><input id="text" placeholder="guide me to the apple" autocomplete="off"><button class="primary">Send</button></form>
+    <div class="quick">
+      <button type="button" data-say="what's in front of me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Describe</button>
+      <button type="button" data-say="read the sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Read</button>
+      <button type="button" data-say="am I going the right way"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Status</button>
+      <button type="button" data-say="stop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</button>
     </div>
-    <div class="panel">
-      <form id="say"><input id="text" placeholder="guide me to the apple" autocomplete="off"><button>Send</button></form>
-      <div class="quick">
-        <button type="button" data-say="what's in front of me">Describe</button>
-        <button type="button" data-say="read the sign">Read</button>
-        <button type="button" data-say="am I going the right way">Status</button>
-        <button type="button" data-say="stop">Stop</button>
-      </div>
-      <button type="button" class="qwen" id="askQwen">Ask Qwen</button>
-      <div class="dim heard" id="heard"></div>
-      <div class="said" id="speech"></div>
-      <div class="dim" id="nav"></div>
+    <button type="button" class="shimmer" id="askQwen">Ask Qwen</button>
+    <div class="dim heard" id="heard"></div>
+    <div class="said" id="speech"></div>
+    <div class="dim" id="nav" style="margin-top:8px"></div>
+  </section>
+
+  <section class="card span-4 half" style="--i:4">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>Objects</h2><span class="badge">YOLO · LiDAR distance</span></div>
+    <ul class="list" id="objects"><li class="dim">none</li></ul>
+  </section>
+
+  <section class="card span-4 half" style="--i:5">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg>Conversation</h2></div>
+    <ul class="list" id="log"><li class="dim">nothing yet</li></ul>
+  </section>
+
+  <section class="card span-4 half manual-off" id="manualPanel" style="--i:6">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Spin the motor</h2><span class="badge">on the Pi</span></div>
+    <label class="switch"><span>Control by hand</span><input type="checkbox" id="manualOn"></label>
+    <div class="pad">
+      <button type="button" data-hold="LEFT"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Counter-clockwise</button>
+      <button type="button" data-hold="RIGHT"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Clockwise</button>
     </div>
-    <div class="panel">
-      <table>
-        <tr><td>Frames in</td><td id="fps">-</td></tr>
-        <tr><td>GX10 processing (median)</td><td id="ms">-</td></tr>
-        <tr><td>Network round trip (ping)</td><td id="rtt">-</td></tr>
-        <tr><td>Stop smoothing (2 frames)</td><td id="smooth">-</td></tr>
-        <tr><td>Frames dropped (stale)</td><td id="dropped">-</td></tr>
-        <tr><td>GPU use / power / temp</td><td id="gpu">-</td></tr>
-        <tr><td>Vision model</td><td id="model">-</td></tr>
-        <tr><td>Tracking / phone heat</td><td id="track">-</td></tr>
-      </table>
-      <div class="dim">Phone capture-to-send time is not included; it is not measured yet.</div>
+    <div id="manualState">Off: the wheel follows the obstacle check.</div>
+    <details><summary>How it works</summary><p>Hold a button to spin the motor that way; let go and it stops. No set positions, and free space is not checked while you control it. Keys: &larr; counter-clockwise, &rarr; clockwise. If the directions come out reversed on the cane, start the Pi with --swap. If this page closes, the wheel goes back to automatic within a second.</p></details>
+  </section>
+
+  <section class="card span-4 half" style="--i:7">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4"/></svg>Raspberry Pi</h2></div>
+    <table>
+      <tr><td>CPU temperature</td><td id="piTemp">-</td></tr>
+      <tr><td>Power in (5 V)</td><td id="piVolts">-</td></tr>
+      <tr><td>Throttling</td><td id="piThrottle">-</td></tr>
+      <tr><td>Load / Wi-Fi</td><td id="piLoad">-</td></tr>
+      <tr><td>Motor mode / power</td><td id="piMotor">-</td></tr>
+      <tr><td>Up for</td><td id="piUp">-</td></tr>
+    </table>
+    <details><summary>About these numbers</summary><p class="dim" id="piNote">No battery gauge on the cane: the 5 V input sags as the supply runs down, so it stands in for battery level. Speed is the motor's label scaled by power, not measured.</p></details>
+  </section>
+
+  <section class="card span-4 half" style="--i:8">
+    <div class="head"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>GX10</h2></div>
+    <div class="stats">
+      <div class="stat"><b id="fpsBig">–</b><span>frames/s</span></div>
+      <div class="stat"><b id="msBig">–</b><span>ms GX10</span></div>
+      <div class="stat"><b id="gpuBig">–</b><span>GPU %</span></div>
     </div>
+    <table>
+      <tr><td>Frames in</td><td id="fps">-</td></tr>
+      <tr><td>GX10 processing (median)</td><td id="ms">-</td></tr>
+      <tr><td>Network round trip (ping)</td><td id="rtt">-</td></tr>
+      <tr><td>Stop smoothing (2 frames)</td><td id="smooth">-</td></tr>
+      <tr><td>Frames dropped (stale)</td><td id="dropped">-</td></tr>
+      <tr><td>GPU use / power / temp</td><td id="gpu">-</td></tr>
+      <tr><td>Vision model</td><td id="model">-</td></tr>
+      <tr><td>Tracking / phone heat</td><td id="track">-</td></tr>
+    </table>
+    <div class="dim" style="margin-top:8px">Phone capture-to-send time is not included; it is not measured yet.</div>
   </section>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
 let lastSpeech = "", lastStatus = 0;
 function color(v) { return v === null ? "var(--unknown)" : v >= 1.5 ? "var(--clear)" : v >= 0.8 ? "var(--caution)" : "var(--stop)"; }  // planner/obstacle.py: USABLE_M, STOP_AHEAD_M
+
+// Number ticker (Magic UI): numbers glide to their new value instead of jumping
+function ticker(el, value, fmt) {
+  if (value === null || value === undefined || !isFinite(value)) { cancelAnimationFrame(el._raf); el.textContent = fmt(null); el._v = undefined; return; }
+  const from = el._v === undefined ? value : el._v, start = performance.now(), dur = 450;
+  el._v = value;
+  cancelAnimationFrame(el._raf);
+  const step = (t) => {
+    const k = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = fmt(from + (value - from) * e);
+    if (k < 1) el._raf = requestAnimationFrame(step);
+  };
+  el._raf = requestAnimationFrame(step);
+}
+
+// Glowing border that follows the pointer across the cards
+$("grid").addEventListener("pointermove", (e) => {
+  for (const c of document.querySelectorAll(".card")) {
+    const r = c.getBoundingClientRect();
+    c.style.setProperty("--x", e.clientX - r.left + "px"); c.style.setProperty("--y", e.clientY - r.top + "px");
+  }
+});
+
+// Clearance bars: built once and kept, so their heights animate
+const barEls = {};
+function showBars(f) {
+  const bars = $("bars");
+  // "Clear to range" is the obstacle check's FAR_M (4.5 m, or 10 m with the longer range): the tallest bar is that
+  const far = Math.max(4.5, ...Object.values(f.clearance || {}).filter((v) => v !== null));
+  for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
+    let b = barEls[h];
+    if (!b) {
+      b = barEls[h] = document.createElement("div"); b.className = "bar";
+      b.fill = document.createElement("div"); b.fill.className = "fill";
+      b.lab = document.createElement("span");
+      b.append(b.fill, b.lab); bars.append(b);
+    }
+    b.classList.toggle("chosen", String(f.best) === h);
+    b.fill.style.height = (v === null ? 100 : Math.max(4, Math.min(v, far) / far * 100)) + "%";
+    b.fill.style.setProperty("--c", color(v));
+    b.lab.textContent = (h > 0 ? "+" : "") + h + "°\n" + (v === null ? "?" : v.toFixed(1));
+  }
+}
+
+// Lists: rows that were not there last time slide in
+function fillList(ul, items, empty, key, make) {
+  const before = new Set([...ul.children].map((li) => li.dataset.k));
+  const fresh = ul.dataset.ready === "1";
+  ul.replaceChildren(...(items.length ? items.map((it) => {
+    const li = make(it); li.dataset.k = key(it);
+    if (fresh && !before.has(li.dataset.k)) li.classList.add("new");
+    return li;
+  }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: empty })]));
+  ul.dataset.ready = "1";
+}
+
+// Guidance icon: an arrow turned to the direction, a hand for stop, a crossed eye for no reading
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+const HAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5v-8a1.5 1.5 0 0 1 3 0V12M14 11.5V5a1.5 1.5 0 0 1 3 0v8.5M17 9.5a1.5 1.5 0 0 1 3 0V15a7 7 0 0 1-7 7h-1a7 7 0 0 1-5.4-2.6L3.3 16a1.6 1.6 0 0 1 2.4-2.1L8 16"/></svg>';
+const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3 3.7M6.6 6.6A17 17 0 0 0 2 12s4 7 10 7a10 10 0 0 0 5.4-1.6"/></svg>';
+const PAUSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6v12M15 6v12"/></svg>';
+let lastIcon = "", lastWord = "", popAt = 0;
+function showIcon(dir, st) {
+  const kind = !st ? "idle" : dir === "STOP" || st === "STOP" ? "stop" : dir === "UNKNOWN" ? "unknown" : "arrow";
+  if (kind !== lastIcon) { $("gicon").innerHTML = { stop: HAND, unknown: EYE, idle: PAUSE, arrow: ARROW }[kind]; lastIcon = kind; }
+  if (kind === "arrow") $("gicon").firstChild.style.transform = "rotate(" + ({ LEFT: -45, RIGHT: 45 }[dir] || 0) + "deg)";
+}
+// Parking-sensor bar for the distance at the centre of the LiDAR picture (zones at 0.8 and 1.5 m)
+function showProx(m) {
+  const zones = document.querySelectorAll(".zone");
+  if (m == null) { $("proxMark").style.left = "-10px"; zones.forEach((z) => z.classList.remove("lit")); return; }
+  $("proxMark").style.left = "calc(" + Math.min(100, Math.max(0, m / 5 * 100)) + "% - 2px)";
+  const zi = m < 0.8 ? 0 : m < 1.5 ? 1 : 2;
+  zones.forEach((z, i) => z.classList.toggle("lit", i === zi));
+}
+showIcon(null, "");
+
 function show(s) {
   lastStatus = Date.now();
   try {
@@ -165,22 +413,21 @@ function show(s) {
     $("explain").textContent = s.explain || "";
     showPi(s.pi_health);
     $("state").textContent = f.state ? f.state + (f.desired !== null && f.desired !== undefined ? " · wants " + f.desired + "°" : "") : "waiting for frames";
-    const bars = $("bars"); bars.innerHTML = "";
-    for (const [h, v] of Object.entries(f.clearance || {}).sort((a, b) => a[0] - b[0])) {
-      const b = document.createElement("div"); b.className = "bar" + (String(f.best) === h ? " chosen" : "");
-      const fill = document.createElement("div"); fill.style.height = (v === null ? 100 : Math.max(4, Math.min(v, 10) / 10 * 100)) + "%"; fill.style.background = color(v);
-      const lab = document.createElement("span"); lab.textContent = (h > 0 ? "+" : "") + h + "° " + (v === null ? "?" : v.toFixed(1));
-      b.append(fill, lab); bars.append(b);
-    }
+    showBars(f);
     if (f.speech && f.speech !== lastSpeech) { $("speech").textContent = "Says: " + f.speech; lastSpeech = f.speech; }
     const st = s.phone ? (f.state || "NO_DATA") : "";
-    $("guidance").className = "guidance " + st;
+    $("guidance").className = "card guidance span-4 " + st;
+    document.body.className = st ? "s-" + st : "";
     // The direction the phone is told (planner/cue.py); the colour is still the state.
-    const words = {LEFT: "\u2190 BEAR LEFT", STRAIGHT: "\u2191 STRAIGHT", RIGHT: "BEAR RIGHT \u2192", STOP: "STOP", UNKNOWN: "CAN'T SEE AHEAD"};
-    $("gstate").textContent = st ? (words[f.direction] || st.replace("_", " ")) : "STANDBY"; $("gstate").className = "big " + st;
+    const words = {LEFT: "← BEAR LEFT", STRAIGHT: "↑ STRAIGHT", RIGHT: "BEAR RIGHT →", STOP: "STOP", UNKNOWN: "CAN'T SEE AHEAD"};
+    const word = st ? (words[f.direction] || st.replace("_", " ")) : "STANDBY";
+    if (word !== lastWord) { popAt = Date.now(); lastWord = word; }
+    $("gstate").textContent = word; $("gstate").className = "big " + st + (Date.now() - popAt < 450 ? " pop" : "");  // a small pop when the word changes
+    showIcon(f.direction, st);
     $("gline").textContent = s.phone ? (s.said || "") : "Waiting for the phone";
     if (s.said) $("speech").textContent = "Says: " + s.said;
-    $("ahead").textContent = s.centre_m != null ? "Ahead (LiDAR, centre): " + s.centre_m.toFixed(2) + " m" : "";
+    ticker($("ahead"), s.centre_m, (v) => v == null ? "" : "Ahead (LiDAR, centre): " + v.toFixed(2) + " m");
+    showProx(s.centre_m);
     $("edge").className = st === "STOP" ? "STOP" : "";
     const h = s.heard;
     $("heard").innerHTML = "";
@@ -190,29 +437,31 @@ function show(s) {
       const b = document.createElement("b"); b.textContent = "“" + h.text + "”"; $("heard").append(b);
       $("heard").append(" → " + how + " (" + (h.kind === "interpret" ? "model" : h.by) + ")");
     }
-    const objs = f.objects || [];
-    $("objects").replaceChildren(...(objs.length ? objs.map((o) => {
+    fillList($("objects"), f.objects || [], "none", (o) => o.label + "|" + o.side, (o) => {
       const li = document.createElement("li");
       const a = document.createElement("span"); a.textContent = o.label + " " + o.conf.toFixed(2);
-      const b = document.createElement("span"); b.textContent = (o.dist_m === null ? "no depth" : o.dist_m.toFixed(1) + " m") + (o.side ? " · " + o.side : "");
+      const b = document.createElement("span"); b.className = "dim"; b.textContent = (o.dist_m === null ? "no depth" : o.dist_m.toFixed(1) + " m") + (o.side ? " · " + o.side : "");
       li.append(a, b); return li;
-    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "none" })]));
-    const log = (s.log || []).slice().reverse();
-    $("log").replaceChildren(...(log.length ? log.map(([t, who, text]) => {
+    });
+    fillList($("log"), (s.log || []).slice().reverse(), "nothing yet", ([t, who, text]) => t + who + text, ([t, who, text]) => {
       const li = document.createElement("li"); li.className = who;
       const w = document.createElement("span"); w.className = "who"; w.textContent = who === "you" ? "You" : "Cane";
       const x = document.createElement("span"); x.className = "what"; x.textContent = text; x.style.flex = "1";
       const tt = document.createElement("span"); tt.className = "dim"; tt.textContent = t;
       li.append(w, x, tt); return li;
-    }) : [Object.assign(document.createElement("li"), { className: "dim", textContent: "nothing yet" })]));
+    });
     $("nav").textContent = "Navigator: " + (f.nav || "-") + (f.dets && f.dets.length ? " · YOLO: " + f.dets.join(", ") : "")
       + (f.clearance ? " · floor: " + (f.cam_h != null ? f.cam_h.toFixed(2) + " m below the phone" : "not seen") : "");
     $("fps").textContent = s.fps + " / s";
+    ticker($("fpsBig"), s.fps, (v) => v == null ? "–" : Math.round(v));
+    $("liveFps").textContent = (s.fps || 0) + " fps";
     $("ms").textContent = s.proc_ms !== null ? s.proc_ms.toFixed(1) + " ms" : "-";
+    ticker($("msBig"), s.proc_ms, (v) => v == null ? "–" : v.toFixed(0));
     $("rtt").textContent = s.rtt_ms !== null ? s.rtt_ms.toFixed(0) + " ms" : "-";
     $("smooth").textContent = s.fps ? "about " + Math.round(2000 / Math.max(s.fps, 1)) + " ms" : "-";
     $("dropped").textContent = s.dropped;
     $("gpu").textContent = s.gpu && s.gpu.util_pct !== undefined ? s.gpu.util_pct + "% · " + s.gpu.power_w.toFixed(0) + " W · " + s.gpu.temp_c + " °C" : "-";
+    ticker($("gpuBig"), s.gpu && s.gpu.util_pct !== undefined ? s.gpu.util_pct : null, (v) => v == null ? "–" : Math.round(v));
     $("model").textContent = s.model || "-";
     $("track").textContent = (f.tracking || "-") + " / " + (f.thermal || "-");
   } catch (e) { console.error(e); }
