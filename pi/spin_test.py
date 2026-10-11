@@ -94,8 +94,7 @@ def unfinished(path=RECORD):
 def record(count, path=RECORD):
     """Write the count so that it survives the power being cut."""
     with open(path, "w") as f:
-        f.write(f"{count}
-")
+        print(count, file=f)
         f.flush()
         os.fsync(f.fileno())
 
