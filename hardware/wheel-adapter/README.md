@@ -97,4 +97,4 @@ With its M3 × 10 clamp screw fitted, the adapter passes 2.3 mm below the v4 mot
 
 ## Note on the wheel design
 
-`AGENTS.md` records the wheel decision as one motor steering a free-rolling wheel. This adapter mounts an omni wheel directly on the motor shaft instead. The decisions table has not been changed.
+On October 11 the user confirmed that the motor drives the wheel directly, with opposite rotations producing left/right guidance. The Pi's `--wheel-drive` mode follows that arrangement. `CENTER`, `STOP` and `FREE` switch the driver off. The physical left/right effect depends on the fitted wheel and motor wiring; use `--swap` if it is reversed.

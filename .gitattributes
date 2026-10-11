@@ -4,3 +4,8 @@
 *.stl -diff linguist-generated
 *.3mf binary
 *.step binary
+
+# Pi runtime scripts must keep Linux line endings on Windows checkouts.
+pi/*.sh text eol=lf
+pi/*.service text eol=lf
+pi/*.py text eol=lf

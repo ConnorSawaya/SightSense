@@ -1,0 +1,16 @@
+[Unit]
+Description=SightSense motor bench test: ramp the motor once after start-up
+# Only runs while this file exists. Delete it from the SD card to switch the test off.
+ConditionPathExists=/boot/firmware/spin-test-enabled
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=sightsense
+WorkingDirectory=/tmp
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/sightsense/spin_test.py --uptime 15
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

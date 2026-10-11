@@ -8,7 +8,7 @@ A smart guide cane for people who are blind or have low vision, built by a four-
 
 - An **iPhone 16 Pro** on the cane captures the camera picture, LiDAR depth and position.
 - An **ASUS Ascent GX10** on the team's table does all the thinking.
-- A **Raspberry Pi 5** on the cane turns a small steering wheel at the tip.
+- A **Raspberry Pi 5** on the cane drives the mecanum wheel at the tip. The user confirmed direct wheel drive on October 11: opposite motor directions produce left/right guidance.
 - The user says "guide me to the apple", "take me to the door" or "take me to Safeway"; the cane confirms, then steers them there around obstacles.
 
 ```
@@ -19,7 +19,7 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 
 ## Current status
 
-As of the commit that added this file, the repository holds structure and documentation only. No application code has been written yet.
+What exists so far, by area:
 
 | Area | State |
 | --- | --- |
@@ -27,7 +27,8 @@ As of the commit that added this file, the repository holds structure and docume
 | Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
 | iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location); LiDAR-only Liquid Glass screen (iOS 26+). Real iPhone 15 Pro frames reached the GX10 frame service (`gx10/ingest`, port 8775) over Tailscale on October 10 around 5 PM: 4–18 frames/s; guidance, describe and read worked. Heat cut (30 fps camera, lower rate when hot) merged; not yet measured on the phone |
 | GX10 software (`gx10/`) | First versions of all pieces: `ingest/` (frame service), `planner/` (7-heading obstacle check, steady phone state), `dashboard/`, `vlm/` (`qwen3-vl:30b-a3b-instruct`), `navigator/` (rules, then the model for voice it does not understand; status and picture questions), `detector/` (YOLO26s). Run live with the iPhone on October 10 (describe 0.9 s, read 0.8 s, stop at about 2.2 m on a walk); model voice tested on a replayed phone recording, not yet live |
-| Pi motor controller (`pi/`) | Written; tests pass on the Pi and its GPIO pins open; not yet run with a real motor or switches |
+| Pi motor controller (`pi/`) | Direct wheel mode added October 11: LEFT/RIGHT spin opposite ways, CENTER/STOP/FREE switch off, no homing or position switches. Real local WebSockets carry synthetic phone frames through GX10 depth planning to the Pi loop and mock GPIO. An SD update installer is prepared. GPIO opened on the Pi October 10; the updated code and actual RPM have not yet been checked on the physical motor. The SD installer disables the previous full-power boot bench test |
+| Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos (columns sure, rows less so); limit switches, fuse and kill switch not fitted; not tested under power |
 | Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in |
 | Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
 | Motor bracket, Pi plate | Not designed |
@@ -44,7 +45,7 @@ These come from the hackathon and from the team. Breaking one can get the projec
 4. **The vision-language model never controls the wheel.** It finds objects, reads text and answers questions. Whether the way is clear is decided from LiDAR depth only. If the two disagree, depth wins.
 5. **Unknown is not clear.** A direction with too few good depth readings counts as blocked.
 6. **Fail safe.** The Pi switches the motor driver off if no command arrives for 0.4 seconds. Never send raw motor power over the network.
-7. **No cloud AI.** The only internet use is the Apple MapKit place lookup. Do not add any other cloud service.
+7. **No cloud AI.** Devices already use Tailscale for transport; place lookup uses Apple MapKit. Do not add any other cloud service.
 8. **No secrets in the repo.** No passwords, tokens, Wi-Fi keys or Apple credentials. Use environment variables.
 9. **Do not change system settings on the GX10.** It is borrowed. Keep project files in one folder.
 10. **Report honestly.** Say only that something works if you ran it. Label estimates as estimates.
@@ -69,7 +70,7 @@ These come from the hackathon and from the team. Breaking one can get the projec
 | iPhone 16 Pro | On the cane | App built on a teammate's Mac with Xcode, free Apple ID (7-day signing). |
 | Mac | Venue | Only for building the iPhone app. |
 | Team laptops | Venue | Development, SSH to the Pi and GX10. |
-| Home desktop | Not at the venue | i7-14700F, RTX 4060 (8 GB), 32 GB RAM, Windows 11. Cannot reach the Pi or GX10. Useful for testing the 8B model and for overnight tuning on recordings. |
+| Home desktop | Not at the venue | i7-14700F, RTX 4060 (8 GB), 32 GB RAM, Windows 11. On October 11 its Tailscale connection reached the GX10 dashboard and command port. The existing Pi node was offline while its SD card was removed. |
 
 Planned addresses (reserve in the router; the subnet depends on the router): GX10 `192.168.8.10`, Pi `192.168.8.20`, iPhone `192.168.8.30`. Ports on the GX10: 8765 frames in, 8766 commands out, 8000 dashboard, 11434 Ollama.
 
@@ -84,7 +85,7 @@ Planned addresses (reserve in the router; the subnet depends on the router): GX1
 | Vision-language model | `qwen3-vl:30b` through Ollama; `qwen3-vl:8b` as the fast fallback. Check what the preloaded Nemotron can do first. Exact Ollama tag names are unverified. |
 | Detector | Ultralytics YOLO (YOLO26s or YOLO11s) in the `ultralytics/ultralytics:latest-nvidia-arm64` container, exported to TensorRT. |
 | Obstacle check | Seven headings from −30° to +30°, chosen every frame from depth. |
-| Wheel | One 12 V 120 rpm gear motor steers a normal free-rolling wheel to three positions with limit switches. Not a mecanum wheel. |
+| Wheel | User confirmed October 11: one 12 V 120 rpm gear motor directly drives the mecanum wheel. LEFT and RIGHT spin opposite ways; CENTER/STOP/FREE switch off. Use `--wheel-drive`; `--swap` reverses the physical mapping. No position switches or homing in this mode. |
 | Motor driver | IBT-2 board (BTS7960). The plan said L298N; the IBT-2 is what the team has. It passes the full 12 V, so the software limits are the only limits. |
 | Power | 12 V 3 Ah pack → fuse → kill switch → IBT-2. Pi from the same pack through a 12 V to 5 V USB-C converter; back to its own power bank if the motor makes it reset. Grounds joined. |
 | Voice | Push-to-talk, on-device speech recognition on the iPhone. A text box on the dashboard does the same job if voice is not ready. |
@@ -137,7 +138,7 @@ Build it first with three headings and a desired bearing of 0.
 
 ### Pi motor controller
 
-See [`pi/README.md`](pi/README.md) and [`hardware/wiring.md`](hardware/wiring.md). Duty ≤ 25%, each move ≤ 0.4 s, stop on switch, home to centre at start and after any timeout.
+See [`pi/README.md`](pi/README.md) and [`hardware/wiring.md`](hardware/wiring.md). Direct wheel mode: duty ≤ 25%, pulses ≤ 0.4 s with 50 ms rests, opposite directions for LEFT/RIGHT, all other commands off. Reverse only after a rest. Finite TTL required; silence or disconnection switches off. The earlier position-steering modes remain available separately. RPM is unmeasured without an encoder or counted-turn measurement.
 
 ### Prompts for the vision-language model
 
@@ -157,7 +158,7 @@ One request at a time, 6-second timeout, keep the model loaded.
 - **Slow model.** A few tokens per second means the setup is wrong, not the model. Check `ollama ps`.
 - **Empty is not clear.** No points in a corridor can mean open space or missing readings.
 - **Stale targets.** If ARKit tracking resets, stored positions are wrong. Clear them.
-- **Pi resets when the motor starts.** Keep the Pi on its own power bank and fit the capacitor.
+- **Pi resets when the motor starts.** The Pi now shares the motor's battery through a converter. If it resets or reports under-voltage when the motor runs, put it back on its own power bank.
 - **Venue Wi-Fi.** `AIHackathon@UCSC` dropped a laptop about a minute after each join, and `UCSC-Guest` has a sign-in page a headless Pi cannot pass. The fixed `192.168.8.x` addresses only exist on the team's own router.
 - **Pi will not start.** Count the green light's blinks before changing anything else. Three long and one short is a bootloader error; the fix is in [`pi/README.md`](pi/README.md).
 - **Pi under-voltage.** A weak supply or long cable makes the Pi throttle and can reset it. `vcgencmd get_throttled` should print `0x0`.
