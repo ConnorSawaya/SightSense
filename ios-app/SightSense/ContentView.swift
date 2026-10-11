@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// The phone shows only the LiDAR view and the talk button. Guidance state, detections with
+/// distances, the conversation and the numbers are on the GX10 dashboard (http://<GX10>:8000).
+/// Beeps, speech and the stop haptic still play here.
 struct ContentView: View {
     @StateObject private var capture = Capture()
     @StateObject private var voice = Voice()
@@ -17,7 +20,6 @@ struct ContentView: View {
 
             VStack(spacing: 12) {
                 topBar
-                GuidancePill(message: capture.guidance, running: capture.isRunning, linkState: capture.linkState)
                 if let problem = capture.problem ?? voice.problem {
                     Label(problem, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote.weight(.semibold))
@@ -26,9 +28,8 @@ struct ContentView: View {
                 }
                 DepthStage(depth: capture.depthPreview, running: capture.isRunning,
                            linkState: capture.linkState, host: host) { idleCard }
-                if capture.isRunning {
-                    if capture.stats.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue { heatNotice }
-                    stats
+                if capture.isRunning, capture.stats.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue {
+                    heatNotice
                 }
                 transcript
                 dock
@@ -123,17 +124,6 @@ struct ContentView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 32))
     }
 
-    private var stats: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                StatChip(label: "Tracking", value: shortTracking,
-                         tint: capture.stats.tracking == "Normal" ? nil : Theme.color(forState: "CAUTION"))
-                StatChip(label: "Depth", value: capture.stats.depthSize?.replacingOccurrences(of: " ", with: "") ?? "—")
-                StatChip(label: "Send", value: linkOpen ? String(format: "%.0f ms", capture.stats.lastSendMs) : "—")
-            }
-        }
-    }
-
     private var heatNotice: some View {
         Label(String(format: "Phone is hot: sending %.0f frames a second", capture.stats.targetRate),
               systemImage: "thermometer.high")
@@ -141,11 +131,6 @@ struct ContentView: View {
             .foregroundStyle(Theme.color(forState: "CAUTION"))
             .padding(.horizontal, 14).padding(.vertical, 8)
             .glassEffect(.regular.tint(Theme.color(forState: "CAUTION").opacity(0.2)), in: .capsule)
-    }
-
-    private var shortTracking: String {
-        let t = capture.stats.tracking
-        return t.hasPrefix("Limited") ? "Limited" : t
     }
 
     @ViewBuilder private var transcript: some View {
@@ -162,13 +147,7 @@ struct ContentView: View {
     private var dock: some View {
         GlassEffectContainer(spacing: 24) {
             HStack(spacing: 24) {
-                QuickAction(title: "Describe", symbol: "text.viewfinder", enabled: linkOpen) {
-                    capture.send(command: "what's in front of me")
-                }
                 TalkButton(voice: voice, enabled: linkOpen) { capture.send(command: $0) }
-                QuickAction(title: "Read", symbol: "doc.text.viewfinder", enabled: linkOpen) {
-                    capture.send(command: "read the sign")
-                }
             }
         }
         .animation(.snappy, value: voice.isListening)
