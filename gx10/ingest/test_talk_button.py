@@ -26,7 +26,7 @@ class FakePhone:
 class FakePi:
     """A Pi connection that sends these messages, with pauses, then closes."""
 
-    remote_address = ("10.0.0.2", 5000)
+    remote_address = ("192.0.2.2", 5000)
 
     def __init__(self, *steps):
         self.steps = steps  # each a message to send, or a number of seconds to wait

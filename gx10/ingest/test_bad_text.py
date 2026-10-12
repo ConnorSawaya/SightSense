@@ -15,7 +15,7 @@ from . import server as srv
 class FakePhone:
     """A phone connection that sends these text messages, then closes."""
 
-    remote_address = ("10.0.0.3", 5000)
+    remote_address = ("192.0.2.3", 5000)
 
     def __init__(self, *messages):
         self.messages = messages

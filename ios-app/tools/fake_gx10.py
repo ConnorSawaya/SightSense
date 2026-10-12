@@ -270,7 +270,7 @@ def log(text):
 def local_addresses():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("192.168.8.1", 9))  # no packet is sent; this only picks the outgoing interface
+        s.connect(("192.0.2.1", 9))  # no packet is sent; this only picks the outgoing interface
         return s.getsockname()[0]
     except OSError:
         return "this computer's IP"

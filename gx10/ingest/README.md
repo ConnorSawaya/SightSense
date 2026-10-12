@@ -2,13 +2,13 @@
 
 The GX10 frame service. Receives the phone's frames, runs the obstacle check, YOLO and the navigator on the newest one, and sends guidance back to the phone and a command to the Pi for every processed frame.
 
-First version, written by the GX10 + models owner to get the end-to-end loop going; the obstacle check owner may replace any of it.
+First version to get the end-to-end loop going; the obstacle check may be replaced as needed.
 
 ## Run
 
 ```bash
-cd ~/SightSense-work/SightSense/gx10
-export YOLO_CONFIG_DIR=~/SightSense-work/.ultralytics
+cd ~/SightSense/gx10
+export YOLO_CONFIG_DIR=~/.config/ultralytics
 ../../venv-yolo/bin/python -m ingest.server --phone-port 8775                          # for the cane: phone 8775, Pi 8766
 ../../venv-yolo/bin/python -m ingest.server --phone-port 8775 --record ../../recordings   # also save every frame and voice message
 ../../venv-yolo/bin/python -m ingest.server                                            # the ports in the contract: phone 8765, Pi 8766
@@ -27,7 +27,7 @@ Each press of the cane's talk button shows in the dashboard's conversation as `(
 
 It needs the project virtual environment (numpy, OpenCV, YOLO, `websockets`); see `../detector/README.md`. Ports can also be set with `SIGHTSENSE_PHONE_PORT` and `SIGHTSENSE_PI_PORT`. Nothing is hard-coded to an address: the phone and the Pi connect to whatever address the GX10 has.
 
-In the app, enter the GX10's address on the network the phone is on, e.g. `169.233.72.156:8775` on the venue Wi-Fi (the GX10's address there on October 10). Keep the phone on the same Wi-Fi: over a hotspot the first test got 0.3–0.7 frames a second.
+In the app, enter the GX10 hostname or address reachable from the phone, followed by `:8775` (for example, `gx10.example.invalid:8775`). Keep the phone and GX10 on networks that can reach one another; available bandwidth varies by network.
 
 ## What it does with each frame
 

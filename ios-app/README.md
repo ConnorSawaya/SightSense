@@ -8,7 +8,7 @@ Open `SightSense.xcodeproj` in Xcode. No packages to install.
 
 1. In Xcode, pick the SightSense target → Signing & Capabilities → choose your team. With a free Apple ID, change the bundle identifier if `com.sightsense.capture` is taken.
 2. Plug in the iPhone, pick it as the destination, Run.
-3. Pick the "GX10 over Tailscale" preset (`100.108.5.67:8775`) and tap Connect. A typed address needs the port (`host:8775`): without one the app uses 8765, which is not the port the service is started on for the cane.
+3. In Connection, enter the GX10 hostname or address reachable from the phone. For Tailscale, use its MagicDNS name or address; for a local router, use the host shown in the router's device list. The examples in the app are placeholders. Add `:8775` for the cane frame service (for example, `gx10.example.invalid:8775`).
 
 Command line build, without opening Xcode:
 

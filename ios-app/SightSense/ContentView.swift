@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var capture = Capture()
     @StateObject private var voice = Voice()
-    @AppStorage("gx10Host") private var host = Hosts.presets[0].address
+    @AppStorage("gx10Host") private var host = ""
     @AppStorage("recentHosts") private var recentRaw = ""
     @State private var showSettings = false
     @State private var resumeOnActive = false
@@ -242,8 +242,8 @@ enum Hosts {
     }
 
     static let presets = [
-        Preset(name: "GX10 over Tailscale", detail: "Frame service, works from any network", address: "100.108.5.67:8775", symbol: "network"),
-        Preset(name: "GX10 on team router", detail: "Fastest, for the demo", address: "192.168.8.10:8775", symbol: "wifi.router"),
+        Preset(name: "Tailscale example", detail: "Replace with the GX10 Tailscale name or address", address: "gx10.example.invalid:8775", symbol: "network"),
+        Preset(name: "Local network example", detail: "Replace with the GX10 address assigned by your router", address: "192.0.2.10:8775", symbol: "wifi.router"),
     ]
 
     static func name(for address: String) -> String? {

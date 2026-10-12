@@ -124,7 +124,7 @@ final class Capture: ObservableObject {
         }
         #endif
         guard let url = Self.frameURL(host) else {
-            problem = "Enter the GX10 address, for example 192.168.8.10"
+            problem = "Enter a GX10 hostname or address, for example gx10.example.invalid:8775"
             return
         }
         if simulated {
@@ -180,7 +180,7 @@ final class Capture: ObservableObject {
             .min { ($0.framesPerSecond, $0.imageResolution.width) < ($1.framesPerSecond, $1.imageResolution.width) }
     }
 
-    /// "192.168.8.10" → ws://192.168.8.10:8765. "host:port" keeps its port (handy for the fake GX10 on a laptop).
+    /// "gx10.example.invalid:8775" → ws://gx10.example.invalid:8775. "host:port" keeps its port.
     static func frameURL(_ host: String) -> URL? {
         let h = host.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !h.isEmpty, !h.contains("/") else { return nil }

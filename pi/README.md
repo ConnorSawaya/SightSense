@@ -73,7 +73,7 @@ Homing with no switch pressed: short pulses left, right, right, left until a swi
 | `test_spin.py` | Tests for the bench test |
 | `test_with_gx10.py` | Runs the GX10's real pipeline against the steering rules |
 | `sightsense-cane.service` | Starts the controller when the Pi starts |
-| `sightsense.env.example` | Direct wheel settings and GX10 address |
+| `sightsense.env.example` | Example settings; replace the sample GX10 hostname before use |
 | `stage_sd.py`, `install_from_boot.sh` | Back up and stage the update; install once on the Pi |
 | `sightsense-setup.service`, `prepare_runtime.sh` | Check/install the already declared Pi dependencies |
 | `test_network.py`, `test_wheel_drive.py`, `test_stage_sd.py` | Real local transport, mock motor and SD staging tests |
@@ -89,25 +89,18 @@ sudo apt install -y python3-gpiozero python3-lgpio python3-websockets
 
 Use `gpiozero`. `RPi.GPIO` and `pigpio` do not work on a Pi 5.
 
-## The team's Pi
+## Configure the Pi
 
-Set up on October 10, 2026.
+Use Raspberry Pi Imager to install a current 64-bit Raspberry Pi OS Lite image. Set a hostname and SSH credentials for your own device, and keep them out of Git. Use the `sightsense` service account or update the systemd unit files if you choose a different account.
 
-| | |
+| Setting | Guidance |
 | --- | --- |
-| Board | Raspberry Pi 5, 8 GB |
-| OS | Raspberry Pi OS Lite 64-bit, 2026-10-06 release (Debian 13) |
-| Bootloader | 2026-09-25, rewritten with the recovery files (see below) |
-| Name and user | `sightsense.local`, user `sightsense` |
-| Login | SSH key from the team lead's laptop; the password also works |
-| Network | On October 11 at 10:31 AM the Pi's SD card was staged again on the laptop, from commit 18f5b35: the controller code with the talk button, and three Wi-Fi profiles, tried in this order: `AIHackathon@UCSC` (WPA2), the same network as WPA3, then `Bono` as before. All 35 staged files matched their checksums when read back from the card. It has not been booted in the Pi since, so the install, the new network and the new code on the Pi are not yet checked. The laptop saved that network as both WPA2 and WPA3; on October 10 it dropped a laptop about a minute after each join, which is why `Bono` is kept as a fallback. At 10:42 AM the card was booted in the Pi: the install finished, the three Wi-Fi profiles were installed, the Pi joined `AIHackathon@UCSC` and its controller connected to the GX10 on port 8766. The Pi's own tests passed on the Pi (104 run, 6 skipped, mock pins), and the four motor driver pins read low. Its link to the GX10 held except when the GX10 service was restarted. It flagged under-voltage once after that boot; after a later restart `get_throttled` read `0x0`. At 10:57 AM, watched from the laptop without touching anything: the Pi logged real presses of the talk button, and `wheel RIGHT: duty 25%` followed by `driver off: STOP` as the GX10's commands changed. Whether the wheel itself turned, and which way, was not seen from the laptop. Before that: `Bono` Wi-Fi, verified October 11. Tailscale `100.75.181.48`; Wi-Fi LAN `192.168.1.227` at that check (DHCP can change it). Credentials stay outside Git. |
-| Installed | `python3-gpiozero`, `python3-lgpio`, `python3-websockets`, `git` |
-| Motor driver | IBT-2 (BTS7960), wired as in `../hardware/wiring.md` |
-| Code | `~/SightSense/pi`, copied from this folder |
+| Network | Connect the Pi to a trusted network that can reach the GX10. A headless Pi cannot complete a captive-portal login. |
+| Wi-Fi credentials | Supply a private NetworkManager profile with `--wifi-profile`; profile files are ignored by Git. |
+| GX10 address | Set `SIGHTSENSE_GX10` to the GX10's reachable Tailscale/MagicDNS name or router-assigned host, with port 8766. |
+| Project folder | `~/SightSense/pi` for the default service account. |
 
-The name `sightsense.local` does not always resolve. If it fails, use `ssh sightsense@100.75.181.48` over Tailscale, or the current LAN address from the router's list of connected devices.
-
-The Pi has to be on a network that can reach the GX10's command port.
+Use the hostname and SSH user configured for your Pi. Keep SSH keys, passwords, Tailscale credentials and live device addresses in local configuration.
 
 ### Power
 
@@ -137,7 +130,7 @@ Count the green light's blinks. Three long and one short means a bootloader erro
 On the Pi, from this folder:
 
 ```bash
-python3 cane.py --wheel-drive --gx10 100.108.5.67:8766
+python3 cane.py --wheel-drive --gx10 gx10.example.invalid:8766
 ```
 
 The address can also come from the `SIGHTSENSE_GX10` environment variable. Add `--swap` if "left" turns the wheel right, and `--duty 0.15` for less power.
@@ -155,10 +148,10 @@ Start it again with `sudo systemctl start sightsense-cane.service`.
 The GX10's frame service ([`../gx10/ingest/`](../gx10/ingest/)) sends the Pi one command for every frame it processes. The command comes from the obstacle check on depth, steered toward what the navigator wants: an object found by the vision model and YOLO, a route, or straight ahead. The Pi only has to connect:
 
 ```bash
-python3 cane.py --wheel-drive --gx10 100.108.5.67:8766
+python3 cane.py --wheel-drive --gx10 gx10.example.invalid:8766
 ```
 
-The GX10's Tailscale address and port 8766 were checked from the laptop on October 11. The dashboard is port 8000; it is not the Pi command port. The existing Pi Tailscale node is `100.75.181.48`. Preserve its login and network state.
+Use the GX10 hostname or address configured for your Tailscale network or router. Port 8766 is the Pi command port; the dashboard uses port 8000. Keep login and network details in device-local configuration.
 
 The updated GX10 server discards expired frames and subtracts processing time from the command TTL. The Pi switches off when that TTL expires. The server update must also be run on the GX10 for this receive-time budget to apply; the running GX10 was not changed by staging the Pi SD card.
 
@@ -169,7 +162,7 @@ What has been run: the service, its fake phone and this controller together on a
 `--open-loop` is for a position-steering mechanism with no limit switches fitted. The direct wheel uses `--wheel-drive` and does not need it. The controller works out where the wheel is from how long the motor has run, and reads no switches.
 
 ```bash
-python3 cane.py --gx10 169.233.72.156:8766 --open-loop
+python3 cane.py --gx10 gx10.example.invalid:8766 --open-loop
 ```
 
 - Put the wheel at centre by hand before starting. The controller assumes it is there.
@@ -311,10 +304,10 @@ python3 cane.py --bench motor
 
 ## Updating the plugged-in SD card from Windows
 
-`stage_sd.py` works on the existing FAT32 boot partition. It does not format the card. First verify its physical disk and root PARTUUID; the tool rejects a boot command line for a different UUID.
+`stage_sd.py` works on the existing FAT32 boot partition. It does not format the card. First verify the physical disk and root PARTUUID; the tool rejects a boot command line for a different UUID. Replace the sample hostname and PARTUUID below with values for your setup. Keep backups in a private local directory.
 
 ```powershell
-python pi/stage_sd.py --boot E:/ --backup C:/Users/Connor.Sawaya29/.cache/sightsense-sd-update-backup --expected-root-partuuid 3a83263b-02 --gx10 100.108.5.67:8766
+python pi/stage_sd.py --boot E:/ --backup "$env:LOCALAPPDATA/sightsense-sd-update-backup" --expected-root-partuuid 01234567-02 --gx10 gx10.example.invalid:8766
 ```
 
 It backs up bootfs outside the card, writes and reads back SHA-256 hashes for the payload, repairs an empty `cmdline.txt` using its matching backup, and disables the old boot spin test. A Pi 5 `config.txt` entry sets the four motor pins low during firmware boot. That setting takes effect after firmware starts and can be overridden later; it does not replace the hardware pull-downs described in the wiring guide. See the [Raspberry Pi GPIO documentation](https://www.raspberrypi.com/documentation/computers/config_txt.html#gpio-control).

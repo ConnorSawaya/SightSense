@@ -33,7 +33,7 @@ AI and guidance run locally on the GX10. The current devices communicate through
 | [`gx10/`](gx10/) | Everything that runs on the GX10: receiving frames, obstacle check, AI models, dashboard | GX10 + models, obstacle check |
 | [`pi/`](pi/) | The Raspberry Pi motor controller | Cane + Pi |
 | [`hardware/`](hardware/) | 3D-printable parts, wiring and build notes for the cane | Cane + Pi |
-| [`docs/`](docs/) | Team handbook link, disclosure of tools and prior work | Team lead |
+| [`docs/`](docs/) | Project history, tool disclosure and supporting notes | Team lead |
 
 ## Hardware
 
