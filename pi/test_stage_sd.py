@@ -65,7 +65,7 @@ class Staging(unittest.TestCase):
 
     def test_staging_backup_manifest_boot_hook_and_existing_network(self):
         backup = self.root / "backup"
-        result = stage(self.boot, backup, "12345678-02", "100.108.5.67:8766")
+        result = stage(self.boot, backup, "12345678-02", "192.0.2.10:8766")
         self.assertGreater(result["files_verified"], 10)
         self.assertEqual((backup / "cmdline.txt").read_text(), "")
         self.assertEqual((backup / "user-data").read_text(), USER_DATA)
@@ -86,14 +86,14 @@ class Staging(unittest.TestCase):
 
     def test_wrong_disk_is_rejected_before_writing(self):
         with self.assertRaises(ValueError):
-            stage(self.boot, self.root / "backup", "ffffffff-02", "100.108.5.67:8766")
+            stage(self.boot, self.root / "backup", "ffffffff-02", "192.0.2.10:8766")
         self.assertFalse((self.boot / "sightsense-update").exists())
 
     def test_private_wifi_profile_is_copied_and_hashed_without_logging_secret(self):
         profile = self.root / "private.nmconnection"
         text = "[connection]\nid=example\ntype=wifi\n[wifi]\nssid=example\n[wifi-security]\nkey-mgmt=wpa-psk\npsk=example$only%\n"
         profile.write_text(text)
-        result = stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766",
+        result = stage(self.boot, self.root / "backup", "12345678-02", "192.0.2.10:8766",
                        wifi_profile=profile)
         target = self.boot / "sightsense-update"
         self.assertEqual((target / "wifi.nmconnection").read_text(), text)
@@ -109,7 +109,7 @@ class Staging(unittest.TestCase):
         for n, text in enumerate(texts, 1):
             files.append(self.root / f"net{n}.nmconnection")
             files[-1].write_text(text)
-        result = stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766",
+        result = stage(self.boot, self.root / "backup", "12345678-02", "192.0.2.10:8766",
                        wifi_profile=files[0], more_wifi_profiles=files[1:])
         target = self.boot / "sightsense-update"
         self.assertEqual((target / "wifi.nmconnection").read_text(), texts[0])
@@ -124,14 +124,14 @@ class Staging(unittest.TestCase):
         extra = self.root / "extra.nmconnection"
         extra.write_text("[connection]\nid=extra\n")
         with self.assertRaises(ValueError):
-            stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766", more_wifi_profiles=[extra])
+            stage(self.boot, self.root / "backup", "12345678-02", "192.0.2.10:8766", more_wifi_profiles=[extra])
         self.assertFalse((self.boot / "sightsense-update").exists())
 
     def test_staging_twice_does_not_repeat_the_boot_settings(self):
-        stage(self.boot, self.root / "backup", "12345678-02", "100.108.5.67:8766")
+        stage(self.boot, self.root / "backup", "12345678-02", "192.0.2.10:8766")
         (self.boot / "sightsense-update").rename(self.root / "previous-update")  # as after an install, moved aside
         (self.boot / "cmdline.txt").write_text("console=tty1 root=PARTUUID=12345678-02 rootfstype=ext4 rootwait\n")  # as the installer leaves it
-        stage(self.boot, self.root / "backup2", "12345678-02", "100.108.5.67:8766")
+        stage(self.boot, self.root / "backup2", "12345678-02", "192.0.2.10:8766")
         self.assertEqual((self.boot / "config.txt").read_text().count("gpio=18,23,24,25=op,dl,pd"), 1)
 
     def test_the_installer_installs_further_profiles(self):
@@ -142,13 +142,13 @@ class Staging(unittest.TestCase):
     def test_missing_wifi_profile_fails_before_card_or_backup_changes(self):
         backup = self.root / "backup"
         with self.assertRaises(FileNotFoundError):
-            stage(self.boot, backup, "12345678-02", "100.108.5.67:8766",
+            stage(self.boot, backup, "12345678-02", "192.0.2.10:8766",
                   wifi_profile=self.root / "missing.nmconnection")
         self.assertFalse(backup.exists())
         self.assertFalse((self.boot / "sightsense-update").exists())
 
     def test_invalid_address_is_rejected(self):
-        for address in ("http://100.108.5.67:8000/", "host:0", "host:65536", "host;touch-file:8766"):
+        for address in ("http://192.0.2.10:8000/", "host:0", "host:65536", "host;touch-file:8766"):
             with self.assertRaises(ValueError):
                 stage(self.boot, self.root / "backup", "12345678-02", address)
 

@@ -2,17 +2,17 @@
 
 The agreed messages between the iPhone, the GX10 and the Raspberry Pi. Everyone builds against these, so tell the whole team before changing anything here.
 
-All links are WebSockets. The plan was the team's private router. The router was not at the venue, so since October 10 the phone reaches the GX10 over Tailscale, at the GX10's Tailscale address, and the Pi is set up to do the same.
+All links are WebSockets. The phone and Pi connect to the GX10 over a network reachable by all three devices. Use a local DNS name, Tailscale MagicDNS name or address assigned by the router. Keep the active values in local configuration, not in Git.
 
 ## Addresses
 
-Reserve these in the router. The subnet depends on the router. As run for the cane on October 10 and 11, the GX10's frame service takes the phone on port 8775 (`--phone-port 8775`, the port in the app's presets) and the Pi on 8766.
+The frame service uses port 8775 for the phone in the cane setup and port 8765 for local development. The Pi command connection uses port 8766. The dashboard and model service use ports 8000 and 11434 on the GX10.
 
-| Device | Address | Ports |
+| Device | Address source | Ports |
 | --- | --- | --- |
-| GX10 | 192.168.8.10 | 8765 frames in · 8766 commands out · 8000 dashboard · 11434 Ollama |
-| Raspberry Pi | 192.168.8.20 | connects out to the GX10 |
-| iPhone | 192.168.8.30 | connects out to the GX10 |
+| GX10 | `SIGHTSENSE_GX10` in local configuration | 8765 or 8775 frames in · 8766 commands out · 8000 dashboard · 11434 Ollama |
+| Raspberry Pi | Router or Tailscale assigned name/address | connects out to the GX10 |
+| iPhone | GX10 name/address reachable from the phone | connects out to the GX10 |
 
 ## Frame: iPhone → GX10 (port 8765, binary, ~15 per second)
 
@@ -41,8 +41,8 @@ One message per camera frame, laid out as:
   "cy": 95.8,
   "pose": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
   "tracking": "normal",
-  "lat": 37.38,
-  "lon": -121.98,
+  "lat": null,
+  "lon": null,
   "gps_acc_m": 8.0,
   "heading_deg": 271.0,
   "thermal": "nominal"
@@ -116,12 +116,14 @@ Added October 11, for the talk button.
 
 ## Route: iPhone → GX10 (text)
 
+The coordinates below are placeholders. The app supplies coordinates from the selected route.
+
 ```json
 {
-  "dest": "Safeway",
+  "dest": "Example destination",
   "distance_m": 950,
   "eta_min": 12,
-  "polyline": [[37.3801, -121.9802], [37.3805, -121.9810]],
-  "steps": [{"lat": 37.3805, "lon": -121.9810, "text": "Turn left onto Bowers Ave"}]
+  "polyline": [[0.0, 0.0], [0.0, 0.0]],
+  "steps": [{"lat": 0.0, "lon": 0.0, "text": "Turn left"}]
 }
 ```

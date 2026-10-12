@@ -1,6 +1,6 @@
 """Ask the running frame service a few things, as a stand-in phone, and print what comes back and how fast.
 
-    python -m ingest.check_live_gx10                      (from gx10/; the GX10's Tailscale address)
+    python -m ingest.check_live_gx10 gx10.example.invalid
     python -m ingest.check_live_gx10 127.0.0.1            (on the GX10 itself)
     python -m ingest.check_live_gx10 127.0.0.1 "what can you do" "say that again"
     python -m ingest.check_live_gx10 127.0.0.1 "guide me to the red circle" wait stop      (wait: 10 s of frames, saying nothing)
@@ -24,7 +24,10 @@ from navigator import encode, fake
 from planner.fake_scene import arrays, render
 from planner.obstacle import check
 
-HOST = sys.argv[1] if len(sys.argv) > 1 else "100.108.5.67"
+if len(sys.argv) < 2:
+    raise SystemExit("Pass the GX10 hostname or address as the first argument.")
+
+HOST = sys.argv[1]
 PHONE_PORT, DASH_PORT = 8775, 8000
 WALL = ((-3, 0, -0.45), (3, 2.5, -0.2))  # so close that the check reads it as right up against something
 

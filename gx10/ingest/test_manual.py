@@ -87,7 +87,7 @@ class Manual(unittest.TestCase):
 
 class PiLink:
     """A Pi that sends the given messages, then hangs up."""
-    remote_address = ("100.75.181.48", 40000)
+    remote_address = ("192.0.2.20", 40000)
 
     def __init__(self, messages):
         self.messages = messages
@@ -106,7 +106,7 @@ class PiHealth(unittest.TestCase):
         report = {"cpu_c": 44.4, "in_v": 5.28, "undervolt_now": False, "mode": "wheel-drive"}
         asyncio.run(s.pi(PiLink(["not json", json.dumps({"other": 1}), json.dumps({"health": report})])))
         h = s._pi_health(time.monotonic())
-        self.assertEqual((h["cpu_c"], h["in_v"], h["addr"]), (44.4, 5.28, "100.75.181.48"))
+        self.assertEqual((h["cpu_c"], h["in_v"], h["addr"]), (44.4, 5.28, "192.0.2.20"))
         self.assertEqual(s.pis, set())  # hung up: no longer sent commands
 
     def test_old_health_is_not_shown(self):

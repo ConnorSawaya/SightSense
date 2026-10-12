@@ -158,10 +158,10 @@ class WholeSystem(unittest.IsolatedAsyncioTestCase):
                                "'what's in front of me' did not come back from the vision model")
                         replies = await after({"text": "take me to the grocery store"})
                         expect([m["lookup"] for m in replies if "lookup" in m] == ["grocery store"], "'take me to the grocery store' did not ask the phone for a place")
-                        route = {"dest": "Corner Grocery", "distance_m": 420, "eta_min": 6,
-                                 "polyline": [[37.0, -122.0], [37.0005, -122.0], [37.001, -122.0005]],
-                                 "steps": [{"lat": 37.0005, "lon": -122.0, "text": "Turn left onto First Street"}]}
-                        expect(any("Corner Grocery" in t and "yes" in t.lower() for t in said(await after(route, 1.0))), "the route was not read back for a yes")
+                        route = {"dest": "Example Market", "distance_m": 420, "eta_min": 6,
+                                 "polyline": [[0.0, 0.0], [0.0005, 0.0], [0.001, 0.0005]],
+                                 "steps": [{"lat": 0.0005, "lon": 0.0, "text": "Turn left onto Example Street"}]}
+                        expect(any("Example Market" in t and "yes" in t.lower() for t in said(await after(route, 1.0))), "the route was not read back for a yes")
                         expect(any("Going to" in t for t in said(await after({"text": "yes"}))), "'yes' did not start the route")
                         expect(said(await after({"text": "stop"})), "'stop' was not acknowledged")
 

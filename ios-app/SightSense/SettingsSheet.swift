@@ -41,9 +41,9 @@ struct SettingsSheet: View {
         Card(title: "GX10 address") {
             HStack(spacing: 10) {
                 Image(systemName: "server.rack").foregroundStyle(Theme.accent)
-                TextField("100.108.5.67 or host:port", text: $draft)
+                TextField("e.g. gx10.example.invalid:8775", text: $draft)
                     .font(.body.monospaced())
-                    .keyboardType(.numbersAndPunctuation)
+                    .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .focused($addressFocused)

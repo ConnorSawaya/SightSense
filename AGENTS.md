@@ -19,23 +19,14 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 
 ## Current status
 
-What exists so far, by area:
-
 | Area | State |
 | --- | --- |
-| Repo layout, message formats, wiring plan | Written |
-| Cane coupler (`hardware/cane-coupler/`) | Designed, STL checked against source, not printed |
-| iPhone app (`ios-app/`) | Build steps 1–7 written (capture, sending, guidance, voice, location) and built on the Mac. Written October 11 on a laptop with no Xcode and **not yet compiled**: step 8, the place lookup (`Places.swift`); listening from the cane's talk button; tones for left, right and unknown. Also not compiled: a light or heavy tap for left or right, and a Test sounds and speech button in Settings. All Swift files parse with a Swift grammar (tree-sitter), which checks syntax only, not types or the Apple frameworks. LiDAR-only Liquid Glass screen (iOS 26+). Real iPhone 15 Pro frames reached the GX10 frame service (`gx10/ingest`, port 8775) over Tailscale on October 10 around 5 PM: 4–18 frames/s; guidance, describe and read worked. Heat cut (30 fps camera, lower rate when hot) merged; not yet measured on the phone |
-| GX10 software (`gx10/`) | First versions of all pieces: `ingest/` (frame service), `planner/` (7-heading obstacle check, steady phone state), `dashboard/`, `vlm/` (`qwen3-vl:30b-a3b-instruct`), `navigator/` (rules, then the model for voice it does not understand; status and picture questions), `detector/` (YOLO26s). Run live with the iPhone on October 10 (describe 0.9 s, read 0.8 s, stop at about 2.2 m on a walk); model voice tested on a replayed phone recording, not yet live. October 11, tested on a laptop only: the talk button passed on to the phone as `listen`, a bad text message no longer drops the phone, the service starts without Ollama. Checked live on October 11 at 9:25 AM: a stand-in phone on a laptop sent the service running on the GX10 a drawn test picture (the word EXIT on green, and a red circle) over Tailscale, with frames that can only read STOP. "What's in front of me" came back in 0.95 s ("A green exit sign and a red circle are directly ahead of the camera."), "read the sign" in 0.30 s ("EXIT"), "what colour is the circle" in 0.48 s ("The circle is red."), and "is the path clear" from depth in 0.27 s. Every guidance state was STOP. That service was older code than this branch. A simulated walker that follows the wheel got round a box, through doorways and along a corridor without a stop (`gx10/planner/test_walk.py`). "Sound check" sends the phone each tone with its name. Also on a laptop only: "what can you do", "say that again" and "what time is it" are answered; each talk button press shows in the dashboard's conversation; the floor checks in `gx10/planner/README.md`. At 10:57 AM on October 11 the GX10 was running this code (plus the obstacle view and manual spin added that morning) with the real phone and the Pi connected, watched from a laptop through the dashboard's status: 12 to 14 frames a second from the phone, 15 to 18 ms of processing a frame, 80 to 190 ms round trip to the phone; the command went STOP, CENTER, LEFT with "Bear left", then STOP with "Obstacle ahead. Stop." as the view changed; the floor read 0.9 m below the phone; and each press of the cane's talk button showed as `(talk button down: phone told to listen)`. No voice text came back after those presses, so whether the app on the phone was the build that listens on the cane's button is not known. |
-| Pi motor controller (`pi/`) | Direct wheel mode installed October 11 over SSH: LEFT/RIGHT spin opposite ways, CENTER/STOP/FREE switch off, no homing or position switches. The Pi joined Bono Wi-Fi, connected to the live GX10 on port 8766 with Ethernet disabled, and automatically reconnected after reboot. Actual GPIO initialization and all four outputs low were checked while receiving STOP. Physical lateral direction and RPM remain unmeasured. The old full-power boot bench service is masked. A talk button on GPIO17 is read and reported to the GX10 (`pi/talk_button.py`): tested on mock pins only, and not in the code installed on the Pi on October 11. 100 Pi tests pass on a laptop with mock GPIO. The Pi did not answer over Tailscale on the morning of October 11 because its SD card was in the laptop. On October 11 at 10:31 AM the Pi's SD card was staged again on the laptop, from commit 18f5b35: the controller code with the talk button, and three Wi-Fi profiles, tried in this order: `AIHackathon@UCSC` (WPA2), the same network as WPA3, then `Bono` as before. All 35 staged files matched their checksums when read back from the card. It has not been booted in the Pi since, so the install, the new network and the new code on the Pi are not yet checked. The laptop saved that network as both WPA2 and WPA3; on October 10 it dropped a laptop about a minute after each join, which is why `Bono` is kept as a fallback. At 10:42 AM the card was booted in the Pi: the install finished, the three Wi-Fi profiles were installed, the Pi joined `AIHackathon@UCSC` and its controller connected to the GX10 on port 8766. The Pi's own tests passed on the Pi (104 run, 6 skipped, mock pins), and the four motor driver pins read low. Its link to the GX10 held except when the GX10 service was restarted. It flagged under-voltage once after that boot; after a later restart `get_throttled` read `0x0`. At 10:57 AM, watched from the laptop without touching anything: the Pi logged real presses of the talk button, and `wheel RIGHT: duty 25%` followed by `driver off: STOP` as the GX10's commands changed. Whether the wheel itself turned, and which way, was not seen from the laptop. |
-| Cane wiring ([`hardware/wiring.md`](hardware/wiring.md)) | Six wires between the Pi and the IBT-2 fitted and read from photos (columns sure, rows less so); limit switches, fuse and kill switch not fitted when last recorded. The talk button is wired: the Pi logged presses on October 11 at 10:57 AM. The driver was commanded at 25% the same minute; what the motor did was not seen from the laptop |
-| Handle and phone mount (`hardware/handle-phone-mount/`) | Designed, geometric checks only, not printed; cradle is oversize and the phone is strapped in; the plug inside the handle's socket is a separate part glued into the tube |
-| Wheel adapter (`hardware/wheel-adapter/`) | Designed on estimated hex and shaft sizes, geometric checks only, not printed |
-| Motor mount 2 (`hardware/motor-mount-2/`) | Designed on motor sizes from a published drawing, geometric checks only, not printed; two small fit tests to print first |
-| Electronics mount (`hardware/electronics-mount/`) | Clamp for the Pi and battery; designed, not printed |
-| Joint sleeve (`hardware/joint-sleeve/`) | Clamp over each tube joint; designed, geometric checks only, not printed; strength figures are estimates |
-| Whole-cane model (`hardware/assembly/`) | Four 400 mm tubes with couplers and the printed parts in place, without the joint sleeves; model only |
-| Whole system on one computer (`pi/test_whole_system.py`) | Fake phone frames, typed voice, a place, the talk button and the dashboard through the real GX10 service and Pi controller to mock motor pins. Passes on a laptop with the model stubbed and YOLO off; not run on the cane |
+| Repo layout, message formats, wiring plan | Documented in this repository |
+| Cane parts (`hardware/`) | CAD designs and assembly notes are included; verify fit and strength on the actual build |
+| iPhone app (`ios-app/`) | Camera, LiDAR, frame transport, guidance, speech and location code are present; verify the current build on a supported iPhone |
+| GX10 software (`gx10/`) | Ingest, planner, dashboard, model, navigation and detection modules are present; validate the current integration on the target GX10 |
+| Pi motor controller (`pi/`) | Direct-wheel mode, command watchdog, setup tools and mock tests are present; verify motor direction and hardware behavior before use |
+| Whole-system checks | Use the synthetic phone, simulated walk and mock GPIO tests; do not claim a physical end-to-end result unless it has been observed |
 
 Update this table when you finish something.
 
@@ -43,7 +34,7 @@ Update this table when you finish something.
 
 These come from the hackathon and from the team. Breaking one can get the project disqualified.
 
-1. **No pre-event code or parts without confirmation.** Hacking started at 12:00 PM on October 10, 2026. The organizers have not confirmed in writing whether earlier work is allowed. Do not copy code in from anywhere outside this repository unless the user says the organizers approved it, and then record it in `docs/DISCLOSURE.md`. Earlier project folders named `PathSense` and `PathSense-iOS` exist on the user's home desktop; they have not been imported.
+1. **No pre-event code or parts without confirmation.** Hacking started at 12:00 PM on October 10, 2026. The organizers have not confirmed in writing whether earlier work is allowed. Do not copy code in from anywhere outside this repository unless the user says the organizers approved it, and then record it in `docs/DISCLOSURE.md`.
 2. **Never fabricate history.** Do not backdate commits, invent commit history, or claim work was done at a time it was not.
 3. **The project must be developed and demoed on the GX10.** All AI inference and all guidance decisions run there. Do not move inference to a laptop, the phone or the cloud.
 4. **The vision-language model never controls the wheel.** It finds objects, reads text and answers questions. Whether the way is clear is decided from LiDAR depth only. If the two disagree, depth wins.
@@ -67,16 +58,14 @@ These come from the hackathon and from the team. Breaking one can get the projec
 
 ## Machines
 
-| Machine | Where | Notes |
+| Machine | Role | Notes |
 | --- | --- | --- |
-| ASUS Ascent GX10 | Venue, on the team's router by Ethernet | NVIDIA GB10, 128 GB shared memory, ARM64 Linux (DGX OS). Stays at the venue; closes 10 PM Saturday. |
-| Raspberry Pi 5 | On the cane; currently on Bono Wi-Fi | Raspberry Pi OS Lite 64-bit. No audio jack. Use `gpiozero` + `lgpio`; `RPi.GPIO` and `pigpio` do not work on a Pi 5. Name `sightsense.local`, user `sightsense`, Tailscale `100.75.181.48`, code in `~/SightSense/pi`. Details in [`pi/README.md`](pi/README.md). |
-| iPhone 16 Pro | On the cane | App built on a teammate's Mac with Xcode, free Apple ID (7-day signing). |
-| Mac | Venue | Only for building the iPhone app. |
-| Team laptops | Venue | Development, SSH to the Pi and GX10. |
-| Home desktop | Not at the venue | i7-14700F, RTX 4060 (8 GB), 32 GB RAM, Windows 11. On October 11 its Tailscale connection reached the GX10 dashboard and command port, then SSH reached the Pi after Ethernet was connected. Bono Wi-Fi and automatic Pi controller startup were verified. |
+| ASUS Ascent GX10 | AI inference and guidance host | NVIDIA GB10, ARM64 Linux (DGX OS) |
+| Raspberry Pi 5 | Motor controller | Raspberry Pi OS Lite 64-bit; use `gpiozero` + `lgpio` |
+| iPhone 16 Pro | Camera, LiDAR, position and voice input | Requires a supported iPhone and a signed app build |
+| Development computers | Build and maintenance | Keep actual hostnames, addresses and credentials in local configuration, outside Git |
 
-Planned addresses (reserve in the router; the subnet depends on the router): GX10 `192.168.8.10`, Pi `192.168.8.20`, iPhone `192.168.8.30`. Ports on the GX10: 8765 frames in, 8766 commands out, 8000 dashboard, 11434 Ollama. As run for the cane, over Tailscale, the frame service takes the phone on 8775 (`--phone-port 8775`, the port in the app's presets) and the Pi on 8766.
+Device addresses depend on the local router or Tailscale network. Use the GX10's local DNS name, MagicDNS name or assigned address in local configuration. The phone frame service uses port 8775 in the cane setup; the Pi command connection uses port 8766. The dashboard and model service use ports 8000 and 11434 on the GX10.
 
 ## Decisions already made
 
@@ -163,7 +152,7 @@ One request at a time, 6-second timeout, keep the model loaded.
 - **Empty is not clear.** No points in a corridor can mean open space or missing readings.
 - **Stale targets.** If ARKit tracking resets, stored positions are wrong. Clear them.
 - **Pi resets when the motor starts.** The Pi now shares the motor's battery through a converter. If it resets or reports under-voltage when the motor runs, put it back on its own power bank.
-- **Venue Wi-Fi.** `AIHackathon@UCSC` dropped a laptop about a minute after each join, and `UCSC-Guest` has a sign-in page a headless Pi cannot pass. The fixed `192.168.8.x` addresses only exist on the team's own router.
+- **Network setup.** A headless Pi needs a trusted network without a captive portal. Provide Wi-Fi credentials through a private NetworkManager profile and keep that profile out of Git. Use addresses assigned by the router or Tailscale; do not put active host addresses in examples.
 - **Pi will not start.** Count the green light's blinks before changing anything else. Three long and one short is a bootloader error; the fix is in [`pi/README.md`](pi/README.md).
 - **Phone tilt.** The phone has to look at least 25 degrees below the horizon. With less, in open space the obstacle check cannot judge the way ahead and stops ("Can't see ahead"). On the printed mount that is the 60 degree step, not the 45 the drawings show.
 - **The cane in its own view.** Anything fixed in the depth picture (the cane's lower end, a hand, a strap) reads as an obstacle about 0.4 m ahead for ever. With open floor ahead every clearance bar on the dashboard should read 4.5. `SIGHTSENSE_OWN_CANE_M=0.65` ignores the cane's own strip; see `gx10/planner/README.md`.
@@ -203,4 +192,5 @@ Sunday: test at 9:00 AM, code freeze 11:00 AM, submit on Devpost by 12:45 PM (de
 ## Where to find more
 
 - [`docs/PROJECT_HISTORY.md`](docs/PROJECT_HISTORY.md): how the plan got here and why.
-- [SightSense Team Handbook](https://claude.ai/code/artifact/25e30a5a-561f-4f03-b7df-020e1d7d422b): the full plan in plain language, with the build guide, tests and checklists. The link is private until its owner shares it; if you cannot open it, ask the user to paste the part you need.
+- [`contracts/MESSAGES.md`](contracts/MESSAGES.md): message formats between the phone, GX10 and Pi.
+- [`pi/README.md`](pi/README.md): Pi setup and operation.
