@@ -21,7 +21,7 @@ No prices or shop links are listed: the team's orders are not recorded in this r
 | 6 | Jumper wire | A socket on each end. Brown, red, black, orange, yellow, green | Fitted | [`wiring.md`](wiring.md) |
 | 1 | Fuse, 5 A, with holder | In the motor's branch only | Not fitted | [`wiring.md`](wiring.md) |
 | 1 | Kill switch | Rated for the fuse's 5 A, within the user's reach | Not fitted | [`wiring.md`](wiring.md) |
-| 1 | Talk button | 7 mm momentary push button with two leads (PBS-110 type) and its nut | Wired: the Pi logged presses on October 11. `wiring.md` still lists it as not fitted | [`../AGENTS.md`](../AGENTS.md) |
+| 1 | Talk button | 7 mm momentary push button with two leads (PBS-110 type) and its nut | Wired: the Pi logged presses on October 11 | [`../pi/README.md`](../pi/README.md) |
 | 2 | Wire for the talk button | Handle to the Pi, a socket on the Pi end of each | Wired, as above | [`wiring.md`](wiring.md) |
 | 3 | Limit microswitch | For the earlier position-steering modes. Direct wheel drive does not use them | Not fitted | [`wiring.md`](wiring.md) |
 | — | Hook-up wire | 12 V from the adapter to the driver, and the driver to the motor | | [`wiring.md`](wiring.md) |

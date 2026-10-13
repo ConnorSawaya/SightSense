@@ -17,6 +17,8 @@ Experimental prototype. Nothing here has been printed, fitted or load tested. Th
 - The tick boxes show and hide each part. Hide a tube to see the inserts inside it. The tubes are drawn in two greys in turn, so the joints show.
 - **Lean pole** switches between the pole leaning as it is held, standing on the ground, and the pole upright.
 
+A more detailed model, with the electronics, the wiring and a guided tour, is at <https://connorsawaya.github.io/SightSense/>. It was made after the event from this one, and shows three tubes and an 85 mm wheel. The scripts that build it are not in this repository.
+
 ## What is in it
 
 | Part | Printed? | Source |
@@ -39,7 +41,7 @@ The Raspberry Pi is held by four M2.5 × 12 screws with nuts.
 | --- | --- | --- |
 | Tubes | Four sections of 400 mm, 1,600 mm in all | The team's tubes. See the next section for how high that puts the handle |
 | Lean of the pole | 30 degrees from upright | The angle the handle was designed for; not measured in use |
-| Omni wheel | 58 mm across, 27 mm wide at the hub | Not measured. It looked 50 to 60 mm across in the team's photos |
+| Omni wheel | 58 mm across, 27 mm wide at the hub | Not measured. It looked 50 to 60 mm across in the team's photos. The seller's listing for the wheel says 85 mm; this model has not been redrawn for that |
 | Phone | A generic phone | Not measured |
 | Gearmotor | JGY-370 outline | From a published drawing, not from measuring this motor |
 | Camera collar | 240 mm below the top of the tube | It can be clamped anywhere on the tube |

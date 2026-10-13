@@ -15,6 +15,8 @@ Printable parts, wiring and build notes for the cane.
 | [`joint-sleeve/`](joint-sleeve/) | Clamp that goes over the joint between two tubes and takes the bending that the coupler's printed tongue cannot. One per joint | Design in, not printed; its strength figures are estimates |
 | [`assembly/`](assembly/) | Interactive 3D model of the whole cane with every printed part in place, as one HTML file to open in a browser | Model only, drawn with four 400 mm tubes and their couplers; the wheel and the phone are stand-ins |
 
+The whole cane, with its electronics and wiring, can be turned round and stepped through at <https://connorsawaya.github.io/SightSense/>.
+
 ## Conventions
 
 - Put each part in its own folder with its source file (`.scad`, `.step` or `.f3d`), the exported `.stl`, and a short `README.md`.

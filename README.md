@@ -8,9 +8,9 @@ Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the AS
 
 ## See it in 3D
 
-<a href="https://connors.dev/sightsense"><img src="docs/media/cane-turning.gif" width="360" alt="3D model of the cane turning slowly on its wheel: a handle, a phone in a cradle, electronics above the tip, and a wheel on the ground."></a>
+<a href="https://connorsawaya.github.io/SightSense/"><img src="docs/media/cane-turning.gif" width="360" alt="3D model of the cane turning slowly on its wheel: a handle, a phone in a cradle, electronics above the tip, and a wheel on the ground."></a>
 
-**[Open the interactive model and guided tour](https://connors.dev/sightsense)** (or click the picture): drag to turn it, step through each part, and point at a data line to see what it carries.
+**[Open the interactive model and guided tour](https://connorsawaya.github.io/SightSense/)** (or click the picture): drag to turn it, step through each part, and point at a data line to see what it carries. There is more on the [project page](https://connors.dev/sightsense).
 
 | | |
 | --- | --- |
@@ -55,9 +55,11 @@ AI and guidance run locally on the GX10. The current devices communicate through
 - iPhone 16 Pro (camera, LiDAR, ARKit)
 - ASUS Ascent GX10 (borrowed from ASUS for the event)
 - Raspberry Pi 5
-- 12 V 120 rpm DC worm gear motor driving the mecanum wheel, IBT-2 (BTS7960) motor driver
+- 12 V 120 rpm DC worm gear motor driving an 85 mm omni wheel, IBT-2 (BTS7960) motor driver. Older notes here call it the mecanum wheel
 - 12 V 3 Ah battery pack, fuse, kill switch
 - 18 mm carbon-fibre tube cane with a printed keyed coupler (see [`hardware/cane-coupler/`](hardware/cane-coupler/))
+
+The full list, down to the screws, is in [`hardware/BOM.md`](hardware/BOM.md).
 
 ## Status
 

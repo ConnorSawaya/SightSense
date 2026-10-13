@@ -44,6 +44,7 @@ The rest is to be completed by the team. State plainly what existed before 12:00
 ## Added after the event
 
 - **3D pictures in the README** (`docs/media/`): made on October 12, 2026, the day after the event, with an AI coding assistant. They are rendered from a model built for a team member's portfolio page. That model starts from `hardware/assembly/assembly_viewer.html` and adds a Raspberry Pi 5 (Raspberry Pi's official STEP model, MIT licence), a gearmotor, battery, phone, wheel, motor driver and wiring drawn from published sizes and from `hardware/wiring.md`. The scripts that build it are in the portfolio's repository, not this one. Nothing in the pictures was part of the judged submission.
+- **3D model page** (<https://connorsawaya.github.io/SightSense/>): added on October 12, 2026. It is one page on the `gh-pages` branch that shows the same model, which is served from the portfolio's site and not stored in this repository.
 - **The result**: the README records that the project placed 1st overall, as reported by the team.
 
 ## AI assistance
