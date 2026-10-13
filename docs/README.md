@@ -8,5 +8,5 @@
 | [`../contracts/MESSAGES.md`](../contracts/MESSAGES.md) | Message formats between the phone, the GX10 and the Pi |
 | [`../hardware/`](../hardware/) | Printable parts and wiring |
 | [`../hardware/BOM.md`](../hardware/BOM.md) | Bill of materials: everything the cane is built from |
-| [`media/`](media/) | The 3D pictures in the main README. CAD renders made after the event |
+| [`media/`](media/) | The 3D pictures in the main README (CAD renders made after the event), and in `media/photos/` the team's photos of the cane at the event |
 | [3D model](https://connorsawaya.github.io/SightSense/) | The interactive model and guided tour, on GitHub Pages. It is served from the `gh-pages` branch |
