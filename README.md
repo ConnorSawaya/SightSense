@@ -8,9 +8,9 @@ Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the AS
 
 ## See it in 3D
 
-<img src="docs/media/cane-turning.gif" width="360" alt="3D model of the cane turning slowly on its wheel: a handle, a phone in a cradle, electronics above the tip, and a wheel on the ground.">
+<a href="https://connors.dev/sightsense"><img src="docs/media/cane-turning.gif" width="360" alt="3D model of the cane turning slowly on its wheel: a handle, a phone in a cradle, electronics above the tip, and a wheel on the ground."></a>
 
-**[Open the interactive model and guided tour](https://connors.dev/sightsense)**: drag to turn it, step through each part, and point at a data line to see what it carries.
+**[Open the interactive model and guided tour](https://connors.dev/sightsense)** (or click the picture): drag to turn it, step through each part, and point at a data line to see what it carries.
 
 | | |
 | --- | --- |
