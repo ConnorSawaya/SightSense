@@ -27,6 +27,9 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 | GX10 software (`gx10/`) | Ingest, planner, dashboard, model, navigation and detection modules are present; validate the current integration on the target GX10 |
 | Pi motor controller (`pi/`) | Direct-wheel mode, command watchdog, setup tools and mock tests are present; verify motor direction and hardware behavior before use |
 | Whole-system checks | Use the synthetic phone, simulated walk and mock GPIO tests; do not claim a physical end-to-end result unless it has been observed |
+| Bill of materials ([`hardware/BOM.md`](hardware/BOM.md)) | Collected from the hardware pages on October 12; no prices or shop links |
+| 3D pictures and model page | README pictures in `docs/media/` and a GitHub Pages page (`gh-pages` branch) that shows the interactive model. Made on October 12, after the event; see `docs/DISCLOSURE.md` |
+| Result | 1st place overall at the UCSC AI Hackathon @ SF Tech Week, as reported by the team |
 
 Update this table when you finish something.
 
@@ -194,3 +197,5 @@ Sunday: test at 9:00 AM, code freeze 11:00 AM, submit on Devpost by 12:45 PM (de
 - [`docs/PROJECT_HISTORY.md`](docs/PROJECT_HISTORY.md): how the plan got here and why.
 - [`contracts/MESSAGES.md`](contracts/MESSAGES.md): message formats between the phone, GX10 and Pi.
 - [`pi/README.md`](pi/README.md): Pi setup and operation.
+- [`hardware/BOM.md`](hardware/BOM.md): everything the cane is built from.
+- [3D model](https://connorsawaya.github.io/SightSense/): the interactive model and guided tour.

@@ -13,7 +13,7 @@ As of the evening of October 10, 2026.
 | Six wires, Pi end | Fitted. Read from photos; all six are on the pins on this page. |
 | Six wires, driver end | Fitted. Read from photos by five independent readers, who all placed every wire on its planned pin, with the second column empty. Three checkers then tried to disprove that and could not. No photo shows a housing on a named pin: the columns are seen, the rows are worked out from the camera angle. Check black and yellow by eye before the first power-on. |
 | Limit switches | Not fitted |
-| Talk button | Not fitted. The Pi's code for it passes its tests on mock pins; not tried with a real button. |
+| Talk button | Wired. On October 11 at 10:57 AM the Pi logged real presses; see [`../pi/README.md`](../pi/README.md). Whether the phone was then running the build that listens for it is not known. |
 | Fuse and kill switch | Not fitted |
 | Battery, converter, motor | Not checked |
 | Anything under power | Not tested |
@@ -38,7 +38,7 @@ October 11 update: the user reports the motor is connected directly to the mecan
 | Barrel-to-screw adapter | The green one. This is where the battery's power splits two ways. |
 | Jumper wires | Six, with a socket on each end |
 | Limit switches | Three microswitches. Not fitted yet. |
-| Talk button | 7 mm momentary push button with two leads, for the handle's nose. Not fitted yet. |
+| Talk button | 7 mm momentary push button with two leads, for the handle's nose. Wired on October 11. |
 | Wire for the talk button | Two wires long enough to reach from the handle to the Pi, with a socket on the Pi end of each |
 | Fuse and kill switch | 5 A fuse, and a switch rated for it. Not fitted yet. |
 

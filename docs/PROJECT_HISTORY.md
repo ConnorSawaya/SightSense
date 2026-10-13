@@ -99,6 +99,14 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - The GX10 and Pi communicated over the private device network on the command port. The actual host addresses are intentionally omitted. Motor RPM and lateral direction still require physical measurement.
 - The Pi's boot configuration needed an explicit installer target. The updater now selects that target directly. Verify network connectivity and physical wheel behavior on the target hardware.
 
+## 13. After the event (October 12)
+
+- The project placed 1st overall, as reported by the team.
+- Live network addresses, Wi-Fi notes, GPS test values and the private handbook link were taken out of the public files. Older commits still contain them.
+- A bill of materials was collected from the hardware pages: [`../hardware/BOM.md`](../hardware/BOM.md).
+- 3D pictures were added to the README, and a GitHub Pages page that shows an interactive model with a guided tour. The model was built for a team member's portfolio from the assembly viewer here; it draws the bought parts from published sizes and shows three tubes and an 85 mm wheel. See [`DISCLOSURE.md`](DISCLOSURE.md).
+- The wheel's listing gives 85 mm across. The printable parts and the assembly model here were drawn for about 58 mm and have not been redrawn.
+
 ## Ideas considered and dropped
 
 | Idea | Why it was dropped |

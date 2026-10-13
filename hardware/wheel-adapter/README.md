@@ -22,6 +22,8 @@ An earlier version was test printed. M3 screws would not pass its 3.2 mm holes, 
 | --- | --- | --- |
 | Wheel hex socket | 12 mm across flats | Measured by the team |
 | Wheel centre hole | 10 mm | Measured by the team |
+| Wheel diameter | 85 mm | The seller's listing; not measured. The drawings here assume about 58 mm |
+| Wheel's own coupling | 5 mm bore | The seller's listing. It does not fit the 6 mm shaft, which is why this adapter is used |
 | Shaft | 6 mm diameter, 14 mm beyond the bosses, flat 12 mm long and 5.4 mm across | Published JGY-370 outline drawing; not measured on this motor |
 | Pilot length | 10 mm | Estimate. It must be shorter than the 10 mm hole is deep |
 
