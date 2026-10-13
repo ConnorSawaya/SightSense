@@ -21,6 +21,15 @@ Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the AS
 
 These are pictures of a CAD model, not photos of the cane. The model was drawn on October 12, after the event, from the printable parts in [`hardware/`](hardware/) and the wiring in [`hardware/wiring.md`](hardware/wiring.md). The bought parts in it are drawn from published sizes, not measured, and where the motor driver, converter and adapter sit is made up: no mount is designed for them yet. It shows three tubes; [`hardware/assembly/`](hardware/assembly/) draws four.
 
+## Photos of the cane
+
+Taken by the team at the event.
+
+| | | | |
+| --- | --- | --- | --- |
+| <img src="docs/media/photos/cane-full-length.jpg" width="200" alt="Looking down the cane from the handle: a hand on the grip, the phone in its mount part way down, and the wheel on the carpet."> | <img src="docs/media/photos/cane-on-floor.jpg" width="200" alt="The lower end of the cane resting on carpet, its tube wrapped in silver tape, with the wheel and electronics at the tip."> | <img src="docs/media/photos/wheel-end-electronics.jpg" width="200" alt="Close view of the electronics at the tip: a Raspberry Pi in a black case with a fan, coloured jumper wires, a green screw-terminal power adapter, a blue battery underneath, and the grey wheel."> | <img src="docs/media/photos/battery-and-wheel.jpg" width="200" alt="The tip of the cane from above: a blue battery pack, red wires along the carbon tube, and an omni wheel with grey rollers on the carpet."> |
+| The whole cane in hand: handle, phone mount and wheel. | The wheel end on the floor, with tape over the tube joints. | The Raspberry Pi in its case, the jumper wires, the green power adapter and the battery underneath. | The battery pack, the carbon tube and the omni wheel. |
+
 ## How it works
 
 ```
