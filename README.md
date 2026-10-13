@@ -21,9 +21,14 @@ Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the AS
 
 These are pictures of a CAD model, not photos of the cane. The model was drawn on October 12, after the event, from the printable parts in [`hardware/`](hardware/) and the wiring in [`hardware/wiring.md`](hardware/wiring.md). The bought parts in it are drawn from published sizes, not measured, and where the motor driver, converter and adapter sit is made up: no mount is designed for them yet. It shows three tubes; [`hardware/assembly/`](hardware/assembly/) draws four.
 
-## Photos of the cane
+## Photos from the event
 
 Taken by the team at the event.
+
+| | |
+| --- | --- |
+| <img src="docs/media/photos/cane-at-hackathon.jpg" width="300" alt="A hand holding the cane's black pole at an angle, with red and black wires running along it and taped joints. The wheel and its electronics sit on the carpet at the far end."> | <img src="docs/media/photos/team-nametags.jpg" width="465" alt="A selfie of three teammates with Minecraft-style name tags added above their heads: Viraj Rungta on the left in a red shirt, Aryan Kulkarni in the middle in grey, and Connor Sawaya in front in a black hoodie."> |
+| The cane at the event, with the wheel end on the floor. | The team: Viraj Rungta, Aryan Kulkarni and Connor Sawaya. Not pictured: Anshuman Kumar. The name tags were added afterwards. |
 
 | | | | |
 | --- | --- | --- | --- |
