@@ -19,8 +19,6 @@ No prices or shop links are listed: the team's orders are not recorded in this r
 | 1 | Gearmotor, 12 V 120 rpm | Greartisan worm gear motor (JGY-370), 6 mm D-shaft. Sizes from a published drawing, not measured | Not checked | [`wiring.md`](wiring.md) |
 | 1 | Omni wheel, 85 mm | Plastic, with rubber rollers; sold with a 5 mm coupling, which does not fit the motor's 6 mm shaft, so it goes on the printed adapter. 12 mm hex socket and 10 mm centre hole, measured. The 85 mm is from the seller's listing; other pages here still draw it at 58 mm and sometimes call it a mecanum wheel | On the motor, as the team reported on October 11 | [`wheel-adapter/`](wheel-adapter/) |
 | 6 | Jumper wire | A socket on each end. Brown, red, black, orange, yellow, green | Fitted | [`wiring.md`](wiring.md) |
-| 1 | Fuse, 5 A, with holder | In the motor's branch only | Not fitted | [`wiring.md`](wiring.md) |
-| 1 | Kill switch | Rated for the fuse's 5 A, within the user's reach | Not fitted | [`wiring.md`](wiring.md) |
 | 1 | Talk button | 7 mm momentary push button with two leads (PBS-110 type) and its nut | Wired: the Pi logged presses on October 11 | [`../pi/README.md`](../pi/README.md) |
 | 2 | Wire for the talk button | Handle to the Pi, a socket on the Pi end of each | Wired, as above | [`wiring.md`](wiring.md) |
 | 3 | Limit microswitch | For the earlier position-steering modes. Direct wheel drive does not use them | Not fitted | [`wiring.md`](wiring.md) |
