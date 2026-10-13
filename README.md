@@ -2,9 +2,24 @@
 
 A smart guide cane for people who are blind or have low vision. You say where you want to go ("guide me to the apple", "take me to the door"), and a small wheel at the tip of the cane steers you there while avoiding obstacles.
 
-Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the ASUS Local AI track.
+Built at the UCSC AI Hackathon @ SF Tech Week, October 10–11, 2026, for the ASUS Local AI track, where it placed 1st overall.
 
 > Experimental prototype. It does not replace a white cane or a guide dog, and it has not been tested with blind users.
+
+## See it in 3D
+
+<img src="docs/media/cane-turning.gif" width="360" alt="3D model of the cane turning slowly on its wheel: a handle, a phone in a cradle, electronics above the tip, and a wheel on the ground.">
+
+**[Open the interactive model and guided tour](https://connors.dev/sightsense)**: drag to turn it, step through each part, and point at a data line to see what it carries.
+
+| | |
+| --- | --- |
+| <img src="docs/media/model-data.jpg" width="420" alt="The whole cane with coloured arcs between the phone, the GX10 and the Raspberry Pi."> | <img src="docs/media/model-wheel.jpg" width="420" alt="Close view of the wheel end: battery, converter, motor driver, gearmotor and omni wheel, with their wires."> |
+| **The wireless links.** Camera frames go from the phone to the GX10, guidance comes back, and one word goes to the Pi. | **The wheel end.** Battery, 5 V converter, motor driver, gearmotor and the 85 mm omni wheel. |
+| <img src="docs/media/model-pi.jpg" width="420" alt="The Raspberry Pi 5 on its printed mount, with six coloured wires running up to the motor driver."> | <img src="docs/media/model-phone.jpg" width="420" alt="The iPhone in its tilting cradle on the pole, below the handle."> |
+| **Pi to driver.** The six signal wires from the Pi's header to the IBT-2. | **Phone mount.** The iPhone in its tilting cradle, camera forward. |
+
+These are pictures of a CAD model, not photos of the cane. The model was drawn on October 12, after the event, from the printable parts in [`hardware/`](hardware/) and the wiring in [`hardware/wiring.md`](hardware/wiring.md). The bought parts in it are drawn from published sizes, not measured, and where the motor driver, converter and adapter sit is made up: no mount is designed for them yet. It shows three tubes; [`hardware/assembly/`](hardware/assembly/) draws four.
 
 ## How it works
 
@@ -50,4 +65,6 @@ The iPhone and GX10 application code is in. The Pi has direct wheel mode and a o
 
 ## Team
 
-Add the four team members and their roles here.
+Connor Sawaya, Viraj Rungta, Aryan Kulkarni and Anshuman Kumar.
+
+Roles to be added by the team.
