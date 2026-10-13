@@ -41,6 +41,11 @@ Two things. The place lookup ("take me to Safeway") goes through Apple Maps. And
 
 The rest is to be completed by the team. State plainly what existed before 12:00 PM on October 10, 2026 (ideas, designs, code, printed parts), and what was built during the event.
 
+## Added after the event
+
+- **3D pictures in the README** (`docs/media/`): made on October 12, 2026, the day after the event, with an AI coding assistant. They are rendered from a model built for a team member's portfolio page. That model starts from `hardware/assembly/assembly_viewer.html` and adds a Raspberry Pi 5 (Raspberry Pi's official STEP model, MIT licence), a gearmotor, battery, phone, wheel, motor driver and wiring drawn from published sizes and from `hardware/wiring.md`. The scripts that build it are in the portfolio's repository, not this one. Nothing in the pictures was part of the judged submission.
+- **The result**: the README records that the project placed 1st overall, as reported by the team.
+
 ## AI assistance
 
 Parts of this repository's documentation and code were written with AI coding assistants.
