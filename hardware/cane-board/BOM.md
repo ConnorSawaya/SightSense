@@ -126,6 +126,7 @@ To buy. None of these was looked up, so no prices:
 | 2 | JST XH 2-way plug with wire leads | One for the kill switch, one for the talk button |
 | 1 | JST XH 2-way plug with leads, and a 3 V coin buzzer motor | Only if the handle buzzer is wanted |
 | 1 | JST XH 4-way plug with leads, and an encoder for the motor | Only if wheel speed is to be measured |
+| 4 | M3 screws, M3 nuts and 5 mm nylon spacers | Mount the board on its four 3.2 mm holes (two below the processor, two at the motor-end corners). Nylon keeps metal away from the aerial and off the carbon tube |
 
 ## 5. Bench test, before any board is ordered
 

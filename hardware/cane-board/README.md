@@ -2,7 +2,7 @@
 
 One circuit board for the cane, to replace the Raspberry Pi 5, its 12 V to 5 V converter, the IBT-2 motor driver, the green screw adapter and the jumper wires. The battery, the motor, the talk button and the kill switch stay off the board and plug into it.
 
-A design, not a finished board. The schematic is drawn and checked. The parts are placed on a 40 × 100 mm board, but no tracks are routed. There is no firmware, and nothing has been ordered, built or tested. Drawn on October 13, 2026, after the event.
+A design, not a finished board. The schematic is drawn and checked, and the 40 × 100 mm board is routed on 4 layers with black solder mask: KiCad's design rules check reports 0 errors and 0 unconnected items, and the board matches the schematic. There is no firmware, and nothing has been ordered, built or tested. Drawn on October 13, 2026, after the event.
 
 ![The board in 3D, seen from the motor end](previews/board-3d.png)
 
@@ -26,7 +26,7 @@ The GX10 still does all the thinking. The board does the Pi's job: it holds the 
 
 ## The board
 
-40 × 100 mm, two layers, every part on the top side. The top edge points up the cane.
+40 × 100 mm, four layers, black solder mask, every part on the top side. Tracks on all four layers with ground poured round them and tied together by about 210 vias. Routed by `make_route.py` with the Freerouting autorouter; the motor-supply tracks are widened to 0.3–0.5 mm where they fit. The top edge points up the cane.
 
 ![The board from above](previews/board-top.png)
 

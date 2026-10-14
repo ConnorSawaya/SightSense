@@ -1,0 +1,11 @@
+(version 1)
+
+# JLCPCB's standard 2- and 4-layer process makes 0.127 mm (5 mil) gaps. The router keeps 0.15 mm everywhere
+# except at the motor driver's fine-pitch pins, whose footprint asks for 0.2 mm; 0.18 mm is accepted there.
+(rule "Motor driver pins"
+	(condition "A.memberOfFootprint('U2') || B.memberOfFootprint('U2')")
+	(constraint clearance (min 0.18mm)))
+
+# A ground pad joined to the pour by one spoke is still joined; many of these also have a track.
+(rule "One spoke is enough"
+	(constraint min_resolved_spokes 1))
