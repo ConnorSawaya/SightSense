@@ -6,7 +6,7 @@ The plan is turnkey assembly (PCBA) by JLCPCB. Parts are listed line by line in 
 
 ## Update, October 14: 4 layers, black
 
-The routed board has 4 copper layers (the autorouter could not finish on 2) and black solder mask. JLCPCB's live quote for five bare boards, 40 x 100 mm: $8.00 for 4 layers green, $16.00 for 4 layers black (black adds $8.00), against $4.00 for 2 layers green. Build time 3–4 days.
+The routed board is 46 × 100 mm (widened from 40 to give the router room) with 4 copper layers (the autorouter could not finish on 2) and black solder mask. JLCPCB's live quote for five bare boards, 40 x 100 mm: $8.00 for 4 layers green, $16.00 for 4 layers black (black adds $8.00), against $4.00 for 2 layers green. Build time 3–4 days.
 
 With the 35% tariff that adds about $16 to the totals below: about **$166 for 5 boards ($33 each)** and roughly $230 for 10 ($23 each, 10-board black 4-layer price not quoted). Choosing green saves about $11 of that.
 

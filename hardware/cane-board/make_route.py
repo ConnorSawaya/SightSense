@@ -245,6 +245,95 @@ def widen_where_room(board, net, widths=(0.5, 0.4, 0.3)):
     print(f"{net}: {widened} of {len(tracks)} tracks widened")
 
 
+def aerial_keepout(board):
+    """The ESP32 footprint keeps copper from under its aerial on the outer layers only; do the same on the inner ones."""
+    u1 = next(fp for fp in board.GetFootprints() if fp.GetReference() == "U1")
+    box = board.GetBoardEdgesBoundingBox()
+    top = u1.GetPosition().y - mm(12.75)  # module body is 25.5 mm long, aerial in its top 6 mm
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    z.SetDoNotAllowZoneFills(True)
+    z.SetDoNotAllowTracks(True)
+    z.SetDoNotAllowVias(True)
+    z.SetDoNotAllowPads(False)
+    z.SetDoNotAllowFootprints(False)
+    z.SetLayerSet(pcbnew.LSET.AllCuMask())
+    o = z.Outline()
+    o.NewOutline()
+    for x, y in ((box.GetLeft(), box.GetTop()), (box.GetRight(), box.GetTop()), (box.GetRight(), top + mm(6.5)),
+                 (box.GetLeft(), top + mm(6.5))):
+        o.Append(x, y)
+    board.Add(z)
+
+
+def outer_only(dsn):
+    """Battery and motor current stays on the outer layers, which have twice the copper of the inner ones."""
+    text = dsn.read_text()
+    text = text.replace('(circuit\n        (use_via "Via[0-3]_800:400_um")\n      )',
+                        '(circuit\n        (use_via "Via[0-3]_800:400_um")\n        (use_layer F.Cu B.Cu)\n      )', 1)
+    text = re.sub(r"(\(class kicad_default[^()]*?)\s/VM(?=[\s)])", r"\1", text)
+    supply = ('    (class Supply /VM\n      (circuit\n        (use_via "Via[0-3]_800:400_um")\n        (use_layer F.Cu B.Cu)\n'
+              '      )\n      (rule\n        (width 200)\n        (clearance 150)\n      )\n    )\n')
+    text = text.replace("    (class Power", supply + "    (class Power", 1)
+    dsn.write_text(text)
+
+
+SUPPLY = ["+BATT", "/VIN_RAW", "/VIN_F", "/VM", "/MOT_A", "/MOT_B", "/BUCK_SW", "+5V"]
+
+
+def blocks(text, head):
+    """Start and end of every balanced (head ...) block in a Specctra file."""
+    out, i = [], 0
+    while True:
+        i = text.find("(" + head + " ", i)
+        if i < 0:
+            return out
+        depth, j = 0, i
+        while True:
+            depth += {"(": 1, ")": -1}.get(text[j], 0)
+            j += 1
+            if depth == 0:
+                break
+        out.append((i, j))
+        i = j
+
+
+def supply_only(dsn):
+    """First pass: only the battery, motor and converter nets, 0.4 mm wide, on the outer layers."""
+    text = dsn.read_text()
+    for a, b in reversed(blocks(text, "net")):
+        name = text[a + 5:text.index("\n", a)].strip().strip('"')
+        if name not in SUPPLY:
+            text = text[:a] + text[b:]
+    cls = blocks(text, "class")
+    first = cls[0][0]
+    for a, b in reversed(cls):
+        text = text[:a] + text[b:]
+    mine = ("(class Supply " + " ".join(SUPPLY) + '\n      (circuit\n        (use_via "Via[0-3]_800:400_um")\n'
+            "        (use_layer F.Cu B.Cu)\n      )\n      (rule\n        (width 400)\n        (clearance 200)\n      )\n    )")
+    text = text[:first] + mine + text[first:]
+    dsn.write_text(text)
+
+
+def freeroute(jar, dsn, work, tag, tries):
+    best = None
+    for attempt in range(tries):  # the router is not deterministic between strategies; keep the best run
+        out = work / f"{tag}-try{attempt}.ses"
+        extra = [] if attempt == 0 else ["-is", "random", "-us", ["greedy", "global", "hybrid"][attempt % 3]]
+        run = subprocess.run([JAVA, "-jar", jar, "-de", str(dsn), "-do", str(out), "-mp", "100", *extra, "--gui.enabled=false"],
+                             capture_output=True, text=True, timeout=1800)
+        found = re.findall(r"\((\d+) unrouted", run.stdout + run.stderr)
+        left = int(found[-1]) if found else 999
+        print(f"{tag} try {attempt}: {left} unrouted")
+        if out.exists() and (best is None or left < best[0]):
+            best = (left, out)
+        if left == 0:
+            break
+    if not best:
+        sys.exit("Freerouting wrote no session file")
+    return best[1]
+
+
 def main():
     jar = JAR or next((str(p) for p in Path(os.environ.get("TMPDIR", "/tmp")).rglob("freerouting-*.jar")), "")
     if not jar or not Path(jar).exists():
@@ -264,31 +353,20 @@ def main():
     work = HERE / "export" / "route"
     work.mkdir(parents=True, exist_ok=True)
     dsn, ses = work / "cane-board.dsn", work / "cane-board.ses"
+    tries = int(os.environ.get("ROUTE_TRIES", "2"))
     if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
         sys.exit("DSN export failed")
-    best = None
-    for attempt in range(int(os.environ.get("ROUTE_TRIES", "5"))):  # the router is not deterministic; keep the best run
-        out = work / f"try{attempt}.ses"
-        extra = [] if attempt == 0 else ["-is", "random", "-us", ["greedy", "global", "hybrid"][attempt % 3]]
-        run = subprocess.run([JAVA, "-jar", jar, "-de", str(dsn), "-do", str(out), "-mp", "100", *extra, "--gui.enabled=false"],
-                             capture_output=True, text=True, timeout=1800)
-        found = re.findall(r"\((\d+) unrouted", run.stdout + run.stderr)
-        left = int(found[-1]) if found else 999
-        print(f"try {attempt}: {left} unrouted")
-        if out.exists() and (best is None or left < best[0]):
-            best = (left, out)
-        if left == 0:
-            break
-    if not best:
-        sys.exit("Freerouting wrote no session file")
-    ses.write_bytes(best[1].read_bytes())
+    outer_only(dsn)  # battery, motor and converter tracks only on the outer layers
+    ses.write_bytes(freeroute(jar, dsn, work, "all", tries).read_bytes())
     if not pcbnew.ImportSpecctraSES(board, str(ses)):
         sys.exit("SES import failed")
 
     for z in fence:
         board.Remove(z)
     widen_thin_tracks(board)
-    widen_where_room(board, "/VM")
+    for net in SUPPLY + ["VBUS", "/VSYS"]:
+        widen_where_room(board, net, widths=(1.0, 0.8, 0.6, 0.5, 0.4))
+    aerial_keepout(board)
     for z in zones:
         board.Add(z)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
@@ -296,9 +374,9 @@ def main():
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(BOARD), board)
 
-    for fp in board.GetFootprints():  # the driver's footprint asks 0.2 mm; JLCPCB makes 0.127 mm, the routed board keeps 0.18
+    for fp in board.GetFootprints():  # the driver's footprint asks 0.2 mm; JLCPCB makes 0.127 mm, the routed board keeps 0.15
         if fp.GetReference() == "U2":
-            fp.SetLocalClearance(mm(0.18))
+            fp.SetLocalClearance(mm(0.15))
     pcbnew.SaveBoard(str(BOARD), board)
     black_board()
     report = work / "drc.json"

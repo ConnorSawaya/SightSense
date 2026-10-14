@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-10-14T01:39:35",
+    "date": "2026-10-14T11:55:24",
     "ignored_checks": [
         {
             "description": "Footprint has no courtyard defined",
@@ -37,10 +37,10 @@
                 {
                     "description": "Footprint C1",
                     "pos": {
-                        "x": 13.5,
+                        "x": 15.52,
                         "y": 65.2
                     },
-                    "uuid": "8f45480d-6078-40e9-887b-dac7f7fb3328"
+                    "uuid": "d109fc23-8f25-4cc6-92bf-9c7fb5d5d0c5"
                 }
             ],
             "severity": "warning",
@@ -52,10 +52,10 @@
                 {
                     "description": "Footprint C3",
                     "pos": {
-                        "x": 25.5,
+                        "x": 29.32,
                         "y": 72.6
                     },
-                    "uuid": "0640d33f-d8b5-49b3-8ddc-415059386d25"
+                    "uuid": "2e94a67c-0b5c-41ff-8820-ba20f2d391f4"
                 }
             ],
             "severity": "warning",
@@ -67,10 +67,10 @@
                 {
                     "description": "Footprint C4",
                     "pos": {
-                        "x": 20.8,
+                        "x": 23.92,
                         "y": 77.2
                     },
-                    "uuid": "e9dc9c6d-6168-4111-9509-efd1e60a7852"
+                    "uuid": "95601ddd-44f2-4dc3-95f3-15e3f847c87e"
                 }
             ],
             "severity": "warning",
@@ -82,10 +82,10 @@
                 {
                     "description": "Footprint C5",
                     "pos": {
-                        "x": 20.8,
+                        "x": 23.92,
                         "y": 79.0
                     },
-                    "uuid": "db522f13-9e9c-4cd7-801f-52430731fef3"
+                    "uuid": "af543f3f-a9b5-43f8-a10d-16eb2dc08804"
                 }
             ],
             "severity": "warning",
@@ -97,10 +97,10 @@
                 {
                     "description": "Footprint C6",
                     "pos": {
-                        "x": 20.8,
+                        "x": 23.92,
                         "y": 80.8
                     },
-                    "uuid": "2e714e10-2b93-44e4-9fa8-6cb1075332b5"
+                    "uuid": "73fcfe15-0e2e-491b-b100-270dcc287f2b"
                 }
             ],
             "severity": "warning",
@@ -112,10 +112,10 @@
                 {
                     "description": "Footprint C7",
                     "pos": {
-                        "x": 33.4,
+                        "x": 38.41,
                         "y": 80.0
                     },
-                    "uuid": "4e9ffb95-9cd8-48b9-9943-4f3d9103c817"
+                    "uuid": "f2949c3b-e4db-46b2-beb0-08e0b49a8917"
                 }
             ],
             "severity": "warning",
@@ -127,10 +127,10 @@
                 {
                     "description": "Footprint C8",
                     "pos": {
-                        "x": 37.0,
+                        "x": 42.55,
                         "y": 81.8
                     },
-                    "uuid": "d8154519-8c48-4eee-9068-3b0c42444ff7"
+                    "uuid": "7368a2a7-1a02-4c6a-b5c1-629f59175bb0"
                 }
             ],
             "severity": "warning",
@@ -142,10 +142,10 @@
                 {
                     "description": "Footprint C9",
                     "pos": {
-                        "x": 33.4,
+                        "x": 38.41,
                         "y": 84.0
                     },
-                    "uuid": "01774661-8760-461f-bafa-907470a62eab"
+                    "uuid": "2123dab6-cc9b-4ae4-9ca6-d7f6dac08684"
                 }
             ],
             "severity": "warning",
@@ -157,10 +157,10 @@
                 {
                     "description": "Footprint C10",
                     "pos": {
-                        "x": 9.5,
+                        "x": 10.92,
                         "y": 46.6
                     },
-                    "uuid": "cd4a4770-ce36-4f61-ab6c-0b697179a909"
+                    "uuid": "736fe781-b534-4d9e-8bd7-927f6ef8a187"
                 }
             ],
             "severity": "warning",
@@ -172,10 +172,10 @@
                 {
                     "description": "Footprint C11",
                     "pos": {
-                        "x": 14.2,
+                        "x": 16.33,
                         "y": 46.4
                     },
-                    "uuid": "51e703d2-cb62-48b6-b021-3089a94906fc"
+                    "uuid": "73e62f6d-0b24-4a92-9e89-ad23aef4ac46"
                 }
             ],
             "severity": "warning",
@@ -187,10 +187,10 @@
                 {
                     "description": "Footprint C12",
                     "pos": {
-                        "x": 14.5,
+                        "x": 16.67,
                         "y": 49.3
                     },
-                    "uuid": "595fcc38-85b2-4f79-a2df-37c3f5cefc53"
+                    "uuid": "f9e88893-fbcb-4da5-accb-80c3b027f793"
                 }
             ],
             "severity": "warning",
@@ -202,10 +202,10 @@
                 {
                     "description": "Footprint C13",
                     "pos": {
-                        "x": 15.2,
+                        "x": 17.48,
                         "y": 54.9
                     },
-                    "uuid": "244ecdeb-ce94-4adb-bcc1-577cf27cf934"
+                    "uuid": "7a106a9a-e21d-47ab-8abf-6e05b00f9e4e"
                 }
             ],
             "severity": "warning",
@@ -217,10 +217,10 @@
                 {
                     "description": "Footprint C14",
                     "pos": {
-                        "x": 15.2,
+                        "x": 17.48,
                         "y": 57.5
                     },
-                    "uuid": "9a56d7c9-b43b-4c0a-b600-93e697f982e5"
+                    "uuid": "f9882761-9143-49c5-9ded-ad81b787c029"
                 }
             ],
             "severity": "warning",
@@ -232,10 +232,10 @@
                 {
                     "description": "Footprint C15",
                     "pos": {
-                        "x": 19.0,
+                        "x": 21.85,
                         "y": 43.4
                     },
-                    "uuid": "659a94cc-06fc-495c-98ea-b94fd490937c"
+                    "uuid": "6d5048c4-71a0-4f2e-ad80-3ab170fd184c"
                 }
             ],
             "severity": "warning",
@@ -247,10 +247,10 @@
                 {
                     "description": "Footprint C16",
                     "pos": {
-                        "x": 24.2,
+                        "x": 27.83,
                         "y": 41.7
                     },
-                    "uuid": "7091e01e-9977-4d6e-bbfe-bd406a094d26"
+                    "uuid": "a996a4ea-e7c8-4913-8a35-9a5b5b50f926"
                 }
             ],
             "severity": "warning",
@@ -262,10 +262,10 @@
                 {
                     "description": "Footprint C17",
                     "pos": {
-                        "x": 28.0,
+                        "x": 32.2,
                         "y": 47.8
                     },
-                    "uuid": "123dc10b-60f5-4121-a849-e9db5f35e81a"
+                    "uuid": "b252e7f5-2e7b-41f7-a96c-75e5e7ac4982"
                 }
             ],
             "severity": "warning",
@@ -277,10 +277,10 @@
                 {
                     "description": "Footprint C17",
                     "pos": {
-                        "x": 28.0,
+                        "x": 32.2,
                         "y": 47.8
                     },
-                    "uuid": "123dc10b-60f5-4121-a849-e9db5f35e81a"
+                    "uuid": "b252e7f5-2e7b-41f7-a96c-75e5e7ac4982"
                 }
             ],
             "severity": "warning",
@@ -292,10 +292,10 @@
                 {
                     "description": "Footprint C18",
                     "pos": {
-                        "x": 28.0,
+                        "x": 32.2,
                         "y": 50.4
                     },
-                    "uuid": "2f00eeed-c87f-434c-b7a4-307c48a64fcb"
+                    "uuid": "b54a7a10-8882-4ec9-9572-3e88393d8cea"
                 }
             ],
             "severity": "warning",
@@ -307,10 +307,10 @@
                 {
                     "description": "Footprint C18",
                     "pos": {
-                        "x": 28.0,
+                        "x": 32.2,
                         "y": 50.4
                     },
-                    "uuid": "2f00eeed-c87f-434c-b7a4-307c48a64fcb"
+                    "uuid": "b54a7a10-8882-4ec9-9572-3e88393d8cea"
                 }
             ],
             "severity": "warning",
@@ -322,10 +322,10 @@
                 {
                     "description": "Footprint C19",
                     "pos": {
-                        "x": 8.8,
+                        "x": 10.12,
                         "y": 12.9
                     },
-                    "uuid": "886048a1-6560-4b0b-a47f-2c9bc47dc533"
+                    "uuid": "03236403-1b8e-4b91-b353-716c6ed51459"
                 }
             ],
             "severity": "warning",
@@ -337,10 +337,10 @@
                 {
                     "description": "Footprint C20",
                     "pos": {
-                        "x": 8.8,
+                        "x": 10.12,
                         "y": 8.6
                     },
-                    "uuid": "6cb97844-987e-4067-b7af-2db7c0c38192"
+                    "uuid": "4e02b773-2d80-4bbd-8859-45e989fa9cae"
                 }
             ],
             "severity": "warning",
@@ -352,10 +352,10 @@
                 {
                     "description": "Footprint C21",
                     "pos": {
-                        "x": 15.3,
+                        "x": 17.59,
                         "y": 34.3
                     },
-                    "uuid": "432a3f3a-f123-438c-bb7c-24efda87a4de"
+                    "uuid": "06d683e5-955a-48c7-8288-780d0543cf78"
                 }
             ],
             "severity": "warning",
@@ -367,10 +367,10 @@
                 {
                     "description": "Footprint C22",
                     "pos": {
-                        "x": 35.1,
+                        "x": 40.37,
                         "y": 34.3
                     },
-                    "uuid": "67e2940c-801b-4ce7-a7ba-924b7f598b07"
+                    "uuid": "495935f7-c8f8-4974-824e-7e496a449a2e"
                 }
             ],
             "severity": "warning",
@@ -382,10 +382,10 @@
                 {
                     "description": "Footprint C23",
                     "pos": {
-                        "x": 35.1,
+                        "x": 40.37,
                         "y": 36.3
                     },
-                    "uuid": "d0b2632c-addf-42b8-9f4b-74448a6bacc7"
+                    "uuid": "cef18bf1-927e-4f39-b46d-e46ebf1fbc4b"
                 }
             ],
             "severity": "warning",
@@ -397,10 +397,10 @@
                 {
                     "description": "Footprint C24",
                     "pos": {
-                        "x": 8.8,
+                        "x": 10.12,
                         "y": 23.6
                     },
-                    "uuid": "a63d3e31-91a6-4655-8a8d-96d9f7150383"
+                    "uuid": "f5bf6a4d-8284-4e1f-9a4d-ab432bbc8c4b"
                 }
             ],
             "severity": "warning",
@@ -412,10 +412,10 @@
                 {
                     "description": "Footprint C25",
                     "pos": {
-                        "x": 14.5,
+                        "x": 16.67,
                         "y": 51.1
                     },
-                    "uuid": "d2573480-ae9c-46c0-b79c-4f3483ffc24f"
+                    "uuid": "4ea8304c-2c30-495b-b45b-12063bb4e52e"
                 }
             ],
             "severity": "warning",
@@ -427,10 +427,10 @@
                 {
                     "description": "Footprint C26",
                     "pos": {
-                        "x": 24.8,
+                        "x": 28.52,
                         "y": 61.6
                     },
-                    "uuid": "07254597-51e9-46a8-a6d3-2a1d4226f9bc"
+                    "uuid": "d9c720e7-89a9-4ac3-bd1d-e2627ad9774c"
                 }
             ],
             "severity": "warning",
@@ -442,10 +442,10 @@
                 {
                     "description": "Footprint C27",
                     "pos": {
-                        "x": 30.3,
+                        "x": 34.84,
                         "y": 72.6
                     },
-                    "uuid": "52524876-356e-4dcc-b88c-84a79021e412"
+                    "uuid": "1f2fb483-186d-4fc2-bb7f-6250806553ed"
                 }
             ],
             "severity": "warning",
@@ -457,10 +457,10 @@
                 {
                     "description": "Footprint D1",
                     "pos": {
-                        "x": 4.2,
+                        "x": 4.83,
                         "y": 83.5
                     },
-                    "uuid": "621535e0-51d8-4d15-a3e6-e1e0586a6bce"
+                    "uuid": "f67066cd-5681-4f77-8acc-b285b10ba1d7"
                 }
             ],
             "severity": "warning",
@@ -472,10 +472,10 @@
                 {
                     "description": "Footprint D4",
                     "pos": {
-                        "x": 37.0,
+                        "x": 42.55,
                         "y": 85.2
                     },
-                    "uuid": "b20eaaa2-b8a8-46bb-aa35-f18962bc79b8"
+                    "uuid": "72dbdd4a-a1d3-4e17-8afa-e7ef2b709614"
                 }
             ],
             "severity": "warning",
@@ -487,10 +487,10 @@
                 {
                     "description": "Footprint D5",
                     "pos": {
-                        "x": 24.2,
+                        "x": 27.83,
                         "y": 38.9
                     },
-                    "uuid": "2f5001a4-e579-40b4-a30b-fc9ae98911a3"
+                    "uuid": "b4d1b639-2e8d-456c-93ce-07832ef30a22"
                 }
             ],
             "severity": "warning",
@@ -502,10 +502,10 @@
                 {
                     "description": "Footprint D6",
                     "pos": {
-                        "x": 34.6,
+                        "x": 39.79,
                         "y": 24.6
                     },
-                    "uuid": "2db6f771-6dd3-4f16-a381-47e78d2790e5"
+                    "uuid": "56df7547-daa5-46ab-85d4-705a1b8a36fe"
                 }
             ],
             "severity": "warning",
@@ -517,10 +517,10 @@
                 {
                     "description": "Footprint D7",
                     "pos": {
-                        "x": 11.5,
+                        "x": 13.22,
                         "y": 43.2
                     },
-                    "uuid": "d64197c4-0425-46e6-82e8-b4824421f151"
+                    "uuid": "f2296561-3d6c-440a-a9dd-e650f32bc756"
                 }
             ],
             "severity": "warning",
@@ -532,10 +532,10 @@
                 {
                     "description": "Footprint D8",
                     "pos": {
-                        "x": 32.2,
+                        "x": 37.03,
                         "y": 20.1
                     },
-                    "uuid": "4c2f76d5-af9a-4f63-8df2-7e824fca6439"
+                    "uuid": "86d267e8-a6fa-4049-bc25-5f15aff0cdd1"
                 }
             ],
             "severity": "warning",
@@ -547,10 +547,10 @@
                 {
                     "description": "Footprint D9",
                     "pos": {
-                        "x": 32.2,
+                        "x": 37.03,
                         "y": 21.9
                     },
-                    "uuid": "138e1179-9625-4171-8719-48521d6519ff"
+                    "uuid": "830a9955-f263-48ba-b556-075c962e88ef"
                 }
             ],
             "severity": "warning",
@@ -562,10 +562,10 @@
                 {
                     "description": "Footprint F1",
                     "pos": {
-                        "x": 13.2,
+                        "x": 15.18,
                         "y": 80.5
                     },
-                    "uuid": "cbeb7b37-81cc-4e28-8c05-e808d9b9b1bb"
+                    "uuid": "921246b0-6578-4668-98fa-43f4120e42a2"
                 }
             ],
             "severity": "warning",
@@ -580,7 +580,7 @@
                         "x": 3.4987,
                         "y": 29.5
                     },
-                    "uuid": "358e2e40-983a-4075-8b22-c180ae9303a3"
+                    "uuid": "c3d1cca9-6a50-4f00-9423-ed6379b17786"
                 }
             ],
             "severity": "warning",
@@ -592,10 +592,10 @@
                 {
                     "description": "Footprint H2",
                     "pos": {
-                        "x": 36.4987,
+                        "x": 42.4987,
                         "y": 29.5
                     },
-                    "uuid": "9227b895-3ad5-4746-9b21-d7554b405356"
+                    "uuid": "e7e1c79c-a850-4eba-bf59-78522def8665"
                 }
             ],
             "severity": "warning",
@@ -610,7 +610,7 @@
                         "x": 3.4987,
                         "y": 96.5
                     },
-                    "uuid": "41bc9b7e-089f-4dc0-b3c0-78e26c636f21"
+                    "uuid": "c23bcbeb-3825-4ad2-b5a4-170bab180eb9"
                 }
             ],
             "severity": "warning",
@@ -622,10 +622,10 @@
                 {
                     "description": "Footprint H4",
                     "pos": {
-                        "x": 36.4987,
+                        "x": 42.4987,
                         "y": 96.5
                     },
-                    "uuid": "71a057d2-f745-46a5-a518-a6ca08d93c3e"
+                    "uuid": "5a73c37e-5fed-4bfe-9db7-6214dd78f6a2"
                 }
             ],
             "severity": "warning",
@@ -637,10 +637,10 @@
                 {
                     "description": "Footprint J1",
                     "pos": {
-                        "x": 11.9,
+                        "x": 13.83,
                         "y": 85.9
                     },
-                    "uuid": "d8ea27c5-bf82-4144-99bf-5f82e16978c1"
+                    "uuid": "7d56304f-8ca5-4307-b432-f1c8001b39f6"
                 }
             ],
             "severity": "warning",
@@ -652,10 +652,10 @@
                 {
                     "description": "PTH pad 3 [<no net>] of J1",
                     "pos": {
-                        "x": 16.6,
+                        "x": 18.53,
                         "y": 88.9
                     },
-                    "uuid": "c24239db-1da5-44ef-8b6c-9e0bcc04c3e9"
+                    "uuid": "c12330ab-d2f0-4674-a20b-eca4e25190ca"
                 }
             ],
             "severity": "warning",
@@ -667,10 +667,10 @@
                 {
                     "description": "Footprint J2",
                     "pos": {
-                        "x": 24.455,
+                        "x": 28.505,
                         "y": 94.805
                     },
-                    "uuid": "313c059c-31a3-450d-af17-786800f06955"
+                    "uuid": "7015ff91-bcbe-428e-9fcd-1aaca5056025"
                 }
             ],
             "severity": "warning",
@@ -682,10 +682,10 @@
                 {
                     "description": "Footprint J3",
                     "pos": {
-                        "x": 3.475,
+                        "x": 4.075,
                         "y": 13.25
                     },
-                    "uuid": "92c37762-857e-4612-bb7d-664ffd23a893"
+                    "uuid": "3dc24891-2f72-45db-b27b-f5c39ba91370"
                 }
             ],
             "severity": "warning",
@@ -697,10 +697,10 @@
                 {
                     "description": "Footprint J4",
                     "pos": {
-                        "x": 3.475,
+                        "x": 4.075,
                         "y": 22.25
                     },
-                    "uuid": "bceb253f-97b6-41c4-832b-bfb3677b91ea"
+                    "uuid": "f1df1d4a-abf7-4938-90af-e282357125c3"
                 }
             ],
             "severity": "warning",
@@ -712,10 +712,10 @@
                 {
                     "description": "Footprint J5",
                     "pos": {
-                        "x": 3.475,
+                        "x": 4.075,
                         "y": 75.25
                     },
-                    "uuid": "bacca30d-11e6-4eaa-8a71-37243d68a749"
+                    "uuid": "f8652c50-4720-4549-b0d1-b3c3466a9039"
                 }
             ],
             "severity": "warning",
@@ -727,10 +727,10 @@
                 {
                     "description": "Footprint J6",
                     "pos": {
-                        "x": 2.3,
+                        "x": 2.64,
                         "y": 54.69
                     },
-                    "uuid": "3d826b98-7437-4d6b-8f20-ede3eac1593b"
+                    "uuid": "d2e51532-3329-46e4-89c7-48fff0522b4b"
                 }
             ],
             "severity": "warning",
@@ -742,10 +742,10 @@
                 {
                     "description": "Footprint J7",
                     "pos": {
-                        "x": 3.475,
+                        "x": 4.075,
                         "y": 39.25
                     },
-                    "uuid": "c89bb784-f025-4d7c-b7a2-caf0384318d5"
+                    "uuid": "72b6517f-0df2-4209-b578-8a294c7caf3d"
                 }
             ],
             "severity": "warning",
@@ -757,10 +757,10 @@
                 {
                     "description": "Footprint J8",
                     "pos": {
-                        "x": 2.3,
+                        "x": 2.64,
                         "y": 44.96
                     },
-                    "uuid": "4b7e9ca3-e63c-4fca-8d71-c17d21a531ba"
+                    "uuid": "f1f22eb8-504f-4362-a0a9-64de42664a64"
                 }
             ],
             "severity": "warning",
@@ -772,10 +772,10 @@
                 {
                     "description": "Footprint J10",
                     "pos": {
-                        "x": 36.025,
+                        "x": 42.025,
                         "y": 46.0
                     },
-                    "uuid": "3000def5-8bb7-400a-acd4-3ffa3f16fc2c"
+                    "uuid": "5ed9a056-48ba-428b-9e82-282615830c6c"
                 }
             ],
             "severity": "warning",
@@ -787,10 +787,10 @@
                 {
                     "description": "Footprint J10",
                     "pos": {
-                        "x": 36.025,
+                        "x": 42.025,
                         "y": 46.0
                     },
-                    "uuid": "3000def5-8bb7-400a-acd4-3ffa3f16fc2c"
+                    "uuid": "5ed9a056-48ba-428b-9e82-282615830c6c"
                 }
             ],
             "severity": "warning",
@@ -802,10 +802,10 @@
                 {
                     "description": "Footprint J11",
                     "pos": {
-                        "x": 35.8,
+                        "x": 41.8,
                         "y": 13.0
                     },
-                    "uuid": "9ee1363a-1b99-4d17-9113-776241a79b70"
+                    "uuid": "def8c1db-c33e-45ed-a9a8-0fb29a0e7cc0"
                 }
             ],
             "severity": "warning",
@@ -817,10 +817,10 @@
                 {
                     "description": "Pad A8 [<no net>] of J11 on F.Cu",
                     "pos": {
-                        "x": 31.755,
+                        "x": 37.755,
                         "y": 11.75
                     },
-                    "uuid": "381785e0-ec89-43c7-8f28-387746a54b34"
+                    "uuid": "54882e64-6024-468b-8810-85a43a1fc973"
                 }
             ],
             "severity": "warning",
@@ -832,10 +832,10 @@
                 {
                     "description": "Pad B8 [<no net>] of J11 on F.Cu",
                     "pos": {
-                        "x": 31.755,
+                        "x": 37.755,
                         "y": 14.75
                     },
-                    "uuid": "ac44cf6f-0f1c-4f0d-a7c6-ab78ad474049"
+                    "uuid": "6bbbb6a9-fe25-4fb8-b58b-83a2577e77b5"
                 }
             ],
             "severity": "warning",
@@ -847,10 +847,10 @@
                 {
                     "description": "Footprint JP1",
                     "pos": {
-                        "x": 26.0,
+                        "x": 29.9,
                         "y": 85.8
                     },
-                    "uuid": "375f430f-c21e-4cbf-b8b1-f74880776493"
+                    "uuid": "53a4f8d2-dda3-468f-b95e-50bf112c9ab1"
                 }
             ],
             "severity": "warning",
@@ -862,10 +862,10 @@
                 {
                     "description": "Footprint L1",
                     "pos": {
-                        "x": 9.0,
+                        "x": 10.35,
                         "y": 56.2
                     },
-                    "uuid": "3a5b17f9-2cb7-40f0-be3a-c30729719512"
+                    "uuid": "8213a47e-c842-40fd-b994-8ff44e58f33d"
                 }
             ],
             "severity": "warning",
@@ -877,10 +877,10 @@
                 {
                     "description": "Footprint LED1",
                     "pos": {
-                        "x": 31.4,
+                        "x": 36.11,
                         "y": 59.6
                     },
-                    "uuid": "207ce459-fc44-4cfe-8b6f-c7e66f7bd869"
+                    "uuid": "71eeecca-99ec-4e60-9cb3-6c2c6bd28130"
                 }
             ],
             "severity": "warning",
@@ -892,10 +892,10 @@
                 {
                     "description": "Footprint LED2",
                     "pos": {
-                        "x": 28.6,
+                        "x": 32.89,
                         "y": 40.4
                     },
-                    "uuid": "7b47245c-054b-48c1-8f69-b27b9897f42f"
+                    "uuid": "e15f0c18-e8fe-4910-9a0e-f63f12bee170"
                 }
             ],
             "severity": "warning",
@@ -907,10 +907,10 @@
                 {
                     "description": "Footprint LED3",
                     "pos": {
-                        "x": 25.2,
+                        "x": 28.98,
                         "y": 34.3
                     },
-                    "uuid": "8a528f1c-4a95-414e-a874-8cddffa954cf"
+                    "uuid": "96fc8183-a28e-4fb0-93c5-7dcacc7de5f3"
                 }
             ],
             "severity": "warning",
@@ -922,10 +922,10 @@
                 {
                     "description": "Footprint Q1",
                     "pos": {
-                        "x": 14.5,
+                        "x": 16.67,
                         "y": 74.3
                     },
-                    "uuid": "2bd2e80d-177b-4d7a-8981-4dd7d27ab9a4"
+                    "uuid": "958f99b8-c203-42db-ad8a-bf613bc61a35"
                 }
             ],
             "severity": "warning",
@@ -937,10 +937,10 @@
                 {
                     "description": "Footprint Q2",
                     "pos": {
-                        "x": 24.0,
+                        "x": 27.6,
                         "y": 66.0
                     },
-                    "uuid": "f588131d-fe0c-4a73-b808-b8b8c6fe6ce1"
+                    "uuid": "e4a33bca-ffbb-4c5f-96de-e20f69f08b45"
                 }
             ],
             "severity": "warning",
@@ -952,10 +952,10 @@
                 {
                     "description": "Footprint Q3",
                     "pos": {
-                        "x": 10.0,
+                        "x": 11.5,
                         "y": 39.5
                     },
-                    "uuid": "94809772-c493-40d6-9d07-11e14abf41af"
+                    "uuid": "f7860620-cd5c-471e-8e95-1df2f6f38c90"
                 }
             ],
             "severity": "warning",
@@ -967,10 +967,10 @@
                 {
                     "description": "Footprint Q4",
                     "pos": {
-                        "x": 19.5,
+                        "x": 22.42,
                         "y": 74.3
                     },
-                    "uuid": "54376084-a386-4eb5-a193-42527470802a"
+                    "uuid": "f7709558-d1c3-449c-9793-dbccdda9bc05"
                 }
             ],
             "severity": "warning",
@@ -982,10 +982,10 @@
                 {
                     "description": "Footprint R1",
                     "pos": {
-                        "x": 16.5,
+                        "x": 18.97,
                         "y": 71.2
                     },
-                    "uuid": "5da3f35c-8fe5-4ac5-96d0-76a4913c7724"
+                    "uuid": "99a3ca94-5101-492a-9046-10e5bb22cb5b"
                 }
             ],
             "severity": "warning",
@@ -997,10 +997,10 @@
                 {
                     "description": "Footprint R2",
                     "pos": {
-                        "x": 21.5,
+                        "x": 24.72,
                         "y": 61.6
                     },
-                    "uuid": "8d1fc8be-e66c-46be-ba8c-660de6723b99"
+                    "uuid": "485f35a1-fa82-407a-80c9-dc6c3d0df0da"
                 }
             ],
             "severity": "warning",
@@ -1012,10 +1012,10 @@
                 {
                     "description": "Footprint R3",
                     "pos": {
-                        "x": 28.1,
+                        "x": 32.31,
                         "y": 61.6
                     },
-                    "uuid": "f0b9b325-05ca-4e43-a84a-401ed3f197ba"
+                    "uuid": "4226271a-e35b-4a67-891a-153f44448dfc"
                 }
             ],
             "severity": "warning",
@@ -1027,10 +1027,10 @@
                 {
                     "description": "Footprint R4",
                     "pos": {
-                        "x": 28.1,
+                        "x": 32.31,
                         "y": 59.6
                     },
-                    "uuid": "08132fc9-fb9f-4f93-a321-86490cfa21e0"
+                    "uuid": "129f0b69-3bdf-4914-9ebf-cd1ca47d00ed"
                 }
             ],
             "severity": "warning",
@@ -1042,10 +1042,10 @@
                 {
                     "description": "Footprint R5",
                     "pos": {
-                        "x": 33.4,
+                        "x": 38.41,
                         "y": 76.4
                     },
-                    "uuid": "a4ff4980-b406-4dcf-90f0-be9cba8bb0ca"
+                    "uuid": "0db9f9d5-42be-413f-a194-d77335405b2b"
                 }
             ],
             "severity": "warning",
@@ -1057,10 +1057,10 @@
                 {
                     "description": "Footprint R6",
                     "pos": {
-                        "x": 33.4,
+                        "x": 38.41,
                         "y": 78.2
                     },
-                    "uuid": "66918495-c7e4-43a0-ab46-628f2fcbef39"
+                    "uuid": "912a1bba-a831-4248-9c6d-0cf49bd57f1a"
                 }
             ],
             "severity": "warning",
@@ -1072,10 +1072,10 @@
                 {
                     "description": "Footprint R7",
                     "pos": {
-                        "x": 33.4,
+                        "x": 38.41,
                         "y": 81.8
                     },
-                    "uuid": "cb63865b-f342-4f08-809f-73f9fc3a00f5"
+                    "uuid": "7d052fad-09f5-431c-adc2-91992935131a"
                 }
             ],
             "severity": "warning",
@@ -1087,10 +1087,10 @@
                 {
                     "description": "Footprint R8",
                     "pos": {
-                        "x": 37.0,
+                        "x": 42.55,
                         "y": 76.4
                     },
-                    "uuid": "5569fe26-0235-4f2a-8611-6d5ab742e987"
+                    "uuid": "2dcc91c9-1a1d-40e0-849c-0ce05d6d7acb"
                 }
             ],
             "severity": "warning",
@@ -1102,10 +1102,10 @@
                 {
                     "description": "Footprint R9",
                     "pos": {
-                        "x": 37.0,
+                        "x": 42.55,
                         "y": 78.2
                     },
-                    "uuid": "4335111d-57fc-46b5-9a77-fac527e8d4f5"
+                    "uuid": "83196cca-1041-4052-8f62-5e5e1a05cca0"
                 }
             ],
             "severity": "warning",
@@ -1117,10 +1117,10 @@
                 {
                     "description": "Footprint R10",
                     "pos": {
-                        "x": 37.0,
+                        "x": 42.55,
                         "y": 80.0
                     },
-                    "uuid": "be25331d-3773-460a-988f-59765ede06ad"
+                    "uuid": "66b07a27-53f4-407e-a292-47c024bb901a"
                 }
             ],
             "severity": "warning",
@@ -1132,10 +1132,10 @@
                 {
                     "description": "Footprint R11",
                     "pos": {
-                        "x": 33.4,
+                        "x": 38.41,
                         "y": 85.8
                     },
-                    "uuid": "35d4271d-9226-47db-b63a-1a4146c56f16"
+                    "uuid": "58e8fa01-9027-4a20-8028-d5a6e8763fe4"
                 }
             ],
             "severity": "warning",
@@ -1147,10 +1147,10 @@
                 {
                     "description": "Footprint R12",
                     "pos": {
-                        "x": 18.0,
+                        "x": 20.7,
                         "y": 49.3
                     },
-                    "uuid": "4367cb34-fe15-4cda-926e-ae936336a55a"
+                    "uuid": "0ba345ab-0731-4021-93fa-b20b2ed3c0e0"
                 }
             ],
             "severity": "warning",
@@ -1162,10 +1162,10 @@
                 {
                     "description": "Footprint R13",
                     "pos": {
-                        "x": 18.0,
+                        "x": 20.7,
                         "y": 51.1
                     },
-                    "uuid": "2aaa1d6a-4ba8-4b80-a3da-92b92ff10347"
+                    "uuid": "35a6d6ae-4dba-4847-b4c9-c904e3b5a381"
                 }
             ],
             "severity": "warning",
@@ -1177,10 +1177,10 @@
                 {
                     "description": "Footprint R14",
                     "pos": {
-                        "x": 28.6,
+                        "x": 32.89,
                         "y": 38.6
                     },
-                    "uuid": "30d7768b-555b-4dae-85c1-09c04869afbd"
+                    "uuid": "2e95871c-bd13-4eed-8d0e-546386f8a172"
                 }
             ],
             "severity": "warning",
@@ -1192,10 +1192,10 @@
                 {
                     "description": "Footprint R15",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 45.0
                     },
-                    "uuid": "2ce0f7dc-475a-4a86-9e28-74709e48352d"
+                    "uuid": "4787d7fb-f104-4df1-b65e-243aadfd0e70"
                 }
             ],
             "severity": "warning",
@@ -1207,10 +1207,10 @@
                 {
                     "description": "Footprint R15",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 45.0
                     },
-                    "uuid": "2ce0f7dc-475a-4a86-9e28-74709e48352d"
+                    "uuid": "4787d7fb-f104-4df1-b65e-243aadfd0e70"
                 }
             ],
             "severity": "warning",
@@ -1222,10 +1222,10 @@
                 {
                     "description": "Footprint R16",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 46.8
                     },
-                    "uuid": "91fad890-d695-42da-a041-2396234ed605"
+                    "uuid": "6bc7175a-0d60-4625-a45f-891691ecdb98"
                 }
             ],
             "severity": "warning",
@@ -1237,10 +1237,10 @@
                 {
                     "description": "Footprint R16",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 46.8
                     },
-                    "uuid": "91fad890-d695-42da-a041-2396234ed605"
+                    "uuid": "6bc7175a-0d60-4625-a45f-891691ecdb98"
                 }
             ],
             "severity": "warning",
@@ -1252,10 +1252,10 @@
                 {
                     "description": "Footprint R17",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 48.6
                     },
-                    "uuid": "0b5c9b6a-6417-4e11-a8a3-21850d05f308"
+                    "uuid": "daf6d4f4-cdc8-4434-8330-85a1d79f7964"
                 }
             ],
             "severity": "warning",
@@ -1267,10 +1267,10 @@
                 {
                     "description": "Footprint R17",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 48.6
                     },
-                    "uuid": "0b5c9b6a-6417-4e11-a8a3-21850d05f308"
+                    "uuid": "daf6d4f4-cdc8-4434-8330-85a1d79f7964"
                 }
             ],
             "severity": "warning",
@@ -1282,10 +1282,10 @@
                 {
                     "description": "Footprint R18",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 50.4
                     },
-                    "uuid": "04329d06-2803-4522-b490-5e530ba8314a"
+                    "uuid": "2605b953-5430-402a-bed5-3d0ec80b0112"
                 }
             ],
             "severity": "warning",
@@ -1297,10 +1297,10 @@
                 {
                     "description": "Footprint R18",
                     "pos": {
-                        "x": 23.4,
+                        "x": 26.91,
                         "y": 50.4
                     },
-                    "uuid": "04329d06-2803-4522-b490-5e530ba8314a"
+                    "uuid": "2605b953-5430-402a-bed5-3d0ec80b0112"
                 }
             ],
             "severity": "warning",
@@ -1312,10 +1312,10 @@
                 {
                     "description": "Footprint R19",
                     "pos": {
-                        "x": 37.6,
+                        "x": 43.24,
                         "y": 20.1
                     },
-                    "uuid": "bb7fd246-505e-4327-bd3b-bf5d039eeb87"
+                    "uuid": "f73273bf-2da8-456b-af53-ab91e13ebfa7"
                 }
             ],
             "severity": "warning",
@@ -1327,10 +1327,10 @@
                 {
                     "description": "Footprint R20",
                     "pos": {
-                        "x": 37.6,
+                        "x": 43.24,
                         "y": 21.9
                     },
-                    "uuid": "d770dae4-cae1-4813-8264-f62e815b2793"
+                    "uuid": "8d3a8559-3f69-4968-9289-e0bf272bf8ae"
                 }
             ],
             "severity": "warning",
@@ -1342,10 +1342,10 @@
                 {
                     "description": "Footprint R21",
                     "pos": {
-                        "x": 12.0,
+                        "x": 13.8,
                         "y": 34.3
                     },
-                    "uuid": "dbe176ca-d8c5-4863-8865-72b5602726eb"
+                    "uuid": "d04325a3-e3a9-4233-ac94-e02ab4d8270b"
                 }
             ],
             "severity": "warning",
@@ -1357,10 +1357,10 @@
                 {
                     "description": "Footprint R22",
                     "pos": {
-                        "x": 18.6,
+                        "x": 21.39,
                         "y": 34.3
                     },
-                    "uuid": "e4e165f3-94b1-4492-922b-fbee3518ae38"
+                    "uuid": "6630a41a-4f73-45d0-aca0-e3f3ced58226"
                 }
             ],
             "severity": "warning",
@@ -1372,10 +1372,10 @@
                 {
                     "description": "Footprint R23",
                     "pos": {
-                        "x": 21.9,
+                        "x": 25.18,
                         "y": 34.3
                     },
-                    "uuid": "47f5131f-a0ba-40c4-b0b8-e36bbb366820"
+                    "uuid": "bf2c80d0-1257-479f-9b3a-f28f4f2a6f37"
                 }
             ],
             "severity": "warning",
@@ -1387,10 +1387,10 @@
                 {
                     "description": "Footprint R24",
                     "pos": {
-                        "x": 28.5,
+                        "x": 32.77,
                         "y": 34.3
                     },
-                    "uuid": "d2694162-9da9-4d71-bec5-0f2a7c9fae10"
+                    "uuid": "d983c937-b062-4da9-894b-cd0d26c3d196"
                 }
             ],
             "severity": "warning",
@@ -1402,10 +1402,10 @@
                 {
                     "description": "Footprint R25",
                     "pos": {
-                        "x": 31.8,
+                        "x": 36.57,
                         "y": 34.3
                     },
-                    "uuid": "a9154b98-c508-4367-ba0b-fc99e57745de"
+                    "uuid": "7c6d00e4-6fcd-4789-8fab-b9337721098b"
                 }
             ],
             "severity": "warning",
@@ -1417,10 +1417,10 @@
                 {
                     "description": "Footprint R26",
                     "pos": {
-                        "x": 30.0,
+                        "x": 34.5,
                         "y": 69.5
                     },
-                    "uuid": "14b5aa62-468d-444f-9e01-9f85d1dc3076"
+                    "uuid": "9e1d4f10-15fa-4bd8-ac70-89a2c3794012"
                 }
             ],
             "severity": "warning",
@@ -1432,10 +1432,10 @@
                 {
                     "description": "Footprint R27",
                     "pos": {
-                        "x": 31.8,
+                        "x": 36.57,
                         "y": 36.3
                     },
-                    "uuid": "ed4b649c-0ad1-43fa-93ce-e529e5ac0d25"
+                    "uuid": "0ef0a8b2-5fbb-4a46-9208-eff6598564f1"
                 }
             ],
             "severity": "warning",
@@ -1447,10 +1447,10 @@
                 {
                     "description": "Footprint R28",
                     "pos": {
-                        "x": 8.8,
+                        "x": 10.12,
                         "y": 17.2
                     },
-                    "uuid": "82e95256-d805-4121-8e5f-64b895d8156c"
+                    "uuid": "ba25da07-dda9-47ca-8984-54bdc9a0ac40"
                 }
             ],
             "severity": "warning",
@@ -1462,10 +1462,10 @@
                 {
                     "description": "Footprint R29",
                     "pos": {
-                        "x": 8.8,
+                        "x": 10.12,
                         "y": 20.4
                     },
-                    "uuid": "0092b49e-4550-4ff4-9c58-bc93524e9bf0"
+                    "uuid": "e725ec6c-456b-4d49-ab9c-294286a63145"
                 }
             ],
             "severity": "warning",
@@ -1477,10 +1477,10 @@
                 {
                     "description": "Footprint R30",
                     "pos": {
-                        "x": 6.2,
+                        "x": 7.13,
                         "y": 61.5
                     },
-                    "uuid": "26a587fd-8d95-47d8-80a6-6b1038dd96a3"
+                    "uuid": "1cfef64f-eaf3-4085-af44-19ca830bd791"
                 }
             ],
             "severity": "warning",
@@ -1492,10 +1492,10 @@
                 {
                     "description": "Footprint R31",
                     "pos": {
-                        "x": 6.2,
+                        "x": 7.13,
                         "y": 63.2
                     },
-                    "uuid": "d86b1f77-7f98-4b92-a3a1-d281e310c6ed"
+                    "uuid": "32096073-4d4b-423c-a80b-a67e298c2117"
                 }
             ],
             "severity": "warning",
@@ -1507,10 +1507,10 @@
                 {
                     "description": "Footprint R32",
                     "pos": {
-                        "x": 14.2,
+                        "x": 16.33,
                         "y": 38.6
                     },
-                    "uuid": "753c825a-d596-4632-8000-5b9846dd625a"
+                    "uuid": "9b34a65c-acab-486d-9ba2-06306ed97ba4"
                 }
             ],
             "severity": "warning",
@@ -1522,10 +1522,10 @@
                 {
                     "description": "Footprint R33",
                     "pos": {
-                        "x": 14.2,
+                        "x": 16.33,
                         "y": 40.4
                     },
-                    "uuid": "219c2dd8-3ab8-409c-aa44-f13263868b72"
+                    "uuid": "ce8787fa-9e04-46d8-b836-9b22b2d6e7f1"
                 }
             ],
             "severity": "warning",
@@ -1537,10 +1537,10 @@
                 {
                     "description": "Footprint R34",
                     "pos": {
-                        "x": 12.0,
+                        "x": 13.8,
                         "y": 71.2
                     },
-                    "uuid": "7ae13803-9629-4984-8cc5-728c70ae5e47"
+                    "uuid": "a20b9089-5e80-4403-8d91-71519ff4303c"
                 }
             ],
             "severity": "warning",
@@ -1552,10 +1552,10 @@
                 {
                     "description": "Footprint SW1",
                     "pos": {
-                        "x": 25.0,
+                        "x": 28.75,
                         "y": 29.5
                     },
-                    "uuid": "18df8e18-5b3d-4a1b-b74e-e5d6c1da0b67"
+                    "uuid": "b6d8b8f5-89b3-4f39-aecc-c88fa0f85995"
                 }
             ],
             "severity": "warning",
@@ -1567,10 +1567,10 @@
                 {
                     "description": "Footprint SW2",
                     "pos": {
-                        "x": 15.0,
+                        "x": 17.25,
                         "y": 29.5
                     },
-                    "uuid": "9924a098-f1ca-4dc1-8672-81d5aa44c8ac"
+                    "uuid": "f147c5e2-e998-4fe1-ab1c-4a668b797d85"
                 }
             ],
             "severity": "warning",
@@ -1582,10 +1582,10 @@
                 {
                     "description": "Footprint SW3",
                     "pos": {
-                        "x": 36.845,
+                        "x": 42.845,
                         "y": 57.5
                     },
-                    "uuid": "e2b05e9e-acf6-4c3d-b6b3-bd00bb97847a"
+                    "uuid": "4ff3bca5-5070-4164-b863-3f418e60cbfa"
                 }
             ],
             "severity": "warning",
@@ -1597,10 +1597,10 @@
                 {
                     "description": "Pad 1 [<no net>] of SW3 on F.Cu",
                     "pos": {
-                        "x": 34.895,
+                        "x": 40.895,
                         "y": 59.75
                     },
-                    "uuid": "8f826b59-372d-4fc8-8c13-4c0c9aff2e56"
+                    "uuid": "97bd2ab0-ab38-447a-9b93-5a1429b06d8b"
                 }
             ],
             "severity": "warning",
@@ -1612,10 +1612,10 @@
                 {
                     "description": "Footprint U1",
                     "pos": {
-                        "x": 20.0,
+                        "x": 23.0,
                         "y": 12.75
                     },
-                    "uuid": "b7e7d542-ff8f-40ae-98b2-4396afef6b97"
+                    "uuid": "fbcfec36-af0c-43f2-bc2a-513ea1498162"
                 }
             ],
             "severity": "warning",
@@ -1627,10 +1627,10 @@
                 {
                     "description": "Pad 10 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 11.25,
+                        "x": 14.25,
                         "y": 18.92
                     },
-                    "uuid": "50c0cd16-d36b-4d6f-8e17-5dd5f5e3b972"
+                    "uuid": "56a40d6f-c0a0-4338-a152-20effa170487"
                 }
             ],
             "severity": "warning",
@@ -1642,10 +1642,10 @@
                 {
                     "description": "Pad 11 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 11.25,
+                        "x": 14.25,
                         "y": 20.19
                     },
-                    "uuid": "5234930d-5423-4a08-b41c-93a710fa5197"
+                    "uuid": "7e8198a4-6ab3-4acf-b5e8-be6a8800bdc5"
                 }
             ],
             "severity": "warning",
@@ -1657,10 +1657,10 @@
                 {
                     "description": "Pad 15 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 13.015,
+                        "x": 16.015,
                         "y": 25.25
                     },
-                    "uuid": "3bc57e00-4aef-4a68-8e40-aa383ef43600"
+                    "uuid": "d96e831f-3462-4af3-9a51-c2f52ae9b65b"
                 }
             ],
             "severity": "warning",
@@ -1672,10 +1672,10 @@
                 {
                     "description": "Pad 16 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 14.285,
+                        "x": 17.285,
                         "y": 25.25
                     },
-                    "uuid": "57894bf0-a29b-48e1-b286-e25d58546913"
+                    "uuid": "852d94b1-97c5-4ef0-8627-0685f18f9104"
                 }
             ],
             "severity": "warning",
@@ -1687,10 +1687,10 @@
                 {
                     "description": "Pad 24 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 24.445,
+                        "x": 27.445,
                         "y": 25.25
                     },
-                    "uuid": "a1e0f280-4dc8-4910-b8cf-40088cb02979"
+                    "uuid": "99dcd4a9-f466-4afe-8636-bf8a803aeaca"
                 }
             ],
             "severity": "warning",
@@ -1702,10 +1702,10 @@
                 {
                     "description": "Pad 25 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 25.715,
+                        "x": 28.715,
                         "y": 25.25
                     },
-                    "uuid": "2a2c9bd5-9dd0-4f19-bd92-45f7741a91dc"
+                    "uuid": "5bb98c76-6351-4410-bcbb-ececcd8eafe6"
                 }
             ],
             "severity": "warning",
@@ -1717,10 +1717,10 @@
                 {
                     "description": "Pad 26 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 26.985,
+                        "x": 29.985,
                         "y": 25.25
                     },
-                    "uuid": "d70280b4-6e73-4b30-a229-cbd728f15ff5"
+                    "uuid": "999ce36c-7910-445a-81fa-ab4ad32b4d51"
                 }
             ],
             "severity": "warning",
@@ -1732,10 +1732,10 @@
                 {
                     "description": "Pad 28 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 22.73
                     },
-                    "uuid": "68a89798-cc23-44c2-8575-48d77934d608"
+                    "uuid": "b4f88817-25ea-4828-b41f-b732a7aad0c0"
                 }
             ],
             "severity": "warning",
@@ -1747,10 +1747,10 @@
                 {
                     "description": "Pad 29 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 21.46
                     },
-                    "uuid": "343ded6d-f17b-424c-95a5-4569f6ef928d"
+                    "uuid": "4f006118-d1f9-4acd-a63a-e4cbd97a2772"
                 }
             ],
             "severity": "warning",
@@ -1762,10 +1762,10 @@
                 {
                     "description": "Pad 30 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 20.19
                     },
-                    "uuid": "844fda2c-7f84-4928-aec2-f1f5a88d7e1d"
+                    "uuid": "353274a8-6775-4c8d-ac1b-c7cacbf425d8"
                 }
             ],
             "severity": "warning",
@@ -1777,10 +1777,10 @@
                 {
                     "description": "Pad 31 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 18.92
                     },
-                    "uuid": "67a22195-9b29-4a6e-bd66-760d88223e16"
+                    "uuid": "cdeb8c21-1746-42c7-8854-60e7fe966e3c"
                 }
             ],
             "severity": "warning",
@@ -1792,10 +1792,10 @@
                 {
                     "description": "Pad 32 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 17.65
                     },
-                    "uuid": "1614f1e8-527d-4a33-850c-302119dc9dd0"
+                    "uuid": "49b2b7ed-8b0a-4b5d-8efe-44ce673d2b14"
                 }
             ],
             "severity": "warning",
@@ -1807,10 +1807,10 @@
                 {
                     "description": "Pad 33 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 16.38
                     },
-                    "uuid": "8cc3ab5c-3efd-4e5c-9e9b-057e0213d177"
+                    "uuid": "005fdfa8-9de4-4962-b9f7-3848b7c11331"
                 }
             ],
             "severity": "warning",
@@ -1822,10 +1822,10 @@
                 {
                     "description": "Pad 34 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 15.11
                     },
-                    "uuid": "8eb57435-7bf7-4178-b476-ba5f156088a3"
+                    "uuid": "3a658a50-4d74-4da7-953c-26c7ad74b7cd"
                 }
             ],
             "severity": "warning",
@@ -1837,10 +1837,10 @@
                 {
                     "description": "Pad 35 [<no net>] of U1 on F.Cu",
                     "pos": {
-                        "x": 28.75,
+                        "x": 31.75,
                         "y": 13.84
                     },
-                    "uuid": "920ba707-4bd0-4201-b0c4-073434655c60"
+                    "uuid": "9f08e41c-d114-4533-91a7-e272be5146bc"
                 }
             ],
             "severity": "warning",
@@ -1852,10 +1852,10 @@
                 {
                     "description": "Footprint U2",
                     "pos": {
-                        "x": 27.0,
+                        "x": 31.05,
                         "y": 78.45
                     },
-                    "uuid": "b155df1e-a012-4c50-abb3-61443d8602a2"
+                    "uuid": "612fd79e-63a6-47f4-a62d-c634a6b82cb5"
                 }
             ],
             "severity": "warning",
@@ -1867,10 +1867,10 @@
                 {
                     "description": "Footprint U3",
                     "pos": {
-                        "x": 10.0,
+                        "x": 11.5,
                         "y": 50.2
                     },
-                    "uuid": "ad535531-b291-4170-84c5-b80765036e9d"
+                    "uuid": "be276a6d-2087-4388-836f-ac48b3f9dc00"
                 }
             ],
             "severity": "warning",
@@ -1882,10 +1882,10 @@
                 {
                     "description": "Footprint U4",
                     "pos": {
-                        "x": 19.0,
+                        "x": 21.85,
                         "y": 40.0
                     },
-                    "uuid": "c4f99ec4-1294-436b-ac83-017ab6bcfff5"
+                    "uuid": "26dae567-8fe7-4fe2-bfae-4bf06bd1be8a"
                 }
             ],
             "severity": "warning",
@@ -1897,10 +1897,10 @@
                 {
                     "description": "Pad 4 [<no net>] of U4 on F.Cu",
                     "pos": {
-                        "x": 20.1375,
+                        "x": 22.9875,
                         "y": 40.95
                     },
-                    "uuid": "b1ac89ca-0720-4b57-9f54-bab6708390f5"
+                    "uuid": "d8f6e5bc-e5bb-4529-be22-764c8c714598"
                 }
             ],
             "severity": "warning",
@@ -1912,10 +1912,10 @@
                 {
                     "description": "Footprint U5",
                     "pos": {
-                        "x": 28.0,
+                        "x": 32.2,
                         "y": 44.6
                     },
-                    "uuid": "9c4233b4-b146-47b7-bea1-98f32283bc44"
+                    "uuid": "4997710b-f550-40ea-8472-04d2e4adf451"
                 }
             ],
             "severity": "warning",
@@ -1927,10 +1927,10 @@
                 {
                     "description": "Footprint U5",
                     "pos": {
-                        "x": 28.0,
+                        "x": 32.2,
                         "y": 44.6
                     },
-                    "uuid": "9c4233b4-b146-47b7-bea1-98f32283bc44"
+                    "uuid": "4997710b-f550-40ea-8472-04d2e4adf451"
                 }
             ],
             "severity": "warning",
@@ -1941,23 +1941,38 @@
     "unconnected_items": [],
     "violations": [
         {
+            "description": "Via is not connected or connected on only one layer",
+            "items": [
+                {
+                    "description": "Via [/ENC_B] on F.Cu - B.Cu",
+                    "pos": {
+                        "x": 24.3013,
+                        "y": 26.4623
+                    },
+                    "uuid": "e0326a7c-31da-4bdc-aecb-66016f9b3b1d"
+                }
+            ],
+            "severity": "warning",
+            "type": "via_dangling"
+        },
+        {
             "description": "Silkscreen clipped by board edge",
             "items": [
                 {
                     "description": "Segment on Edge.Cuts",
                     "pos": {
-                        "x": 38.0,
+                        "x": 44.0,
                         "y": 100.0
                     },
-                    "uuid": "0b934678-26a9-43ea-92c9-cd77f6faf750"
+                    "uuid": "83ab3518-1e00-4607-ba23-af681ae54235"
                 },
                 {
                     "description": "Polygon of J2 on F.Silkscreen",
                     "pos": {
-                        "x": 24.455,
+                        "x": 28.505,
                         "y": 99.525
                     },
-                    "uuid": "3d10b20d-0040-493a-ae5f-490e15b9b25a"
+                    "uuid": "e613cbfe-240f-4f21-8621-08bb3fdec39b"
                 }
             ],
             "severity": "warning",
@@ -1972,15 +1987,15 @@
                         "x": 2.0,
                         "y": 0.0
                     },
-                    "uuid": "59be69f6-a3be-4dd0-8f98-40cdb8b9e75b"
+                    "uuid": "6b41fd69-efa1-4685-9e9e-8c502fa267ed"
                 },
                 {
                     "description": "Segment of U1 on F.Silkscreen",
                     "pos": {
-                        "x": 10.8,
+                        "x": 13.8,
                         "y": -0.15
                     },
-                    "uuid": "104385c8-3d7b-4530-b767-99a4eb6e7e46"
+                    "uuid": "d9e91c1c-2a75-4a15-b191-760dbbd74ee0"
                 }
             ],
             "severity": "warning",
@@ -1995,15 +2010,15 @@
                         "x": 2.0,
                         "y": 0.0
                     },
-                    "uuid": "59be69f6-a3be-4dd0-8f98-40cdb8b9e75b"
+                    "uuid": "6b41fd69-efa1-4685-9e9e-8c502fa267ed"
                 },
                 {
                     "description": "Segment of U1 on F.Silkscreen",
                     "pos": {
-                        "x": 29.2,
+                        "x": 32.2,
                         "y": -0.15
                     },
-                    "uuid": "64cd83a5-7547-4100-8d2c-691420bc457b"
+                    "uuid": "77b2411e-3e0c-420d-b246-91a85b9afe3c"
                 }
             ],
             "severity": "warning",
@@ -2015,10 +2030,10 @@
                 {
                     "description": "Footprint U1",
                     "pos": {
-                        "x": 20.0,
+                        "x": 23.0,
                         "y": 12.75
                     },
-                    "uuid": "b7e7d542-ff8f-40ae-98b2-4396afef6b97"
+                    "uuid": "fbcfec36-af0c-43f2-bc2a-513ea1498162"
                 }
             ],
             "severity": "warning",
@@ -2028,43 +2043,20 @@
             "description": "Silkscreen clearance",
             "items": [
                 {
-                    "description": "Reference field of U3",
-                    "pos": {
-                        "x": 10.0,
-                        "y": 47.8
-                    },
-                    "uuid": "13bd536b-4e2a-41a3-ae3a-7d897ca7348f"
-                },
-                {
                     "description": "Segment of C10 on F.Silkscreen",
                     "pos": {
-                        "x": 8.788748,
+                        "x": 10.208748,
                         "y": 47.51
                     },
-                    "uuid": "ef2c69ae-9433-4a29-a23f-34864c1de4db"
-                }
-            ],
-            "severity": "warning",
-            "type": "silk_overlap"
-        },
-        {
-            "description": "Silkscreen clearance",
-            "items": [
-                {
-                    "description": "Segment of C24 on F.Silkscreen",
-                    "pos": {
-                        "x": 9.31,
-                        "y": 23.74058
-                    },
-                    "uuid": "2f9d08f1-7a2b-4f08-a331-913c8bb28f8a"
+                    "uuid": "04b908ac-0805-41f8-8d86-379dc896b8cd"
                 },
                 {
-                    "description": "Reference field of U1",
+                    "description": "Reference field of U3",
                     "pos": {
-                        "x": 9.5,
-                        "y": 24.15
+                        "x": 11.5,
+                        "y": 47.8
                     },
-                    "uuid": "92ca42d1-f06b-4f49-af6e-8b387c61c05b"
+                    "uuid": "f88ade7e-42f6-490a-bb02-deb11dfac5f6"
                 }
             ],
             "severity": "warning",
@@ -2076,41 +2068,18 @@
                 {
                     "description": "Reference field of U3",
                     "pos": {
-                        "x": 10.0,
+                        "x": 11.5,
                         "y": 47.8
                     },
-                    "uuid": "13bd536b-4e2a-41a3-ae3a-7d897ca7348f"
+                    "uuid": "f88ade7e-42f6-490a-bb02-deb11dfac5f6"
                 },
                 {
                     "description": "Pad 2 [GND] of C10 on F.Cu",
                     "pos": {
-                        "x": 10.975,
+                        "x": 12.395,
                         "y": 46.6
                     },
-                    "uuid": "2306a31d-e08f-4981-a45b-bbc29e215f2f"
-                }
-            ],
-            "severity": "warning",
-            "type": "silk_over_copper"
-        },
-        {
-            "description": "Silkscreen clipped by solder mask",
-            "items": [
-                {
-                    "description": "Reference field of U1",
-                    "pos": {
-                        "x": 9.5,
-                        "y": 24.15
-                    },
-                    "uuid": "92ca42d1-f06b-4f49-af6e-8b387c61c05b"
-                },
-                {
-                    "description": "Pad 1 [/TALK] of C24 on F.Cu",
-                    "pos": {
-                        "x": 8.8,
-                        "y": 24.375
-                    },
-                    "uuid": "36d2a9c4-cbf3-4a49-ad74-8210f9fcf6cc"
+                    "uuid": "d6b1907d-27ee-4dfe-a3d5-a2f57d27cbd8"
                 }
             ],
             "severity": "warning",

@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-10-14T01:38:46",
+    "date": "2026-10-14T11:54:19",
     "ignored_checks": [
         {
             "description": "Footprint has no courtyard defined",
@@ -35,188 +35,19 @@
     "unconnected_items": [],
     "violations": [
         {
-            "description": "Clearance violation (footprint U2 clearance 0.2000 mm; actual 0.1977 mm)",
+            "description": "Via is not connected or connected on only one layer",
             "items": [
                 {
-                    "description": "Track [/MOT_PH] on F.Cu, length 2.1818 mm",
+                    "description": "Via [/ENC_B] on F.Cu - B.Cu",
                     "pos": {
-                        "x": 29.0455,
-                        "y": 82.6255
+                        "x": 24.3013,
+                        "y": 26.4623
                     },
-                    "uuid": "05bf0569-810a-4ff9-b4a6-a8c4ae4f3922"
-                },
-                {
-                    "description": "Pad 1 [/MOT_EN] of U2 on F.Cu",
-                    "pos": {
-                        "x": 29.775,
-                        "y": 80.725
-                    },
-                    "uuid": "ab5bde53-b6b8-4f76-973e-3e4bdbe3fb76"
+                    "uuid": "e0326a7c-31da-4bdc-aecb-66016f9b3b1d"
                 }
             ],
-            "severity": "error",
-            "type": "clearance"
-        },
-        {
-            "description": "Clearance violation (footprint U2 clearance 0.2000 mm; actual 0.1883 mm)",
-            "items": [
-                {
-                    "description": "Track [/MOT_PH] on F.Cu, length 0.7371 mm",
-                    "pos": {
-                        "x": 30.5883,
-                        "y": 81.0827
-                    },
-                    "uuid": "1634e82d-8ad8-4a2a-aae8-2ea43d79b6cf"
-                },
-                {
-                    "description": "Pad 1 [/MOT_EN] of U2 on F.Cu",
-                    "pos": {
-                        "x": 29.775,
-                        "y": 80.725
-                    },
-                    "uuid": "ab5bde53-b6b8-4f76-973e-3e4bdbe3fb76"
-                }
-            ],
-            "severity": "error",
-            "type": "clearance"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer In1.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on In1.Cu, priority 0",
-                    "pos": {
-                        "x": -0.05,
-                        "y": -0.05
-                    },
-                    "uuid": "4842a868-c743-4534-ab80-dd70fde3a7eb"
-                },
-                {
-                    "description": "PTH pad SH [GND] of J10",
-                    "pos": {
-                        "x": 33.025,
-                        "y": 50.32
-                    },
-                    "uuid": "abdaa872-542b-4bf3-90b1-07d14351f0f9"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer F.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on F.Cu, priority 0",
-                    "pos": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "uuid": "a7b5e664-1cd9-49b8-b6f7-9887e096559c"
-                },
-                {
-                    "description": "Pad 2 [GND] of D9 on F.Cu",
-                    "pos": {
-                        "x": 32.55,
-                        "y": 21.9
-                    },
-                    "uuid": "6c0c181b-c1ae-490e-9aa3-a4fa9b73b593"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer In1.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on In1.Cu, priority 0",
-                    "pos": {
-                        "x": -0.05,
-                        "y": -0.05
-                    },
-                    "uuid": "4842a868-c743-4534-ab80-dd70fde3a7eb"
-                },
-                {
-                    "description": "PTH pad 1 [GND] of J6",
-                    "pos": {
-                        "x": 2.3,
-                        "y": 54.69
-                    },
-                    "uuid": "8cd9f5d5-df8f-4004-9ca2-9511f53a7d74"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer F.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on F.Cu, priority 0",
-                    "pos": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "uuid": "a7b5e664-1cd9-49b8-b6f7-9887e096559c"
-                },
-                {
-                    "description": "Pad A1 [GND] of J11 on F.Cu",
-                    "pos": {
-                        "x": 31.755,
-                        "y": 16.25
-                    },
-                    "uuid": "0e4bac8d-60de-4f7f-a3a0-357e92ea6e6b"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer F.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on F.Cu, priority 0",
-                    "pos": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "uuid": "a7b5e664-1cd9-49b8-b6f7-9887e096559c"
-                },
-                {
-                    "description": "Pad B12 [GND] of J11 on F.Cu",
-                    "pos": {
-                        "x": 31.755,
-                        "y": 16.25
-                    },
-                    "uuid": "ff2cffd1-e2de-4358-a2c3-d43bc39dedaa"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
-        },
-        {
-            "description": "Thermal relief connection to zone incomplete (layer F.Cu; zone min spoke count 2; actual 1)",
-            "items": [
-                {
-                    "description": "Zone [GND] on F.Cu, priority 0",
-                    "pos": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "uuid": "a7b5e664-1cd9-49b8-b6f7-9887e096559c"
-                },
-                {
-                    "description": "Pad 2 [GND] of R27 on F.Cu",
-                    "pos": {
-                        "x": 32.625,
-                        "y": 36.3
-                    },
-                    "uuid": "0c6b5fc5-225a-4953-b8d1-e24a4e97afb0"
-                }
-            ],
-            "severity": "error",
-            "type": "starved_thermal"
+            "severity": "warning",
+            "type": "via_dangling"
         },
         {
             "description": "Silkscreen clipped by board edge",
@@ -224,18 +55,18 @@
                 {
                     "description": "Segment on Edge.Cuts",
                     "pos": {
-                        "x": 38.0,
+                        "x": 44.0,
                         "y": 100.0
                     },
-                    "uuid": "0b934678-26a9-43ea-92c9-cd77f6faf750"
+                    "uuid": "83ab3518-1e00-4607-ba23-af681ae54235"
                 },
                 {
                     "description": "Polygon of J2 on F.Silkscreen",
                     "pos": {
-                        "x": 24.455,
+                        "x": 28.505,
                         "y": 99.525
                     },
-                    "uuid": "3d10b20d-0040-493a-ae5f-490e15b9b25a"
+                    "uuid": "e613cbfe-240f-4f21-8621-08bb3fdec39b"
                 }
             ],
             "severity": "warning",
@@ -250,15 +81,15 @@
                         "x": 2.0,
                         "y": 0.0
                     },
-                    "uuid": "59be69f6-a3be-4dd0-8f98-40cdb8b9e75b"
+                    "uuid": "6b41fd69-efa1-4685-9e9e-8c502fa267ed"
                 },
                 {
                     "description": "Segment of U1 on F.Silkscreen",
                     "pos": {
-                        "x": 10.8,
+                        "x": 13.8,
                         "y": -0.15
                     },
-                    "uuid": "104385c8-3d7b-4530-b767-99a4eb6e7e46"
+                    "uuid": "d9e91c1c-2a75-4a15-b191-760dbbd74ee0"
                 }
             ],
             "severity": "warning",
@@ -273,15 +104,15 @@
                         "x": 2.0,
                         "y": 0.0
                     },
-                    "uuid": "59be69f6-a3be-4dd0-8f98-40cdb8b9e75b"
+                    "uuid": "6b41fd69-efa1-4685-9e9e-8c502fa267ed"
                 },
                 {
                     "description": "Segment of U1 on F.Silkscreen",
                     "pos": {
-                        "x": 29.2,
+                        "x": 32.2,
                         "y": -0.15
                     },
-                    "uuid": "64cd83a5-7547-4100-8d2c-691420bc457b"
+                    "uuid": "77b2411e-3e0c-420d-b246-91a85b9afe3c"
                 }
             ],
             "severity": "warning",
@@ -293,10 +124,10 @@
                 {
                     "description": "Footprint U1",
                     "pos": {
-                        "x": 20.0,
+                        "x": 23.0,
                         "y": 12.75
                     },
-                    "uuid": "b7e7d542-ff8f-40ae-98b2-4396afef6b97"
+                    "uuid": "fbcfec36-af0c-43f2-bc2a-513ea1498162"
                 }
             ],
             "severity": "warning",
@@ -306,43 +137,20 @@
             "description": "Silkscreen clearance",
             "items": [
                 {
-                    "description": "Reference field of U3",
-                    "pos": {
-                        "x": 10.0,
-                        "y": 47.8
-                    },
-                    "uuid": "13bd536b-4e2a-41a3-ae3a-7d897ca7348f"
-                },
-                {
                     "description": "Segment of C10 on F.Silkscreen",
                     "pos": {
-                        "x": 8.788748,
+                        "x": 10.208748,
                         "y": 47.51
                     },
-                    "uuid": "ef2c69ae-9433-4a29-a23f-34864c1de4db"
-                }
-            ],
-            "severity": "warning",
-            "type": "silk_overlap"
-        },
-        {
-            "description": "Silkscreen clearance",
-            "items": [
-                {
-                    "description": "Segment of C24 on F.Silkscreen",
-                    "pos": {
-                        "x": 9.31,
-                        "y": 23.74058
-                    },
-                    "uuid": "2f9d08f1-7a2b-4f08-a331-913c8bb28f8a"
+                    "uuid": "04b908ac-0805-41f8-8d86-379dc896b8cd"
                 },
                 {
-                    "description": "Reference field of U1",
+                    "description": "Reference field of U3",
                     "pos": {
-                        "x": 9.5,
-                        "y": 24.15
+                        "x": 11.5,
+                        "y": 47.8
                     },
-                    "uuid": "92ca42d1-f06b-4f49-af6e-8b387c61c05b"
+                    "uuid": "f88ade7e-42f6-490a-bb02-deb11dfac5f6"
                 }
             ],
             "severity": "warning",
@@ -354,41 +162,18 @@
                 {
                     "description": "Reference field of U3",
                     "pos": {
-                        "x": 10.0,
+                        "x": 11.5,
                         "y": 47.8
                     },
-                    "uuid": "13bd536b-4e2a-41a3-ae3a-7d897ca7348f"
+                    "uuid": "f88ade7e-42f6-490a-bb02-deb11dfac5f6"
                 },
                 {
                     "description": "Pad 2 [GND] of C10 on F.Cu",
                     "pos": {
-                        "x": 10.975,
+                        "x": 12.395,
                         "y": 46.6
                     },
-                    "uuid": "2306a31d-e08f-4981-a45b-bbc29e215f2f"
-                }
-            ],
-            "severity": "warning",
-            "type": "silk_over_copper"
-        },
-        {
-            "description": "Silkscreen clipped by solder mask",
-            "items": [
-                {
-                    "description": "Reference field of U1",
-                    "pos": {
-                        "x": 9.5,
-                        "y": 24.15
-                    },
-                    "uuid": "92ca42d1-f06b-4f49-af6e-8b387c61c05b"
-                },
-                {
-                    "description": "Pad 1 [/TALK] of C24 on F.Cu",
-                    "pos": {
-                        "x": 8.8,
-                        "y": 24.375
-                    },
-                    "uuid": "36d2a9c4-cbf3-4a49-ad74-8210f9fcf6cc"
+                    "uuid": "d6b1907d-27ee-4dfe-a3d5-a2f57d27cbd8"
                 }
             ],
             "severity": "warning",
