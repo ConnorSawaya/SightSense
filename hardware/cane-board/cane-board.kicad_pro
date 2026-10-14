@@ -336,10 +336,6 @@
       },
       {
         "netclass": "Power",
-        "pattern": "/BUCK_SW"
-      },
-      {
-        "netclass": "Power",
         "pattern": "+5V"
       },
       {

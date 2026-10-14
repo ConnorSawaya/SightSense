@@ -1,26 +1,25 @@
 # Cane board: what it costs to have made
 
-Checked on October 13, 2026. Prices are US dollars. Nothing has been ordered, and the board is not routed yet, so these are estimates built from live quotes and published fees, not checkout totals.
+Checked on October 13 and 14, 2026. Prices are US dollars. Nothing has been ordered, so these are estimates built from live quotes and published fees, not checkout totals.
 
-The plan is turnkey assembly (PCBA) by JLCPCB. Parts are listed line by line in [`BOM.md`](BOM.md): $8.49 a board.
+The plan is turnkey assembly (PCBA) by JLCPCB. Parts are listed line by line in [`BOM.md`](BOM.md): $10.48 a board.
 
-## Update, October 14: 4 layers, black
+## Current estimate, October 14
 
-The routed board is 46 × 100 mm (widened from 40 to give the router room) with 4 copper layers (the autorouter could not finish on 2) and black solder mask. JLCPCB's live quote for five bare boards, 40 x 100 mm: $8.00 for 4 layers green, $16.00 for 4 layers black (black adds $8.00), against $4.00 for 2 layers green. Build time 3–4 days.
+For the board as it stands: 46 × 100 mm, 4 copper layers, black solder mask, the ready-made 5 V module, the XT30 motor socket and 7 Extended part lines. Worked out from the fees below; not a checkout total.
 
-With the 35% tariff that adds about $16 to the totals below: about **$166 for 5 boards ($33 each)** and roughly $230 for 10 ($23 each, 10-board black 4-layer price not quoted). Choosing green saves about $11 of that.
-
-## Price for any number of boards
-
-Roughly **$88 to start, plus about $12.50 a board**, delivered to Santa Clara, CA 95051 with US duty paid.
+Roughly **$74 to start, plus the bare boards, plus about $15.30 a board**, delivered to Santa Clara, CA 95051 with the 35% US tariff paid.
 
 | Boards | Total | Per board |
 | --- | --- | --- |
-| 5 | about $150 | about $30 |
-| 10 | about $214 | about $21 |
-| 20 | about $340 | about $17 |
+| 5 | about $172 | about $34 |
+| 10 | about $260 | about $26 |
 
-The 20-board row is less certain: its bare-board price and shipping weight were not quoted.
+- Bare boards, 5 at 4 layers black: $16.00 (JLCPCB live quote for 40 × 100 mm; the 46 mm width was not re-quoted). The 10-board price was not quoted; $25 is assumed.
+- The module costs about $2 a board more than the converter built from parts, but saves two Extended lines ($6.14 an order) and the converter's layout risk.
+- Choosing green mask saves about $11 on 5 boards.
+
+Earlier figures, kept for comparison: the 2-layer green design with 9 Extended lines came to about $150 for 5 and $214 for 10 ($88 to start plus $12.50 a board).
 
 ### Where the numbers come from
 
@@ -28,11 +27,11 @@ The 20-board row is less certain: its bare-board price and shipping weight were 
 | --- | --- | --- |
 | Set-up | $8.18 per order | JLCPCB price page |
 | Stencil | $1.53 per order | JLCPCB price page |
-| Fees for 9 part types JLCPCB does not keep loaded | $27.63 per order (9 × $3.07) | JLCPCB price page and parts library |
-| Through-hole labour | $3.58 per order, plus $0.0164 a joint (22 a board) | JLCPCB price page |
+| Fees for 7 part types JLCPCB does not keep loaded | $21.49 per order (7 × $3.07) | JLCPCB price page and parts library |
+| Through-hole labour | $3.58 per order, plus $0.0164 a joint (about 25 a board) | JLCPCB price page |
 | Surface-mount soldering | $0.0016 a joint (277 a board) | JLCPCB price page |
-| Bare boards | $4.00 for 5, $5.00 for 10 | JLCPCB live quote |
-| Parts | $8.49 a board | JLCPCB parts library |
+| Bare boards | $16.00 for 5 at 4 layers black ($4.00 for 2 layers green) | JLCPCB live quote |
+| Parts | $10.48 a board | JLCPCB parts library |
 | US tariff | 35% of the order, collected at checkout | JLCPCB US tariff FAQ, updated September 9, 2026 |
 | Shipping | $26.64, UPS Express Saver, duty prepaid, 2–4 business days | JLCPCB live shipping calculator |
 | California sales tax | 9.75% (Santa Clara), may add $15–$20 | Not confirmed whether JLCPCB charges it |
@@ -43,8 +42,8 @@ JLCPCB's cheaper Global Standard Direct Line ($6.95, 8–13 business days) is li
 
 | Route, 5 boards | Total | Per board | Notes |
 | --- | --- | --- | --- |
-| JLCPCB assembly (the plan) | about $150 | about $30 | Above |
-| Solder it yourself | about $115–$130 | about $23–$26 | Bare boards about $11 shipped, parts about $42 plus shipping and duty, stencil $7–$10. Tools not counted. Several parts are hard to solder by hand |
+| JLCPCB assembly (the plan) | about $172 | about $34 | Above, 4 layers black |
+| Solder it yourself (2-layer figures, not updated) | about $115–$130 | about $23–$26 | Bare boards about $11 shipped, parts about $42 plus shipping and duty, stencil $7–$10. Tools not counted. Several parts are hard to solder by hand |
 | PCBWay assembly | $34 before parts and duty | — | Parts priced only after a BOM upload to an account. "$29 for up to 20 boards" offer seems to cover 5 boards |
 | PCBgogo, Elecrow assembly | about $135–$155 before parts | — | Already above JLCPCB's total |
 | US assemblers (MacroFab, CircuitHub, Screaming Circuits) | — | — | No prices without an account |

@@ -26,7 +26,7 @@ JAR = os.environ.get("FREEROUTING_JAR", "")
 CLI = os.environ.get("KICAD_CLI", "kicad-cli")
 
 # Nets that carry motor or battery current get wide tracks.
-POWER = ["VIN_RAW", "VIN_F", "+BATT", "MOT_A", "MOT_B", "BUCK_SW", "+5V", "VSYS", "VBUS", "GND"]
+POWER = ["VIN_RAW", "VIN_F", "+BATT", "MOT_A", "MOT_B", "+5V", "VSYS", "VBUS", "GND"]
 
 
 def mm(v):
@@ -278,7 +278,7 @@ def outer_only(dsn):
     dsn.write_text(text)
 
 
-SUPPLY = ["+BATT", "/VIN_RAW", "/VIN_F", "/VM", "/MOT_A", "/MOT_B", "/BUCK_SW", "+5V"]
+SUPPLY = ["+BATT", "/VIN_RAW", "/VIN_F", "/VM", "/MOT_A", "/MOT_B", "+5V"]
 
 
 def blocks(text, head):
@@ -334,6 +334,56 @@ def freeroute(jar, dsn, work, tag, tries):
     return best[1]
 
 
+# Motor and battery current, drawn by hand before the autorouter runs: (net, layer, width, points).
+# The autorouter left these 0.15 to 0.3 mm wide in places; these runs are 0.6 to 1.0 mm, except at the driver's pins.
+HAND = [
+    # Reverse-plug FETs: fuse up between Q1 and Q4 to both drains.
+    ("/VIN_F", "F.Cu", 0.8, [(18.57, 80.5), (19.5, 79.6), (19.5, 74.3)]),
+    ("/VIN_F", "F.Cu", 0.6, [(17.61, 74.3), (23.36, 74.3)]),
+    # Both sources to the kill-switch FET, on the bottom (the drains' track is in the way on top).
+    ("+BATT", "F.Cu", 0.8, [(15.73, 75.25), (15.73, 76.6)]),
+    ("+BATT", "F.Cu", 0.8, [(21.48, 75.25), (21.48, 76.6)]),
+    ("+BATT", "B.Cu", 1.0, [(15.73, 76.6), (21.48, 76.6), (22.4, 76.6), (25.3, 70.0), (25.3, 67.9)]),
+    ("+BATT", "F.Cu", 0.8, [(25.3, 67.9), (26.66, 66.95)]),
+    # Kill-switch FET to the 22 uF capacitor, then to C4 and the driver's VM pin, approached from the left.
+    ("/VM", "F.Cu", 0.8, [(28.54, 66.0), (28.54, 68.0), (27.84, 70.0), (27.84, 72.6)]),
+    ("/VM", "F.Cu", 0.6, [(27.84, 72.6), (24.7, 75.7), (24.7, 77.2)]),
+    ("/VM", "F.Cu", 0.6, [(24.7, 77.2), (25.2, 77.47), (26.9, 77.47)]),
+    ("/VM", "F.Cu", 0.4, [(26.9, 77.47), (28.27, 77.47)]),
+    ("/VM", "F.Cu", 0.4, [(24.7, 77.2), (24.7, 79.0)]),
+    # Motor outputs: a short hop off the pin to a via, then straight down the bottom to the XT30.
+    ("/MOT_B", "F.Cu", 0.4, [(28.27, 76.83), (27.4, 76.83), (26.2, 76.2)]),
+    ("/MOT_B", "B.Cu", 1.0, [(26.2, 76.2), (26.2, 92.2), (28.55, 94.5)]),
+    ("/MOT_A", "F.Cu", 0.4, [(33.83, 76.17), (34.9, 76.17), (35.5, 76.0)]),
+    ("/MOT_A", "B.Cu", 1.0, [(35.5, 76.0), (35.5, 92.5), (33.55, 94.5)]),
+]
+HAND_VIAS = [("+BATT", (15.73, 76.6)), ("+BATT", (21.48, 76.6)), ("+BATT", (25.3, 67.9)),
+             ("/MOT_B", (26.2, 76.2)), ("/MOT_A", (35.5, 76.0))]
+
+
+def hand_route(board):
+    """Lay the HAND tracks and vias, locked so the autorouter treats them as fixed."""
+    layer = {"F.Cu": pcbnew.F_Cu, "B.Cu": pcbnew.B_Cu}
+    for net, side, width, points in HAND:
+        for a, z in zip(points, points[1:]):
+            t = pcbnew.PCB_TRACK(board)
+            t.SetStart(pcbnew.VECTOR2I(mm(a[0]), mm(a[1])))
+            t.SetEnd(pcbnew.VECTOR2I(mm(z[0]), mm(z[1])))
+            t.SetWidth(mm(width))
+            t.SetLayer(layer[side])
+            t.SetNet(board.FindNet(net))
+            t.SetLocked(True)
+            board.Add(t)
+    for net, at in HAND_VIAS:
+        v = pcbnew.PCB_VIA(board)
+        v.SetPosition(pcbnew.VECTOR2I(mm(at[0]), mm(at[1])))
+        v.SetWidth(mm(0.8))
+        v.SetDrill(mm(0.4))
+        v.SetNet(board.FindNet(net))
+        v.SetLocked(True)
+        board.Add(v)
+
+
 def main():
     jar = JAR or next((str(p) for p in Path(os.environ.get("TMPDIR", "/tmp")).rglob("freerouting-*.jar")), "")
     if not jar or not Path(jar).exists():
@@ -348,6 +398,7 @@ def main():
     planes = inner_ground(board)
     classes(board)
     widen_small_holes(board)
+    hand_route(board)
     fence = edge_keepout(board)
 
     work = HERE / "export" / "route"
@@ -379,10 +430,82 @@ def main():
             fp.SetLocalClearance(mm(0.15))
     pcbnew.SaveBoard(str(BOARD), board)
     black_board()
+    data = drc(work)
+    if tie_ground(data):
+        data = drc(work)
+    report_drc(board, data)
+
+
+def drc(work):
     report = work / "drc.json"
     subprocess.run([CLI, "pcb", "drc", "--format", "json", "--severity-all", "--refill-zones", "--save-board",
                     "-o", str(report), str(BOARD)], capture_output=True, text=True)
-    data = json.loads(report.read_text())
+    return json.loads(report.read_text())
+
+
+def tie_pad(board, pad, width=mm(0.3), gap=mm(0.2)):
+    """A straight track from a ground pad to the nearest ground via it can reach without passing other copper."""
+    at = pad.GetPosition()
+    layer = pcbnew.F_Cu if pad.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+    others = [t for t in board.GetTracks() if t.GetNetname() != "GND" and t.IsOnLayer(layer)]
+    others += [p for fp in board.GetFootprints() for p in fp.Pads() if p.GetNetname() != "GND" and p.IsOnLayer(layer)]
+    vias = sorted((v for v in board.GetTracks() if v.Type() == pcbnew.PCB_VIA_T and v.GetNetname() == "GND"),
+                  key=lambda v: (v.GetPosition() - at).EuclideanNorm())
+    for v in vias:
+        end = v.GetPosition()
+        if (end - at).EuclideanNorm() > mm(3):
+            return False
+        steps = 40
+        points = [at + pcbnew.VECTOR2I(int((end.x - at.x) * k / steps), int((end.y - at.y) * k / steps)) for k in range(steps + 1)]
+        if any(o.HitTest(pt, width // 2 + gap) for pt in points for o in others):
+            continue
+        t = pcbnew.PCB_TRACK(board)
+        t.SetStart(at)
+        t.SetEnd(end)
+        t.SetWidth(width)
+        t.SetLayer(layer)
+        t.SetNet(board.FindNet("GND"))
+        board.Add(t)
+        return True
+    return False
+
+
+def tie_ground(data):
+    """Ground pads the pour could not join to the rest: by name from the DRC report, or inside a stranded piece of pour."""
+    board = pcbnew.LoadBoard(str(BOARD))
+    pads = [p for fp in board.GetFootprints() for p in fp.Pads() if p.GetNetname() == "GND"]
+    stranded = []
+    for item in data.get("unconnected_items", []):
+        for part in item.get("items", []):
+            if "[GND]" in part.get("description", "") and "Pad" in part["description"]:
+                at = pcbnew.VECTOR2I(mm(part["pos"]["x"]), mm(part["pos"]["y"]))
+                stranded += [p for p in pads if (p.GetPosition() - at).EuclideanNorm() < mm(0.05)]
+    anchors = [t.GetPosition() for t in board.GetTracks() if t.Type() == pcbnew.PCB_VIA_T and t.GetNetname() == "GND"]
+    anchors += [p.GetPosition() for p in pads if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH]
+    vias = set((a.x, a.y) for a in anchors)
+    for t in board.GetTracks():  # a pad already tied counts as reached
+        if t.Type() == pcbnew.PCB_TRACE_T and t.GetNetname() == "GND":
+            if (t.GetEnd().x, t.GetEnd().y) in vias:
+                anchors.append(pcbnew.VECTOR2I(t.GetStart().x, t.GetStart().y))
+    for z in board.Zones():
+        if z.GetIsRuleArea() or z.GetNetname() != "GND":
+            continue
+        for layer in z.GetLayerSet().Seq():
+            if layer not in (pcbnew.F_Cu, pcbnew.B_Cu):
+                continue
+            poly = z.GetFilledPolysList(layer)
+            for i in range(poly.OutlineCount()):
+                outline = poly.Outline(i)
+                if not any(outline.PointInside(a) for a in anchors):
+                    stranded += [p for p in pads if p.IsOnLayer(layer) and outline.PointInside(p.GetPosition())][:1]
+    tied = sum(tie_pad(board, p) for p in stranded)
+    if tied:
+        pcbnew.SaveBoard(str(BOARD), board)
+        print(f"ground pads tied to a via: {tied} of {len(stranded)}")
+    return tied
+
+
+def report_drc(board, data):
     kinds = {}
     for v in data.get("violations", []):
         kinds.setdefault((v["severity"], v["type"]), []).append("; ".join(i.get("description", "") for i in v.get("items", [])))

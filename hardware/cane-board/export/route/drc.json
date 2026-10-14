@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-10-14T11:54:19",
+    "date": "2026-10-14T13:03:28",
     "ignored_checks": [
         {
             "description": "Footprint has no courtyard defined",
@@ -35,44 +35,6 @@
     "unconnected_items": [],
     "violations": [
         {
-            "description": "Via is not connected or connected on only one layer",
-            "items": [
-                {
-                    "description": "Via [/ENC_B] on F.Cu - B.Cu",
-                    "pos": {
-                        "x": 24.3013,
-                        "y": 26.4623
-                    },
-                    "uuid": "e0326a7c-31da-4bdc-aecb-66016f9b3b1d"
-                }
-            ],
-            "severity": "warning",
-            "type": "via_dangling"
-        },
-        {
-            "description": "Silkscreen clipped by board edge",
-            "items": [
-                {
-                    "description": "Segment on Edge.Cuts",
-                    "pos": {
-                        "x": 44.0,
-                        "y": 100.0
-                    },
-                    "uuid": "83ab3518-1e00-4607-ba23-af681ae54235"
-                },
-                {
-                    "description": "Polygon of J2 on F.Silkscreen",
-                    "pos": {
-                        "x": 28.505,
-                        "y": 99.525
-                    },
-                    "uuid": "e613cbfe-240f-4f21-8621-08bb3fdec39b"
-                }
-            ],
-            "severity": "warning",
-            "type": "silk_edge_clearance"
-        },
-        {
             "description": "Silkscreen clipped by board edge",
             "items": [
                 {
@@ -81,7 +43,7 @@
                         "x": 2.0,
                         "y": 0.0
                     },
-                    "uuid": "6b41fd69-efa1-4685-9e9e-8c502fa267ed"
+                    "uuid": "89525d45-fd4e-4606-8c94-2a17c5085bf0"
                 },
                 {
                     "description": "Segment of U1 on F.Silkscreen",
@@ -89,7 +51,7 @@
                         "x": 13.8,
                         "y": -0.15
                     },
-                    "uuid": "d9e91c1c-2a75-4a15-b191-760dbbd74ee0"
+                    "uuid": "b1dc9e44-b73f-49b5-bb3a-802fd706ec48"
                 }
             ],
             "severity": "warning",
@@ -104,7 +66,7 @@
                         "x": 2.0,
                         "y": 0.0
                     },
-                    "uuid": "6b41fd69-efa1-4685-9e9e-8c502fa267ed"
+                    "uuid": "89525d45-fd4e-4606-8c94-2a17c5085bf0"
                 },
                 {
                     "description": "Segment of U1 on F.Silkscreen",
@@ -112,7 +74,7 @@
                         "x": 32.2,
                         "y": -0.15
                     },
-                    "uuid": "77b2411e-3e0c-420d-b246-91a85b9afe3c"
+                    "uuid": "1648c42c-aaae-477a-b161-7b98f6916a5d"
                 }
             ],
             "severity": "warning",
@@ -127,34 +89,34 @@
                         "x": 23.0,
                         "y": 12.75
                     },
-                    "uuid": "fbcfec36-af0c-43f2-bc2a-513ea1498162"
+                    "uuid": "22def909-79bc-4e72-99c1-c866b21ec872"
                 }
             ],
             "severity": "warning",
             "type": "lib_footprint_mismatch"
         },
         {
-            "description": "Silkscreen clearance",
+            "description": "Silkscreen clipped by solder mask",
             "items": [
                 {
-                    "description": "Segment of C10 on F.Silkscreen",
+                    "description": "PCB text 'cane board v0.1' on F.Silkscreen",
                     "pos": {
-                        "x": 10.208748,
-                        "y": 47.51
+                        "x": 29.9,
+                        "y": 56.4
                     },
-                    "uuid": "04b908ac-0805-41f8-8d86-379dc896b8cd"
+                    "uuid": "ae00deec-a92a-4168-bf98-10165759af0f"
                 },
                 {
-                    "description": "Reference field of U3",
+                    "description": "Pad 2 [GND] of C14 on F.Cu",
                     "pos": {
-                        "x": 11.5,
-                        "y": 47.8
+                        "x": 24.075,
+                        "y": 57.5
                     },
-                    "uuid": "f88ade7e-42f6-490a-bb02-deb11dfac5f6"
+                    "uuid": "52610b48-5d07-402f-925a-188207efd065"
                 }
             ],
             "severity": "warning",
-            "type": "silk_overlap"
+            "type": "silk_over_copper"
         },
         {
             "description": "Silkscreen clipped by solder mask",
@@ -162,10 +124,10 @@
                 {
                     "description": "Reference field of U3",
                     "pos": {
-                        "x": 11.5,
-                        "y": 47.8
+                        "x": 13.055,
+                        "y": 47.19
                     },
-                    "uuid": "f88ade7e-42f6-490a-bb02-deb11dfac5f6"
+                    "uuid": "2cf2f802-f982-4748-be55-b215f6a4fc0f"
                 },
                 {
                     "description": "Pad 2 [GND] of C10 on F.Cu",
@@ -173,7 +135,7 @@
                         "x": 12.395,
                         "y": 46.6
                     },
-                    "uuid": "d6b1907d-27ee-4dfe-a3d5-a2f57d27cbd8"
+                    "uuid": "2511f5ac-6521-48d0-885e-66e197906c86"
                 }
             ],
             "severity": "warning",

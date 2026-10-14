@@ -58,7 +58,8 @@ DRV_FP = "Package_SO:HTSSOP-16-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3x3mm_ThermalVi
 # Keyed by value and footprint, or by the maker's number for connectors, switches, the inductor and the fuse.
 BUY = {
     "DC-005-5A-2.0": {"lcsc": "C381116", "price": 0.262, "jlc": "Extended"},
-    "KF128-5.08-2P-AA": {"lcsc": "C474952", "price": 0.192, "jlc": "Extended"},
+    "XT30UPB-F30.G.Y": {"lcsc": "C108769", "price": 0.2333, "jlc": "Extended"},
+    "K7805-1000R3": {"lcsc": "C2992391", "price": 2.3475, "jlc": "Extended"},
     "B2B-XH-A": {"lcsc": "C158012", "price": 0.0407, "jlc": "Extended"},
     "B4B-XH-A": {"lcsc": "C144395", "price": 0.0594, "jlc": "Extended"},
     "PZ254V-11-04P": {"lcsc": "C2691448", "price": 0.0275, "jlc": "Extended"},
@@ -101,6 +102,7 @@ BUY = {
     ("22k", "R_0603_1608Metric"): {"lcsc": "C31850", "mpn": "0603WAF2202T5E", "price": 0.0041, "jlc": "Basic"},
     ("47k", "R_0603_1608Metric"): {"lcsc": "C25819", "mpn": "0603WAF4702T5E", "price": 0.0021, "jlc": "Basic"},
     ("100k", "R_0603_1608Metric"): {"lcsc": "C25803", "mpn": "0603WAF1003T5E", "price": 0.0031, "jlc": "Basic"},
+    ("1.5k", "R_0603_1608Metric"): {"lcsc": "C22843", "mpn": "0603WAF1501T5E", "price": 0.002, "jlc": "Basic"},
 }
 
 # DRV8876 in the HTSSOP-16 (PWP) package: pin number, name, type, side, place on that side.
@@ -476,9 +478,9 @@ def draw():
     two("C4", "C", "100nF 50V", (35, 11), "VM", "GND")
     two("C5", "C", "100nF 50V", (41, 11), "DRV_VCP", "VM")
     two("C6", "C", "22nF 50V", (47, 11), "DRV_CPH", "DRV_CPL")
-    part("J2", "Connector:Screw_Terminal_01x02", "Motor", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
-         (64, 12), {"1": "MOT_A", "2": "MOT_B"}, mpn="KF128-5.08-2P-AA")
-    two("R5", "R", "2.2k", (35, 20), "IPROPI", "GND")
+    part("J2", "Connector_Generic:Conn_01x02", "Motor", "Connector_AMASS:AMASS_XT30UPB-F_1x02_P5.0mm_Vertical",
+         (64, 12), {"1": "MOT_A", "2": "MOT_B"}, mpn="XT30UPB-F30.G.Y")
+    two("R5", "R", "1.5k", (35, 20), "IPROPI", "GND")
     two("R6", "R", "10k", (41, 20), "IPROPI", "I_ADC")
     two("C7", "C", "100nF 50V", (47, 20), "I_ADC", "GND")
     two("R7", "R", "10k", (53, 20), "+3V3", "DRV_FLT")
@@ -491,31 +493,28 @@ def draw():
     two("R11", "R", "100k", (46, 28), "HB_DC", "GND")
     part("JP1", "Jumper:SolderJumper_3_Bridged12", "Sleep source", "Jumper:SolderJumper-3_P1.3mm_Bridged12_RoundedPad1.0x1.5mm",
          (58, 28), {"A": "HB_DC", "C": "DRV_SLP", "B": "HBEAT"}, bom=False)
-    note("Current limit = 3.3 V / R5 / 1000 uA/A: 2.2k gives 1.5 A. All resistors 1%.", 33, 5.5)
+    note("Current limit = 3.3 V / R5 / 1000 uA/A: 1.5k gives 2.2 A. All resistors 1%.", 33, 5.5)
 
     # 12 V to 5 V, built in.
-    block("12 V to 5 V, 3 A", 5, 42, 54, 32)
-    part("U3", "Regulator_Switching:TPS54302", "TPS54302DDCR", "Package_TO_SOT_SMD:SOT-23-6", (22, 12),
-         {"VIN": "+BATT", "EN": "BUCK_EN", "BOOT": "BUCK_BST", "SW": "BUCK_SW", "FB": "BUCK_FB", "GND": "GND"}, mpn="TPS54302DDCR")
-    two("C12", "C", "100nF 50V", (34, 12), "BUCK_BST", "BUCK_SW")
-    two("L1", "L", "10uH 3.2A", (40, 12), "+5V", "BUCK_SW", fp="Inductor_SMD:L_Changjiang_FNR6045S", mpn="FNR6045S100MT")
-    two("R12", "R", "100k", (46, 12), "+5V", "BUCK_FB")
-    two("C25", "C", "100pF", (45, 24), "+5V", "BUCK_FB")
+    block("12 V to 5 V: ready-made module", 5, 42, 54, 32)
+    part("U3", "Converter_DCDC:R-78E5.0-1.0", "K7805-1000R3", "Converter_DCDC:Converter_DCDC_RECOM_R-78E-0.5_THT", (22, 12),
+         {"IN": "+BATT", "OUT": "+5V", "GND": "GND"}, mpn="K7805-1000R3")
     two("C10", "C", "10uF 50V", (5, 24), "+BATT", "GND", fp=C1206)
     two("C11", "C", "100nF 50V", (10, 24), "+BATT", "GND")
-    part("SW3", "Switch:SW_SPDT", "Power", "Button_Switch_SMD:SW_SPDT_Shouhan_MSK12C02", (21, 24), {"B": "BUCK_EN", "C": "GND"}, nc=("A",), mpn="MSK12C02")
     two("C13", "C", "22uF 25V", (29, 24), "+5V", "GND", fp=C1206)
     two("C14", "C", "22uF 25V", (34, 24), "+5V", "GND", fp=C1206)
-    two("R13", "R", "13k", (39, 24), "BUCK_FB", "GND")
-    flag("+5V", (50, 23))
-    note("SW3 to ground: converter off, so the processor is off. 100k and 13k give 5.2 V.", 1, 31)
+    note("A sealed switching module (YLPTEC K7805-1000R3: 8-36 V in, 5 V 1 A out, pins 1 in, 2 ground, 3 out).\n"
+         "The converter's layout is inside it, so the board's layout cannot spoil it.", 1, 31)
 
     # 3.3 V for the processor, from the 5 V rail or from the programming socket.
     block("3.3 V", 60, 42, 34, 32)
     diode("D5", "Device:D_Schottky", "B5819W", SOD123, (5, 10), "VSYS", "+5V", k_up=False, mpn="B5819W")
     diode("D6", "Device:D_Schottky", "B5819W", SOD123, (12, 10), "VSYS", "VBUS", k_up=False, mpn="B5819W")
     part("U4", "Regulator_Linear:AP2112K-3.3", "AP2112K-3.3", "Package_TO_SOT_SMD:SOT-23-5", (24, 10),
-         {"VIN": "VSYS", "EN": "VSYS", "VOUT": "+3V3", "GND": "GND"}, mpn="AP2112K-3.3TRG1")
+         {"VIN": "VSYS", "EN": "LDO_EN", "VOUT": "+3V3", "GND": "GND"}, mpn="AP2112K-3.3TRG1")
+    two("R12", "R", "100k", (17, 18), "VSYS", "LDO_EN")
+    part("SW3", "Switch:SW_SPDT", "Power", "Button_Switch_SMD:SW_SPDT_Shouhan_MSK12C02", (27, 18), {"B": "LDO_EN", "C": "GND"},
+         nc=("A",), mpn="MSK12C02")
     two("C15", "C", "10uF 25V", (5, 24), "VSYS", "GND", fp=C0805)
     two("C16", "C", "10uF 25V", (11, 24), "+3V3", "GND", fp=C0805)
     two("R14", "R", "1k", (16, 24), "+3V3", "LED2_A")
@@ -658,12 +657,13 @@ def check_rules(sch, tmp):
     return found
 
 
-THROUGH_HOLE = ("Connector_BarrelJack", "TerminalBlock_Phoenix", "Connector_JST", "Connector_PinHeader_2.54mm")
+THROUGH_HOLE = ("Connector_BarrelJack", "TerminalBlock_Phoenix", "Connector_JST", "Connector_PinHeader_2.54mm", "Connector_AMASS", "Converter_DCDC")
 PACKAGE = {"R_0603_1608Metric": "0603", "C_0603_1608Metric": "0603", "LED_0603_1608Metric": "0603", "C_1206_3216Metric": "1206", "C_0805_2012Metric": "0805",
            "CP_Elec_6.3x7.7": "6.3 x 7.7 mm can", "CP_Elec_8x10": "8 x 10 mm can", "D_SOD-123": "SOD-123", "D_SMB": "SMB",
            "SOIC-8_3.9x4.9mm_P1.27mm": "SO-8", "ESP32-S3-WROOM-1": "Module", "Fuse_2920_7451Metric": "2920",
            "L_Changjiang_FNR6045S": "6 x 6 x 4.5 mm", "D_SOD-882": "DFN1006", "SW_Push_1P1T_XKB_TS-1187A": "SMD, 5.1 mm square",
-           "SW_SPDT_Shouhan_MSK12C02": "SMD, side slider"}
+           "SW_SPDT_Shouhan_MSK12C02": "SMD, side slider",
+           "Converter_DCDC_RECOM_R-78E-0.5_THT": "Through-hole, 3 pins"}
 KIND = {"R": "Resistor, 1%,", "C": "Capacitor,", "L": "Inductor,", "F": "Fuse,", "LED": "LED,", "D": "Diode,", "J": "Connector:",
         "SW": "Switch:"}
 ORDER = ["U", "Q", "D", "LED", "L", "F", "C", "R", "J", "SW"]
