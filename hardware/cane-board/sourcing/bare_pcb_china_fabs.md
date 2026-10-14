@@ -1,10 +1,10 @@
-# Bare PCB prices from China-based prototype makers, shipped to Santa Clara, CA 95051 (read October 13, 2026)
+# Bare PCB prices from China-based prototype makers, shipped to the San Francisco Bay Area (read October 13, 2026)
 
 How to read these notes
 
 - Every figure carries one of three marks: **[LIVE]** = read from the maker's live instant-quote calculator (page text or the JSON the page requested), **[PUBLISHED]** = from a published help, notice or price page, **[N/A]** = could not obtain. Arithmetic done by the researcher is marked **[CALC]** and appears only under "Inferences".
 - All live quotes were read on **October 13, 2026 between about 19:07 and 19:30 PDT** (October 14, about 10:07 to 10:30 China time; PCBgogo's panel showed "CHN Time Zone (GMT+8): 2026/10/14 10:14:51"). No login, no account, no Gerber upload, nothing added to a cart. Cookie banners were not accepted.
-- **None of the seven calculators accepts a ZIP code at the quote stage.** Each takes only the country ("United States"). ZIP 95051 could therefore not be entered anywhere; all shipping prices below are each maker's rate for "United States". A ZIP-specific or remote-area adjustment, if any, appears only at checkout behind a login.
+- **None of the seven calculators accepts a ZIP code at the quote stage.** Each takes only the country ("United States"). the Bay Area ZIP could therefore not be entered anywhere; all shipping prices below are each maker's rate for "United States". A ZIP-specific or remote-area adjustment, if any, appears only at checkout behind a login.
 - Board entered everywhere: 100 mm x 40 mm, 2 layers, FR-4, 1.6 mm, 1 oz, green mask, white silkscreen, single piece (no panel), 1 design, no castellated holes, no gold fingers, no impedance control. Minimum track/space 6/6 mil and minimum drill 0.3 mm were selected where the form offers them (see the per-maker option list in the first section for the forms that do not).
 
 ## 1. Board price for 5 and for 10 pieces, standard build time, and paid faster build
@@ -82,7 +82,7 @@ All prices are for "United States" (no ZIP field exists). Transit times are the 
 - PCBWay's stated dates (ship October 16 AM, deliver October 19, for a quote made October 14 China time) imply about 5 to 6 calendar days order-to-door on plain DHL if files pass review the same day.
 
 ### Gaps
-- No ZIP-level rate could be read anywhere; whether 95051 attracts any surcharge is not visible without logging in. Santa Clara is a major metro address, so a remote-area fee would be unexpected, but that is not confirmed.
+- No ZIP-level rate could be read anywhere; whether that ZIP attracts any surcharge is not visible without logging in. It is a major metro address, so a remote-area fee would be unexpected, but that is not confirmed.
 - JLCPCB warns that the final shipping cost is confirmed only at checkout (login required).
 - Whether JLCPCB lets an individual (non-company) customer pick the non-DDP "DHL Express" line could not be tested without an account; its published rule is in section 3.
 - Transit times are stated ranges; only JLCPCB publishes delivery statistics. No customs-delay allowance is included by any maker.
@@ -124,7 +124,7 @@ Independent context and cross-checks
 - [CALC] At the published rates the duty on these boards is small in dollars: JLCPCB 35% x $4.00 = $1.40 (5 pcs) or 35% x $5.00 = $1.75 (10 pcs); PCBWay 37.5% x $5.00 = $1.88. These assume the percentage is applied to the product price only; neither maker publishes the base, and the EEVblog example fits product-value-only (35% of $1,368.84 = $479.09 against $479.11 charged).
 - Two different readings of the law are in circulation for a 2-layer bare board. The makers' notices apply roughly 35% to 37.5% (25% Section 301 plus the 12.5% layer of July 24, 2026). Altium (March 2026) and NextPCB (August 2026) both say 2- and 4-layer bare boards hold a Section 301 exclusion scheduled to end November 10, 2026, which would make the statutory rate lower than what JLCPCB pre-collects. JLCPCB says it does not refund the difference at its averaged rates. For a $4 to $5 order the gap is under $1.50, so it does not change the ranking.
 - The practical risk on a small parcel is not the percentage but fixed fees on non-prepaid express lines (courier advancement or brokerage charges, and a possible MPF minimum). Lines sold as duty-prepaid (JLCPCB DDP, PCBWay DTP/DDP and Global Direct) remove that uncertainty; plain DHL at PCBWay, PCBgogo, NextPCB, Elecrow and Seeed leaves it open.
-- JLCPCB may add California sales tax at checkout: its price JSON has a `saleTaxMoney` field and a 2026 user report shows sales tax on a US order. No amount for 95051 could be read without logging in.
+- JLCPCB may add California sales tax at checkout: its price JSON has a `saleTaxMoney` field and a 2026 user report shows sales tax on a US order. No amount for that ZIP could be read without logging in.
 
 ### Gaps
 - No tariff, duty or sales-tax dollar amount could be read for this order at any maker: all of them compute it after login, at order submission. Published rates are given instead.

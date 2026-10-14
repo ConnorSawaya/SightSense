@@ -1,6 +1,6 @@
 # Cane board: potential problems
 
-What could make the board fail, what has been checked, and what is still open. Written October 14, 2026, and updated the same day for the board with the 5 V module, the XT30 motor socket, the 2.2 A limit and hand-drawn power tracks. Nothing has been built.
+What could make the board fail, what has been checked, and what is still open. Written October 14, 2026, and updated the same day for the board with the 5 V module, the XT30 motor socket, the 2.2 A limit and hand-drawn power tracks, then again after a review of the schematic against the DRV8876 datasheet and KiCad's pin maps (items 24 to 30). Nothing has been built.
 
 Severity: **High** means the board may not work or may be damaged; **Medium** means it may work badly or need a hand fix; **Low** means it is an annoyance.
 
@@ -27,6 +27,11 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | Width of every motor-current path, pad to pad | Script follows the copper from part to part | 0.6 to 1.0 mm, except 0.4 mm for the last 1 to 1.4 mm into the driver's 0.3 mm pins |
 | Copper under the four M3 screw heads | Script, 3.2 mm radius | Only ground |
 | Parts in stock | JLCPCB parts library, October 13 and 14 | All lines found; recheck on the day |
+| Motor driver IMODE, PMODE and the current-limit formula | TI datasheet SLVSDS7B, read October 14 | IMODE = GND is fixed off-time current chopping with automatic retry, so R5 sets a real limit; PMODE = GND is PH/EN mode; A_IPROPI = 1000 µA/A; VREF at 3.3 V is under its 3.6 V limit; IPROPI's 2.2 mA is under its 3 mA limit |
+| Motor driver capacitors | Same datasheet | 100 nF rated 16 V or more on VCP to VM, 22 nF rated for VM on CPH to CPL, 100 nF bypass and bulk on VM: match |
+| Watchdog against nSLEEP | Same datasheet: 100 kΩ internal pull-down, 1.5 V logic high, 0.8 V logic low | The pump gives about 2.6 V into the 50 kΩ it sees; nSLEEP falls below logic low about 65 ms after the toggling stops |
+| Pin order of the slide switch, the diode pair, the FETs, the 3.3 V regulator, the 5 V module and JP1 | KiCad's symbols read against the footprints and the makers' pinouts | All match: the switch's common is pin 2, the middle pad; BAT54S A, K, COM = 1, 2, 3; AO3401A G, S, D = 1, 2, 3; JP1's middle pad is DRV_SLP |
+| Design rules check, rerun October 14 | kicad-cli 10.0.6 on the committed board | 0 errors, 0 unconnected, 5 silkscreen warnings; the ordering files were made after the last board save |
 
 ## 2. Problems found that need fixing before ordering
 
@@ -60,6 +65,13 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | 19 | The board does not fit the cane: the electronics mount is drawn for the Pi | Medium | Redesign the mount; test with a printed blank first |
 | 20 | Wheel encoder header supplies 3.3 V; many motor encoders need 5 V | Low | Check the encoder before buying |
 | 21 | Parts go out of stock or change before ordering | Low | Recheck stock on the day |
+| 24 | In PH/EN mode, EN low brakes the motor (both low-side switches on). There is no coast state short of putting the driver to sleep, so `FREE` and `STOP`/`CENTER` are the same in hardware | Low | Decide before the firmware: tie PMODE to +3V3 for PWM mode, where IN1 = IN2 = 0 coasts on the same two pins (PMODE is read once at power-up), or let `FREE` mean "stop the heartbeat" |
+| 25 | Q2, the kill-switch FET, has only −2.9 V on its gate from a 9 V pack, so up to 85 mΩ: 0.4 W at the 2.2 A limit, about a 50 °C rise in one SOT-23, more than the 35 °C the README counted | Medium | A second AO3401A in parallel, as Q1 and Q4 are; or accept, since 2.2 A is reached only at stall |
+| 26 | The 3.3 V regulator drops about 1.35 V while feeding the processor (120 to 355 mA) and the 80 mA buzzer: 0.2 to 0.35 W in a SOT-23-5, a 30 to 90 °C rise depending on the copper under it | Medium | Feel it on the bench with Wi-Fi and the buzzer running; feed the buzzer from 5 V with a 5 V motor if it runs hot |
+| 27 | The watchdog pump's output falls with the toggle rate: below about 30 Hz nSLEEP drops under its 1.5 V logic high | Low (safety) | Firmware rule: toggle HBEAT at 200 Hz or more, from the main loop |
+| 28 | nFAULT does not report the 2.2 A chopping in this IMODE, only overcurrent (3.5 to 5.5 A), undervoltage and over-temperature | Low | Detect a stall from I_ADC; IMODE = 20 kΩ to ground would also flag chopping on nFAULT |
+| 29 | With the power switch off, the battery and motor-supply dividers push about 20 µA each into the unpowered processor through its protection diodes | Low | Harmless in practice; out of specification on paper |
+| 30 | No ESD parts on the kill-switch, talk, buzzer and encoder plugs, whose wires run up the cane | Low | Fine for v0.1; TVS diodes on a later board |
 
 ## 4. First power-up checklist
 

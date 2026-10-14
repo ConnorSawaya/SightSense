@@ -1,4 +1,4 @@
-# Component suppliers for hand-soldering the cane board (5 and 10 boards, delivered to Santa Clara CA 95051)
+# Component suppliers for hand-soldering the cane board (5 and 10 boards, delivered to the San Francisco Bay Area)
 
 DRAFT IN PROGRESS (saved early, October 13, 2026). Sections below the LCSC table are still being researched.
 
@@ -65,7 +65,7 @@ listed parts (ignoring stock): 5 boards needed 42.91 ordered 53.39 ; 10 boards n
 with in-stock substitutes:     5 boards needed 43.74 ordered 53.35 ; 10 boards needed 81.25 ordered 87.80
 net weight g {5: 136.72, 10: 202.73000000000002}
 
-### LCSC cart, read in a guest cart on lcsc.com today (Ship To: United States, 95051) -- raw notes, to be tidied
+### LCSC cart, read in a guest cart on lcsc.com today (Ship To: United States, a Bay Area ZIP) -- raw notes, to be tidied
 - 10-board cart (42 lines, substitutes for the 5 zero-stock lines; C15849 1uF 50V went to 0 stock between 19:07 and 19:55 and shows "50 - Backordered"): Merchandise Total $87.83, Merchandise Discount -$6.13 (three lines zeroed as free samples: C51118 $1.73, C311983 $3.03, C20917 $0.90; plus 5-8% promo on C20539726, C7432781, C2691448, C2937625, C165948, C431540), Estimated Weight 1,500 g, no handling fee, no duty/tariff line. Shipping options: Global Direct Standard Line $15.87 (7-15 business days); 4PX $32.12 (5-10); DHL Express $45.48 (3-7); UPS $47.75 (3-7); FedEx International Priority $50.09 (3-7); FedEx International Economy $51.62 (4-8). Total with Global Direct $97.57.
 - 5-board cart: Merchandise Total $53.37, Merchandise Discount -$3.13, Estimated Weight 1,500 g. Global Direct Standard Line $12.85 (7-15 business days); 4PX $25.51 (5-10); DHL Express $45.48 (3-7); UPS $47.75 (3-7); FedEx International Priority $49.15 (3-7); FedEx International Economy $50.70 (4-8). Total with Global Direct $63.09.
 - 1-module cart ($4.15): Global Direct $7.91, 4PX $15.05, DHL $38.71, UPS $40.41, FedEx IP $42.96, FedEx IE $43.83; Estimated Weight 1,000 g; Handling Fee $3, waived at $15 merchandise ("Add $10.85+ to waive $3 fee").

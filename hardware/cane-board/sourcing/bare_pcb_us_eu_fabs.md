@@ -1,4 +1,4 @@
-# Bare PCB prices from US and European board makers, delivered to Santa Clara, CA 95051 (checked October 13, 2026)
+# Bare PCB prices from US and European board makers, delivered to the San Francisco Bay Area (checked October 13, 2026)
 
 Board quoted everywhere: 40 mm x 100 mm rectangle (1.575 in x 3.937 in, 6.20 sq in, 40 cm2), 2 layers, FR-4, 1.6 mm, 1 oz copper, mask and silkscreen both sides, 0.15 mm (6 mil) track/space, 0.3 mm (11.8 mil) minimum drill, no special features. No Gerber files exist, so every number comes from a calculator or a published rule.
 
@@ -147,10 +147,10 @@ Standard build times run from 3 working days (Eurocircuits, 5 boards) and 5 days
 - Price of DKRed's 5-day quick turn.
 - Price of any expedite at Advanced Circuits, Sunstone and Bay Area Circuits.
 
-## 3. What does shipping to ZIP 95051 cost and how long does it take? Is local pickup possible at Bay Area Circuits?
+## 3. What does shipping to the Bay Area ZIP cost and how long does it take? Is local pickup possible at Bay Area Circuits?
 
 ### Takeaway
-Free domestic shipping is published by OSH Park (USPS First Class, 1-5 business days), DigiKey DKRed and Sunstone (UPS Ground). Bay Area Circuits confirms free "Will Call / Local Pickup" at its Fremont plant. No maker's paid shipping price to 95051 could be read, because every checkout needs an account; AISLER and Eurocircuits in particular show shipping only after login, and AISLER's free shipping does not apply to the US.
+Free domestic shipping is published by OSH Park (USPS First Class, 1-5 business days), DigiKey DKRed and Sunstone (UPS Ground). Bay Area Circuits confirms free "Will Call / Local Pickup" at its Fremont plant. No maker's paid shipping price to that ZIP could be read, because every checkout needs an account; AISLER and Eurocircuits in particular show shipping only after login, and AISLER's free shipping does not apply to the US.
 
 ### Cited Findings
 
@@ -187,7 +187,7 @@ Free domestic shipping is published by OSH Park (USPS First Class, 1-5 business 
 - AISLER's two notices disagree on wording but agree on the effect: a US order today goes by UPS, costs money, and carries a customs handling surcharge.
 
 ### Gaps
-- Paid shipping price to 95051 at every maker (all need an account or cart): AISLER UPS, Eurocircuits, Advanced Circuits, PCB Unlimited, PCB Universe, Bay Area Circuits UPS.
+- Paid shipping price to that ZIP at every maker (all need an account or cart): AISLER UPS, Eurocircuits, Advanced Circuits, PCB Unlimited, PCB Universe, Bay Area Circuits UPS.
 - DKRed carrier and transit time.
 - Whether Sunstone's free Ground offer applies to every OneQuote order or only ValueProto.
 
@@ -265,7 +265,7 @@ Arithmetic check:
 ### Gaps
 - A complete landed cost for AISLER, Eurocircuits, Advanced Circuits, PCB Unlimited and PCB Universe (shipping and, for the European two, duty are missing).
 - Any cost at Sunstone and Bay Area Circuits.
-- Actual transit days to 95051 for every carrier option except OSH Park's published ranges.
+- Actual transit days to that ZIP for every carrier option except OSH Park's published ranges.
 
 ## 6. Stencil: price and lead time for a frameless stainless stencil about 40 x 100 mm
 

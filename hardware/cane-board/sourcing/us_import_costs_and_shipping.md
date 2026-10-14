@@ -1,4 +1,4 @@
-# US import costs and delivery times for small electronics parcels from China (Santa Clara, CA 95051, as of October 13, 2026)
+# US import costs and delivery times for small electronics parcels from China (the San Francisco Bay Area, as of October 13, 2026)
 
 How to read these notes. Every finding carries a provenance tag: **[Official]** = US government or the courier/seller speaking about its own fees on its own site; **[Seller]** = a board house or parts seller describing its own practice; **[Third party]** = law firms, tariff trackers, trade press; **[User]** = forum posts. "(via search snippet)" means the page could not be opened directly in this session (timeout, 403, or bot block) and the text came from a search-engine extract of that page; treat those as less certain. Nothing below is filled in from memory. Rates changed three times in 2026 (February 24, July 24, and fee changes July–October), so pages dated before July 24, 2026 are stale on the stacked rate.
 
@@ -173,7 +173,7 @@ All three add a fee for advancing the duty with a minimum of about $17–$17.50 
 - DHL's charge for receivers without an account, storage charges and free days were not found.
 - Whether FedEx's Inbound Processing Fee and UPS's International Processing Fee are billed to the shipper or the receiver is not stated in the sources read.
 
-## 5. Is California sales or use tax collected on shipments to 95051, at what rate, and on top of duty?
+## 5. Is California sales or use tax collected on shipments to that ZIP, at what rate, and on top of duty?
 
 ### Takeaway
 The City of Santa Clara rate is reported as 9.75% (7.25% state plus 2.5% district) following a county-wide rise on April 1, 2026. JLCPCB and LCSC both list California among the states where they collect sales tax at checkout, on goods plus shipping; whether a prepaid duty line is also taxed is not stated by either. Under California's own guidance, duty the buyer pays as importer is generally outside the tax base, while a tariff that is the seller's cost is inside it.
@@ -190,7 +190,7 @@ The City of Santa Clara rate is reported as 9.75% (7.25% state plus 2.5% distric
 - **[User]** One April 2026 JLCPCB order showed sales tax of $127.56 beside goods of $1,368.84, shipping of $169.19 and customs of $479.11; the buyer's state is not given. — [EEVblog, "JLC tarriffs etc. to US ?"](https://www.eevblog.com/forum/manufacture/jlc-tarriffs-etc-to-us/)
 
 ### Inferences
-- For 95051 use 9.75% on goods plus shipping as the base case, and 9.75% on goods plus shipping plus prepaid duty as the upper case.
+- For that ZIP use 9.75% on goods plus shipping as the base case, and 9.75% on goods plus shipping plus prepaid duty as the upper case.
 - In the user's order the tax equals 8.29% of goods plus shipping, 9.32% of goods alone, or 6.32% of everything; without the state none of these can be confirmed, so the example does not settle whether JLCPCB taxes the duty line.
 - On a DDP shipment where the buyer remains importer of record (as Seeed states for its own), the CDTFA principle points to duty not being taxable, but a seller's tax engine may still tax it if it treats the line as part of the selling price.
 

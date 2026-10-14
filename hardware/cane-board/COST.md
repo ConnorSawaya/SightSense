@@ -8,7 +8,7 @@ The plan is turnkey assembly (PCBA) by JLCPCB. Parts are listed line by line in 
 
 For the board as it stands: 46 × 100 mm, 4 copper layers, black solder mask, the ready-made 5 V module, the XT30 motor socket and 7 Extended part lines. Worked out from the fees below; not a checkout total.
 
-Roughly **$74 to start, plus the bare boards, plus about $15.30 a board**, delivered to Santa Clara, CA 95051 with the 35% US tariff paid.
+Roughly **$74 to start, plus the bare boards, plus about $15.30 a board**, delivered to the San Francisco Bay Area with the 35% US tariff paid.
 
 | Boards | Total | Per board |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Earlier figures, kept for comparison: the 2-layer green design with 9 Extended l
 | Parts | $10.48 a board | JLCPCB parts library |
 | US tariff | 35% of the order, collected at checkout | JLCPCB US tariff FAQ, updated September 9, 2026 |
 | Shipping | $26.64, UPS Express Saver, duty prepaid, 2–4 business days | JLCPCB live shipping calculator |
-| California sales tax | 9.75% (Santa Clara), may add $15–$20 | Not confirmed whether JLCPCB charges it |
+| California sales tax | About 9–10%, may add $15–$20 | Not confirmed whether JLCPCB charges it |
 
 JLCPCB's cheaper Global Standard Direct Line ($6.95, 8–13 business days) is limited to orders of $59 or less, so an assembled order cannot use it. Checked live on JLCPCB's shipping calculator.
 

@@ -48,3 +48,7 @@ Thumbs.db
 # Devpost submission drafts: kept on the laptop, never in the repository
 devpost/
 DEVPOST.md
+
+# Autorouter attempts and logs (make_route.py keeps the best run as cane-board.ses)
+hardware/cane-board/export/route/*try*.ses
+hardware/cane-board/export/route/run.log

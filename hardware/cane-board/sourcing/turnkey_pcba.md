@@ -4,7 +4,7 @@ How to read these notes
 
 - Every figure carries one of three labels: **[LIVE]** = read from the company's live calculator on October 13, 2026 (US Pacific evening; October 14 morning China time); **[PUBLISHED]** = from a published price or help page; **[NO ACCOUNT]** = could not be obtained without logging in, creating an account or uploading a file (none of which was done).
 - The job entered everywhere: 40 x 100 mm, 2 layers, FR-4, 1.6 mm, 1 oz, HASL, green, 1 design; top-side assembly; 42 unique parts (BOM lines); 86 parts per board = 78 surface-mount (about 277 joints) + 8 through-hole (22 joints); no BGA. Quantities 5 and 10.
-- No calculator asked for a ZIP code. All shipping figures are to "United States" as a country; 95051 could not be entered anywhere without an account.
+- No calculator asked for a ZIP code. All shipping figures are to "United States" as a country; the ZIP could not be entered anywhere without an account.
 - No parts price was guessed. Where parts need a BOM upload, the parts line is "their quote".
 - "Excluding parts" totals are sums made in these notes from the labelled figures; they are not quotes.
 
@@ -144,7 +144,7 @@ No company in the list has a minimum above 5 boards. Published build times are m
 - MacroFab lead times: not on its public pages.
 - JLCPCB assembly build time for this order was not read (the assembly step needs Gerber files); only the PCB build time was visible.
 
-## Key question 3: Shipping methods, prices and transit times to 95051; US tariff, duty and tax; California sales tax and US build for US assemblers
+## Key question 3: Shipping methods, prices and transit times to that ZIP; US tariff, duty and tax; California sales tax and US build for US assemblers
 
 ### Takeaway
 Express courier from China costs $27–$33 for a parcel of this size and takes 2–5 business days at every company; economy lines cost $7–$15 and take 6–13 business days. JLCPCB pre-collects 35% duty at checkout on US orders; PCBWay and PCBgogo offer duty-prepaid courier options but their ordinary quotes say duties are not included, so a US buyer should expect roughly 35–37.5% on the declared value either at checkout or from the courier.
@@ -192,7 +192,7 @@ US assemblers: location and tax
 - MacroFab: "ITAR-registered manufacturing facilities in the United States"; corporate office in Houston, Texas; shipping and tax not stated. [PUBLISHED] — [MacroFab FabIQ](https://nws.macrofab.com/fabiq/); [MacroFab PCB assembly](https://macrofab.com/pcb-assembly)
 - AdvancedPCB describes itself as a "U.S.-based operation" with domestic manufacturing; no city is named for assembly. [PUBLISHED] — [AdvancedPCB assembly services](https://www.advancedpcb.com/en-us/solutions/assembly-services/)
 - CircuitHub offers standard and expedited shipping and customer courier accounts; factory location and sales tax are not stated on the pages read. [PUBLISHED] — [CircuitHub docs](https://docs.circuithub.com/getting-started/concepts)
-- The combined sales tax rate for ZIP 95051 is listed as 9.75% as of September 2026 (after a district change on April 1, 2026); this is from secondary rate tables, not the state lookup. — [Kintsugi rate table](https://trykintsugi.com/sales-tax-guides/usa/california/santa-clara-county); [TaxCloud 2026 update](https://taxcloud.com/sales-tax-radar/2026-california-sales-tax-updates)
+- The combined sales tax rate for the Bay Area ZIP used is listed as 9.75% as of September 2026 (after a district change on April 1, 2026); this is from secondary rate tables, not the state lookup. — [Kintsugi rate table](https://trykintsugi.com/sales-tax-guides/usa/california/santa-clara-county); [TaxCloud 2026 update](https://taxcloud.com/sales-tax-radar/2026-california-sales-tax-updates)
 
 ### Inferences
 - JLCPCB duty estimate for the known 5-board order: 35% of $91.39 is about $31.99, if the rate is applied to the goods total (the forum report suggests it is). With UPS Express Saver (DDP) at $26.64 that makes about $150.02 landed; with DHL Express (DDP) about $154.82. These are estimates: the shipping price was read for a bare-board cart (0.19–0.54 kg cost $31.44–$32.86 by DHL), and the assembled weight could not be read without Gerber files.
@@ -202,11 +202,11 @@ US assemblers: location and tax
 - US-built boards carry no import duty but, if the seller collects California tax, 9.75% is added; Chinese sellers showed no sales-tax line in any calculator.
 
 ### Gaps
-- No calculator accepted ZIP 95051; ZIP-specific rates (and any remote-area surcharge) were not obtainable without an account.
+- No calculator accepted the Bay Area ZIP; ZIP-specific rates (and any remote-area surcharge) were not obtainable without an account.
 - Exact duty and "service fee" for PCBWay DHL (DTP)/FedEx (DDP), PCBgogo DHL (DDP) and whatever Elecrow, Seeed and NextPCB do for US orders in 2026: not published on the pages found; no 2026 tariff notice was found for PCBWay, PCBgogo, Elecrow or Seeed.
 - Sources disagree on the legal make-up of the extra layer after July 24, 2026: JLCPCB's FAQ still pre-collects 35% (25% + 10%), while NextPCB's article gives 37.5% (25% + 12.5%). The current statutory rate was not checked against official US sources here.
 - What "ZT" and "Direct Line" mean in Elecrow's shipping list, and their transit times: Elecrow's shipping page returned a 404.
-- Whether Screaming Circuits, MacroFab, CircuitHub and AdvancedPCB collect California sales tax, their shipping prices to 95051, and CircuitHub's factory location: not found on public pages.
+- Whether Screaming Circuits, MacroFab, CircuitHub and AdvancedPCB collect California sales tax, their shipping prices to that ZIP, and CircuitHub's factory location: not found on public pages.
 - JLCPCB shipping price for the actual assembled parcel: needs Gerber files in the cart.
 
 ## Key question 4: Conditions on headline offers, and whether this job qualifies

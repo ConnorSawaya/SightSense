@@ -91,7 +91,7 @@ The pack is labelled 12 V 3 Ah, about 32 Wh. I counted 26 Wh as usable. Its capa
 | Path | Most it can carry by design | Part's rating |
 | --- | --- | --- |
 | Battery jack, fuse, reverse-plug FETs | About 2.5 A: motor at its 2.2 A limit and the processor's peaks, on a 9 V pack | Jack 5 A, fuse holds 4 A, two FETs of 4 A each side by side |
-| Kill-switch FET | 2.2 A, the motor's limit. About 0.3 W of heat then, an estimated 35 °C rise | 4 A |
+| Kill-switch FET | 2.2 A, the motor's limit. About 0.3 to 0.4 W of heat then, an estimated 35 to 50 °C rise; worst from a 9 V pack, when its gate has only 2.9 V | 4 A |
 | Motor driver | 2.2 A, set by R5 | 3.5 A peak |
 | 5 V rail | About 0.5 A, the processor's peaks | 1 A |
 | 3.3 V rail | About 0.44 A: 355 mA Wi-Fi peak and an 80 mA buzzer | 0.6 A |
