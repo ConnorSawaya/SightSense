@@ -32,6 +32,13 @@ xcuserdata/
 *.gcode
 *.3mf.bak
 
+# KiCad's own working files
+*.kicad_prl
+*-backups/
+fp-info-cache
+*.lck
+_autosave-*
+
 # OS and editors
 .DS_Store
 Thumbs.db

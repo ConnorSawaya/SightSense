@@ -27,6 +27,7 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 | GX10 software (`gx10/`) | Ingest, planner, dashboard, model, navigation and detection modules are present; validate the current integration on the target GX10 |
 | Pi motor controller (`pi/`) | Direct-wheel mode, command watchdog, setup tools and mock tests are present; verify motor direction and hardware behavior before use |
 | Whole-system checks | Use the synthetic phone, simulated walk and mock GPIO tests; do not claim a physical end-to-end result unless it has been observed |
+| Cane board ([`hardware/cane-board/`](hardware/cane-board/)) | Schematic for one board to replace the Pi, its converter and the IBT-2, drawn on October 13 after the event. The schematic passes KiCad's checks. The parts are placed on a 40 × 100 mm board with no tracks routed. No firmware, not built; the cane as built still uses the Pi |
 | Bill of materials ([`hardware/BOM.md`](hardware/BOM.md)) | Collected from the hardware pages on October 12; no prices or shop links |
 | 3D pictures and model page | README pictures in `docs/media/` and a GitHub Pages page (`gh-pages` branch) that shows the interactive model. Made on October 12, after the event; see `docs/DISCLOSURE.md` |
 | Result | 1st place overall at the UCSC AI Hackathon @ SF Tech Week, as reported by the team |

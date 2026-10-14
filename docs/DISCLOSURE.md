@@ -25,6 +25,7 @@ What in this project we did not make ourselves, and what existed before the even
 | Tailscale | Private network between the phone, the Pi, the laptops and the GX10, used from October 10 because the team's router was not at the venue |
 | OpenSCAD | Designing the cane coupler |
 | build123d | Designing the handle and phone mount |
+| KiCad 10 and its symbol and footprint libraries | Drawing and checking the cane board's schematic (`hardware/cane-board/`), after the event |
 | Raspberry Pi OS Lite, Raspberry Pi Imager | The Raspberry Pi's operating system, and writing it to the SD card |
 | Raspberry Pi bootloader recovery files (rpi-eeprom) | Repairing the Raspberry Pi's bootloader when it would not start |
 
@@ -46,6 +47,7 @@ The rest is to be completed by the team. State plainly what existed before 12:00
 - **3D pictures in the README** (`docs/media/`): made on October 12, 2026, the day after the event, with an AI coding assistant. They are rendered from a model built for a team member's portfolio page. That model starts from `hardware/assembly/assembly_viewer.html` and adds a Raspberry Pi 5 (Raspberry Pi's official STEP model, MIT licence), a gearmotor, battery, phone, wheel, motor driver and wiring drawn from published sizes and from `hardware/wiring.md`. The scripts that build it are in the portfolio's repository, not this one. Nothing in the pictures was part of the judged submission.
 - **3D model page** (<https://connorsawaya.github.io/SightSense/>): added on October 12, 2026. It is one page on the `gh-pages` branch that shows the same model, which is served from the portfolio's site and not stored in this repository.
 - **Photos from the event** (`docs/media/photos/`): taken by the team at the event and added to the README on October 12, 2026. They are captures of the photos as shown in a browser, resized, not the original files. Two are trimmed to leave out an event badge's QR code. The name tags over the three people in the team photo are not in the original: they were made with an online Minecraft name tag generator and added to the picture afterwards.
+- **Cane board** (`hardware/cane-board/`): a schematic, a parts placement and a bill of materials for one circuit board to replace the Raspberry Pi, its converter and the motor driver, drawn on October 13, 2026, two days after the event, with an AI coding assistant. It is a design only: the board is not routed and none has been made. Nothing in it was part of the judged submission.
 - **The result**: the README records that the project placed 1st overall, as reported by the team.
 
 ## AI assistance
