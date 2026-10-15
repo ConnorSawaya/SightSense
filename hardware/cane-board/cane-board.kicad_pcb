@@ -3496,6 +3496,7 @@
 		(property "Reference" "U3"
 			(at 2.54 -7.56 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "2cf2f802-f982-4748-be55-b215f6a4fc0f")
 			(effects
 				(font
@@ -20511,80 +20512,14 @@
 		(layer "Edge.Cuts")
 		(uuid "7c70031f-0fd0-4871-a040-2bdba452680d")
 	)
-	(gr_text "I2C"
-		(at 5.58 56 90)
-		(layer "F.SilkS")
-		(uuid "2f8b07a4-5f3b-454a-8ee6-343d8c9935fe")
-		(effects
-			(font
-				(size 0.8 0.8)
-				(thickness 0.12)
-			)
-		)
-	)
-	(gr_text "SER"
-		(at 6.09 47.5 90)
-		(layer "F.SilkS")
-		(uuid "4c534b97-3064-4907-aa95-8d249b4ffdd2")
-		(effects
-			(font
-				(size 0.8 0.8)
-				(thickness 0.12)
-			)
-		)
-	)
-	(gr_text "ENC"
-		(at 9.77 70.6 90)
-		(layer "F.SilkS")
-		(uuid "9f4738c0-1f86-4954-bd43-cb695a10df3a")
-		(effects
-			(font
-				(size 0.8 0.8)
-				(thickness 0.12)
-			)
-		)
-	)
-	(gr_text "BOOT"
-		(at 10.58 29.5 90)
-		(layer "F.SilkS")
-		(uuid "eed51a05-6432-4ed9-adbf-cf3b96db966d")
-		(effects
-			(font
-				(size 0.8 0.8)
-				(thickness 0.12)
-			)
-		)
-	)
-	(gr_text "RST"
-		(at 35.53 29.5 90)
-		(layer "F.SilkS")
-		(uuid "d916c1a5-0165-4aca-8082-54e58145ec90")
-		(effects
-			(font
-				(size 0.8 0.8)
-				(thickness 0.12)
-			)
-		)
-	)
-	(gr_text "PWR"
-		(at 38.18 57.5 90)
-		(layer "F.SilkS")
-		(uuid "90a28bf7-2e9e-460d-946e-74fb50545f80")
-		(effects
-			(font
-				(size 0.8 0.8)
-				(thickness 0.12)
-			)
-		)
-	)
 	(gr_text "KILL"
 		(at 4.6 6.9 0)
 		(layer "F.SilkS")
 		(uuid "9050ebc3-5241-4a83-b801-16b3267f0424")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)
@@ -20594,8 +20529,8 @@
 		(uuid "b94ed196-a776-438c-b7dd-057cec66c0aa")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)
@@ -20605,19 +20540,19 @@
 		(uuid "47e62fc6-c0a9-43cd-a7d1-7c03eda76313")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)
-	(gr_text "cane board v0.1"
-		(at 29.9 56.4 0)
+	(gr_text "board v0.1"
+		(at 29.9 56.2 0)
 		(layer "F.SilkS")
 		(uuid "ae00deec-a92a-4168-bf98-10165759af0f")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)
@@ -20627,8 +20562,8 @@
 		(uuid "3a6a3b8d-25e4-428b-8446-08c8756de309")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)
@@ -20638,8 +20573,52 @@
 		(uuid "ff1badb9-7c2d-4f9f-ad77-5c53630d60e3")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "I2C"
+		(at 5.58 56 90)
+		(layer "F.SilkS")
+		(uuid "2f8b07a4-5f3b-454a-8ee6-343d8c9935fe")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "SER"
+		(at 6.09 47.5 90)
+		(layer "F.SilkS")
+		(uuid "4c534b97-3064-4907-aa95-8d249b4ffdd2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "ENC"
+		(at 9.77 70.6 90)
+		(layer "F.SilkS")
+		(uuid "9f4738c0-1f86-4954-bd43-cb695a10df3a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "BOOT"
+		(at 10.58 29.5 90)
+		(layer "F.SilkS")
+		(uuid "eed51a05-6432-4ed9-adbf-cf3b96db966d")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)
@@ -20649,8 +20628,30 @@
 		(uuid "b17b35c6-6fd0-4796-8655-38fc0890d8a2")
 		(effects
 			(font
-				(size 0.9 0.9)
-				(thickness 0.135)
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "RST"
+		(at 35.53 29.5 90)
+		(layer "F.SilkS")
+		(uuid "d916c1a5-0165-4aca-8082-54e58145ec90")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "PWR"
+		(at 38.18 57.5 90)
+		(layer "F.SilkS")
+		(uuid "90a28bf7-2e9e-460d-946e-74fb50545f80")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
 			)
 		)
 	)

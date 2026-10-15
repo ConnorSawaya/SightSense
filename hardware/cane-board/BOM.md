@@ -154,7 +154,7 @@ JLCPCB's economic assembly, from its price page on October 13, 2026, for the boa
 
 ## Notes on the parts
 
-- **Stock.** Every line was in stock in JLCPCB's library on October 13. The thinnest were the processor module (2,543) and the Preferred TVS (8,094). The 5 V module and the XT30 socket were found in JLCPCB's library on October 14; recheck stock on the day.
+- **Stock.** Every line was in stock in JLCPCB's library on October 13. The thinnest were the processor module (2,543) and the Preferred TVS (8,094). The 5 V module and the XT30 socket were found in JLCPCB's library on October 14; recheck stock on the day. Rechecked on LCSC the evening of October 14: the processor module 2,222, the motor driver 29,627, the 5 V module 9,427 (now $1.37 there), the XT30 43,520, the 220 µF can 21,915.
 - **Motor socket, J2.** AMASS XT30UPB-F, upright, rated 15 A continuous. Its footprint is KiCad's own for that exact part.
 - **Fuse, F1.** Holds 4 A at 25 °C, 3.4 A at 40 °C and 2.7 A at 60 °C, and trips at 8 A. The board's worst case is about 2.5 A, with the motor at its 2.2 A limit.
 - **Battery jack, J1.** 2.0 mm pin, for a 5.5 mm plug. Measure the pack's plug first: the same jack comes with a 2.5 mm pin as C381115.

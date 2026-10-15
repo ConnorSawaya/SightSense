@@ -79,13 +79,14 @@ PLACE = {
 }
 BY_ORIGIN = {"U1"}  # placed by its own origin: its courtyard includes the clear space the aerial wants
 
-# Words printed on the board: text, x, y, turn, height. Part numbers are printed only for the chips.
+# Words printed on the board: text, x, y, turn, height. JLCPCB wants text 1.0 mm or taller with 0.15 mm lines.
+# Part numbers are printed only for the chips.
 SILK = [
-    ("SightSense", 29.9, 54.3, 0, 1.3), ("cane board v0.1", 29.9, 56.4, 0, 0.9),
-    ("KILL", 4.6, 6.9, 0, 0.9), ("TALK", 4.6, 26.1, 0, 0.9), ("BUZZ", 4.6, 33.0, 0, 0.9),
-    ("USB", 40.82, 6.9, 0, 0.9), ("BOOT", 10.58, 29.5, 90, 0.8), ("RST", 35.53, 29.5, 90, 0.8),
-    ("SER", 6.09, 47.5, 90, 0.8), ("I2C", 5.58, 56.0, 90, 0.8), ("ENC", 9.77, 70.6, 90, 0.8),
-    ("PWR", 38.18, 57.5, 90, 0.8), ("BATT 12V", 23.0, 93.5, 90, 0.9), ("MOTOR", 31.05, 88.2, 0, 0.9),
+    ("SightSense", 29.9, 54.3, 0, 1.3), ("board v0.1", 29.9, 56.2, 0, 1.0),
+    ("KILL", 4.6, 6.9, 0, 1.0), ("TALK", 4.6, 26.1, 0, 1.0), ("BUZZ", 4.6, 33.0, 0, 1.0),
+    ("USB", 40.82, 6.9, 0, 1.0), ("BOOT", 10.58, 29.5, 90, 1.0), ("RST", 35.53, 29.5, 90, 1.0),
+    ("SER", 6.09, 47.5, 90, 1.0), ("I2C", 5.58, 56.0, 90, 1.0), ("ENC", 9.77, 70.6, 90, 1.0),
+    ("PWR", 38.18, 57.5, 90, 1.0), ("BATT 12V", 23.0, 93.5, 90, 1.0), ("MOTOR", 31.05, 88.2, 0, 1.0),
 ]
 # KiCad ships no 3D model for these parts. A part of the same kind and size stands in for each in the pictures.
 MODELS = "${KICAD10_3DMODEL_DIR}/"
@@ -137,7 +138,7 @@ def build():
             box = fp.GetCourtyard(pcbnew.F_CrtYd).BBox()
             cx, cy = (box.GetLeft() + box.GetRight()) / 2, (box.GetTop() + box.GetBottom()) / 2
             fp.SetPosition(pcbnew.VECTOR2I(int(mm(x) - cx), int(mm(y) - cy)))
-        fp.Reference().SetVisible(ref.startswith("U"))
+        fp.Reference().SetVisible(ref.startswith("U") and ref != "U3")  # the module has its own print; U3 would sit on C10
         if ref in STAND_IN:
             model = pcbnew.FP_3DMODEL()
             model.m_Filename, turn_z = STAND_IN[ref]
@@ -191,7 +192,7 @@ def build():
         t.SetLayer(pcbnew.F_SilkS)
         t.SetPosition(point(x, y))
         t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
-        t.SetTextThickness(mm(size * 0.15))
+        t.SetTextThickness(mm(max(0.15, size * 0.15)))
         t.SetTextAngleDegrees(turn)
         board.Add(t)
 
