@@ -14,6 +14,7 @@ which for some parts is KiCad's turned round. ROTATE below holds those turns.
 """
 
 import csv
+import math
 import os
 import shutil
 import subprocess
@@ -55,6 +56,16 @@ ROTATE = {
     "PinHeader_1x04_P2.54mm_Vertical": 270,
 }
 
+# Where the body's centre really is, in mm in the footprint's own frame, where its outline misleads (found by
+# an outside review, October 15). SW3: KiCad's outline includes the lever; the housing is centred on the two
+# locating holes, which is the footprint's origin. U3: the outline is RECOM's 11.6 x 8.5 mm module; the
+# YLPTEC K7805's drawing (page 3) gives 11.5 x 7.55 mm with the pins 2.00 mm from one face and 3.20 and 3.22 mm
+# from the ends, so its centre is 2.55 mm along from pin 1 and 1.775 mm into the body.
+CENTRE = {
+    "SW_SPDT_Shouhan_MSK12C02": (0.0, 0.0),
+    "Converter_DCDC_RECOM_R-78E-0.5_THT": (2.55, -1.775),
+}
+
 
 def run(*args):
     done = subprocess.run([CLI, *args], capture_output=True, text=True)
@@ -64,6 +75,13 @@ def run(*args):
 
 def body_centre(fp):
     """Centre of the part's outline on the fabrication layer, or of its pads if it has none."""
+    name = fp.GetFPIDAsString().split(":")[1]
+    if name in CENTRE:  # a point in the footprint's frame, turned and moved as the footprint is
+        dx, dy = CENTRE[name]
+        a = math.radians(fp.GetOrientationDegrees())
+        o = fp.GetPosition()
+        return pcbnew.VECTOR2I(o.x + pcbnew.FromMM(dx * math.cos(a) + dy * math.sin(a)),
+                               o.y + pcbnew.FromMM(-dx * math.sin(a) + dy * math.cos(a)))
     shapes = [d for d in fp.GraphicalItems() if d.GetLayer() == pcbnew.F_Fab and d.Type() == pcbnew.PCB_SHAPE_T]
     items = shapes or list(fp.Pads())
     box = items[0].GetBoundingBox()
