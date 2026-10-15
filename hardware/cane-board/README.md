@@ -54,7 +54,7 @@ None of these depends on the firmware being right.
 
 1. **Kill switch.** A switch on connector J3 holds the motor supply on. Open the switch, unplug it or break a wire, and the motor supply is off, by my sums within about 2 ms. The processor cannot override it. The switch carries about 0.5 mA, so it can be small and its wires thin.
 2. **Watchdog.** The driver is awake only while the processor keeps toggling one pin. If the firmware hangs or the processor resets, the driver sleeps: in about 60 ms if the pin stops low, about 125 ms if it stops high (`check_watchdog.py`). Solder jumper JP1 bypasses this if it misbehaves.
-3. **Current limit.** R5 sets the most current the motor can ever get: 3.3 V ÷ R5 ÷ 0.001. With 1.5 kΩ that is 2.2 A, set above the 1.0 to 1.7 A stall currents in seller tables so the motor pushes as hard as it did on the IBT-2. The IBT-2 has no such limit. Lower it once the stall current is measured.
+3. **Current limit.** R5 sets the motor's current limit: 3.3 V ÷ R5 ÷ 0.001. With 1.5 kΩ that is 2.2 A, set above the 1.0 to 1.7 A stall currents in seller tables so the motor pushes as hard as it did on the IBT-2. That is the steady figure: for about the first millisecond of a pulse, the empty filter capacitor C7 draws on IPROPI through R6 and lets the current reach about 2.5 A (an outside review's estimate). The motor's inductance and the driver's timing set the real peaks; measure them. The IBT-2 has no such limit. Lower it once the stall current is measured.
 
 The firmware still has to keep the rules in `AGENTS.md`: off when a command's time-to-live runs out, off after 0.4 s of silence, and no motor power taken from the network.
 
@@ -66,7 +66,7 @@ The board's protection assumes these. Each comes from an item in [`POTENTIAL_PRO
 2. **Stop driving the motor when VBAT_ADC reads under 9.3 V**, and say "battery low" before that. Below about 8 V at the jack the 5 V module drops out and the processor resets (item 31).
 3. **Back off on a stall.** Read I_ADC with 12 dB attenuation: Espressif characterises that range to 2.9 V, about 1.93 A at 1.5 V per amp, so treat anything above it as high current. When it stays high for longer than a pulse, stop and wait. At the 2.2 A limit the driver makes about 3.4 W and its own over-temperature cut-out will stop it anyway (item 22).
 4. **Treat nFAULT low as "motor off until it clears".** It reports overcurrent, undervoltage and over-temperature, not the normal 2.2 A chopping (item 28).
-5. **Arm in order.** At boot set MOT_EN, HBEAT and the buzzer low before anything else. Start the heartbeat, then wait about 5 ms (the pump fills in under 1 ms, the driver wakes in 1 ms) before driving. The driver's inputs are pulled down and the pump is empty at power-up, so this is belt and braces.
+5. **Arm in order.** At boot set MOT_EN, HBEAT and the buzzer low before anything else. Start the heartbeat, then keep MOT_EN low for about 15 ms before driving. The model fills the pump in under 1 ms and the driver wakes in 1 ms, but capacitor tolerances can slow the pump several times over (an outside review). The driver's inputs are pulled down and the pump is empty at power-up, so this is belt and braces.
 6. **Disarm at once.** On a stale command, a lost link or any fault: MOT_EN low straight away, heartbeat stopped low, and wait for a fresh command after re-arming.
 
 The kill switch does not protect against its two wires shorting together. That reads as "switch closed".

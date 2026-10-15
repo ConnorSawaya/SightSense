@@ -35,10 +35,13 @@ LAYERS = "F.Cu,In1.Cu,In2.Cu,B.Cu,F.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cut
 #   AO3401A C15127, AO3400A C20917, BAT54S C7420333: pin 1 bottom right, KiCad top left -> 180
 #   AP2112K C51118, DRV8876 C575551: pins 1 up along the bottom, KiCad down the left side -> 270
 #   JST XH C158012, C144395 and XT30 C108769: pin 1 and the housing's key on the other side -> 180
+#   pin headers C2691448, C2937625: a row with pin 1 on the left, KiCad a column with pin 1 at the top -> 270
+#     (missed on the first pass and found by an outside review; a header turned a quarter misses its holes)
 # Checked and the same as KiCad (0): the LEDs C2286, B5819W C8598, SMBJ15A C19077569 (cathode left),
 # the 220 uF can C724620 (+ left), USB-C C165948 (A1 top left), ESP32-S3 C2913197 (aerial up),
 # MSK12C02 C431540, K7805 C2992391 (pin 1 left) and the barrel jack C381116.
-# Resistors, capacitors, buttons, the fuse, the pin headers and the two USB TVS diodes turn either way.
+# Also the same as KiCad: the push buttons C318884 (pins 1-2 along the top, as KiCad's pads 1), the fuse
+# C20539726, the USB TVS diodes C7420372, and the 0603 and 1206 parts (pads side by side).
 # The generic tables in other tools disagree for SOT-23-5 (180), the electrolytic (180) and this USB-C (180);
 # those would have turned U4 a quarter, and C1 and J11 round. Recheck in JLCPCB's preview before paying.
 ROTATE = {
@@ -48,6 +51,8 @@ ROTATE = {
     "JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical": 180,
     "JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical": 180,
     "AMASS_XT30UPB-F_1x02_P5.0mm_Vertical": 180,
+    "PinHeader_1x03_P2.54mm_Vertical": 270,
+    "PinHeader_1x04_P2.54mm_Vertical": 270,
 }
 
 
