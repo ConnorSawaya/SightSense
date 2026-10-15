@@ -149,10 +149,19 @@ def build():
             fp.SetDNP(True)
             fp.SetExcludedFromBOM(True)
             fp.SetExcludedFromPosFiles(True)
+            for pad in fp.Pads():  # no solder paste where no part goes, so the stencil leaves those pads bare
+                layers = pad.GetLayerSet()
+                layers.RemoveLayer(pcbnew.F_Paste)
+                pad.SetLayerSet(layers)
         for pad in fp.Pads():
             net = mb.expect.get((ref, pad.GetNumber()))
             if net:
                 pad.SetNet(nets[net])
+        if ref == "J1":  # XKB's drawing asks for 1.0 x 3.5 mm slots; KiCad's generic jack has 3.0 mm ones
+            for pad in fp.Pads():
+                long_x = pad.GetDrillSize().x > pad.GetDrillSize().y
+                pad.SetDrillSize(pcbnew.VECTOR2I(mm(3.5 if long_x else 1.0), mm(1.0 if long_x else 3.5)))
+                pad.SetSize(pcbnew.F_Cu, pcbnew.VECTOR2I(mm(4.0 if long_x else 3.5), mm(3.5 if long_x else 4.0)))
         board.Add(fp)
 
     # Outline: a rectangle with rounded corners.
