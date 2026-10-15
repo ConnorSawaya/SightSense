@@ -121,6 +121,7 @@ To buy. None of these was looked up, so no prices:
 | --- | --- | --- |
 | 1 | Kill switch | One that stays where it is put, with two terminals. Closed means the motor can run. It carries about 0.5 mA, so any small switch rated for 12 V will do. Mount it within reach of the hand |
 | 2 | JST XH 2-way plug with wire leads | One for the kill switch, one for the talk button |
+| 1 | 100 nF ceramic capacitor, 50 V, through-hole | Solder it straight across the motor's two terminals, at the motor, under the same solder as the leads. It takes the brush noise out before it reaches the wire. Any 0.1 µF ceramic rated 50 V or more |
 | 1 | JST XH 2-way plug with leads, and a 3 V coin buzzer motor | Only if the handle buzzer is wanted |
 | 1 | JST XH 4-way plug with leads, and an encoder for the motor | Only if wheel speed is to be measured |
 | 4 | M3 screws, M3 nuts and 5 mm nylon spacers | Mount the board on its four 3.2 mm holes (two below the processor, two at the motor-end corners). Nylon keeps metal away from the aerial and off the carbon tube |

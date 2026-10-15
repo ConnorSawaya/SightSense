@@ -1,6 +1,6 @@
 # Cane board: potential problems
 
-What could make the board fail, what has been checked, and what is still open. Written October 14, 2026, and updated the same day for the board with the 5 V module, the XT30 motor socket, the 2.2 A limit and hand-drawn power tracks, then again after a review of the schematic against the DRV8876 datasheet and KiCad's pin maps (items 24 to 30). Nothing has been built.
+What could make the board fail, what has been checked, and what is still open. Written October 14, 2026, and updated the same day for the board with the 5 V module, the XT30 motor socket, the 2.2 A limit and hand-drawn power tracks, then again after a review of the schematic against the DRV8876 datasheet and KiCad's pin maps (items 24 to 30), and after looking up the supply chain's margins (items 10 and 31 to 33). Nothing has been built.
 
 Severity: **High** means the board may not work or may be damaged; **Medium** means it may work badly or need a hand fix; **Low** means it is an annoyance.
 
@@ -32,6 +32,8 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | Watchdog against nSLEEP | Same datasheet: 100 kΩ internal pull-down, 1.5 V logic high, 0.8 V logic low | The pump gives about 2.6 V into the 50 kΩ it sees; nSLEEP falls below logic low about 65 ms after the toggling stops |
 | Pin order of the slide switch, the diode pair, the FETs, the 3.3 V regulator, the 5 V module and JP1 | KiCad's symbols read against the footprints and the makers' pinouts | All match: the switch's common is pin 2, the middle pad; BAT54S A, K, COM = 1, 2, 3; AO3401A G, S, D = 1, 2, 3; JP1's middle pad is DRV_SLP |
 | Design rules check, rerun October 14 | kicad-cli 10.0.6 on the committed board | 0 errors, 0 unconnected, 5 silkscreen warnings; the ordering files were made after the last board save |
+| Watchdog pump | `check_watchdog.py`, a time-step model with the BAT54S diode law and the driver's 100 kΩ pull-down | nSLEEP holds 2.5 V at 200 Hz and 2.2 V at 100 Hz, above the 1.5 V threshold; falls below it under about 40 Hz; wakes in under 1 ms; asleep about 60 ms after the toggling stops |
+| Supply chain under motor load | Sums from the datasheets: pack sag, fuse and FET drops, the 5 V module's 8 V minimum, the Schottky and regulator drops, ESP-IDF's 2.44 V brownout default | About 1.1 V to spare on the 3.3 V rail; only a pack under about 8 V at the jack can reset the processor |
 
 ## 2. Problems found that need fixing before ordering
 
@@ -51,14 +53,14 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | --- | --- | --- | --- |
 | 8 | **JLCPCB places a part turned the wrong way.** KiCad and JLCPCB disagree on rotation for many packages (SOT-23, SOIC, the ESP32 module, USB-C, electrolytics). This is the most common cause of dead assembled boards | High | Check every part in JLCPCB's placement preview before paying; correct rotations there |
 | 9 | A real part differs from its footprint (LED cathode mark, switch pin order, alternate maker) | Medium | Compare JLCPCB's preview pictures; the slide switch and LEDs most of all |
-| 10 | ESP32 resets when the motor starts (the Pi did this) | Medium | Bench test with the real motor and battery; watch the 3.3 V rail |
-| 11 | Watchdog charge pump holds the driver asleep, or never sleeps it. Calculated, not simulated or built | Medium | Simulate; on the first board, jumper JP1 bypasses it |
-| 12 | Firmware drives the watchdog pin from a hardware PWM timer, which keeps toggling even if the program hangs, defeating the watchdog | High (safety) | Firmware rule: toggle it from the main control loop only |
+| 10 | ESP32 resets when the motor starts. The Pi was feared to, and logged under-voltage on a weak USB supply, but a reset from the motor was never seen. A Pi 5 wants 5.1 V at up to 3 A and warns below 4.63 V; this board's chain is pack → 5 V module (8 to 36 V in) → Schottky → 3.3 V regulator with about 1.1 V to spare, at 0.3 A at most, and the processor's brownout trips at 2.44 V (ESP-IDF default). By these sums only a pack below about 8 V at the jack can brown it out | Low | Bench test with the real motor and battery; watch the 3.3 V rail. See item 31 for the one case that can |
+| 11 | Watchdog charge pump holds the driver asleep, or never sleeps it. Simulated October 14 (`check_watchdog.py`, section 1), not built | Low | On the first board, jumper JP1 bypasses it if the model is wrong |
+| 12 | Firmware drives the watchdog pin from a hardware PWM timer, which keeps toggling even if the program hangs, defeating the watchdog | High (safety) | Firmware rule 1 in the README: toggle it from the main control loop only |
 | 13 | Kill-switch wire shorted to ground (for example to the carbon tube) reads as "switch closed" and lets the motor run | Medium (safety) | Insulate the wire; consider a normally-open contact that must be held |
 | 14 | SW3 now switches off only the 3.3 V regulator. With the battery plugged in, the 5 V module's idle draw (a few mA, not in its datasheet summary, not measured), the kill-switch loop, the red "motor armed" light and the dividers stay on: a full pack could go flat in a few weeks | Low | Unplug the battery when stored |
 | 15 | No battery cut-off on the board; deep discharge is left to the pack's own protection | Medium | Confirm the pack has protection; firmware warns on low voltage from VBAT_ADC |
 | 16 | Motor current reading saturates near the limit (1.5 V/A, so it reads up to about 2.0 A of the 2.2 A limit) | Low | Fine for detecting stall |
-| 22 | A stalled motor heats the driver: about 2 W at 1.7 A, 3.4 W at the 2.2 A limit. Its own over-temperature cut-out switches it off | Medium | Firmware stops the motor when the current reading stays high; the Pi had no limit at all |
+| 22 | A stalled motor heats the driver: about 2 W at 1.7 A, 3.4 W at the 2.2 A limit. Its own over-temperature cut-out switches it off | Medium | Firmware rule 3 in the README: stop when the current reading stays high; the Pi had no limit at all |
 | 23 | The 5 V module is the only through-hole part carrying power that JLCPCB hand-solders; a cold joint would leave the board dead | Low | Look at its three joints; step 4 of the checklist catches it |
 | 17 | Wi-Fi/Bluetooth range cut by metal screws or the carbon tube near the aerial | Low | Nylon screws and spacers; mount aerial end clear of the tube |
 | 18 | Hidden solder joints under the ESP32 module and the motor driver | Low | JLCPCB inspection; power up one block at a time |
@@ -68,10 +70,13 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | 24 | In PH/EN mode, EN low brakes the motor (both low-side switches on). There is no coast state short of putting the driver to sleep, so `FREE` and `STOP`/`CENTER` are the same in hardware | Decided October 14 | Kept as is. The worm gear holds the wheel whether the driver brakes or coasts, so they differ only in the last few milliseconds of spin-down. A dropped link still sleeps the driver, which coasts, as the IBT-2 did. Firmware that wants a coast for `FREE` stops the heartbeat. See "Brake or coast" in the README |
 | 25 | ~~Q2, the kill-switch FET, has only −2.9 V on its gate from a 9 V pack~~ | Fixed October 14 | R2 and R3 changed from 47k and 100k to 10k and 13k: the gate now gets 0.43 of the battery, 3.9 V from 9 V, so about 60 mΩ and 0.3 W at the 2.2 A limit. Values only; the routed board is unchanged. The kill switch now carries about 0.5 mA and opens the supply in about 2 ms |
 | 26 | The 3.3 V regulator drops about 1.35 V while feeding the processor (120 to 355 mA) and the 80 mA buzzer: 0.2 to 0.35 W in a SOT-23-5, a 30 to 90 °C rise depending on the copper under it | Medium | Feel it on the bench with Wi-Fi and the buzzer running; feed the buzzer from 5 V with a 5 V motor if it runs hot |
-| 27 | The watchdog pump's output falls with the toggle rate: below about 30 Hz nSLEEP drops under its 1.5 V logic high | Low (safety) | Firmware rule: toggle HBEAT at 200 Hz or more, from the main loop |
+| 27 | The watchdog pump's output falls with the toggle rate: the simulation puts nSLEEP under its 1.5 V logic high below about 40 Hz | Low (safety) | Firmware rule 1 in the README: toggle HBEAT at 200 Hz or more, from the main loop |
 | 28 | nFAULT does not report the 2.2 A chopping in this IMODE, only overcurrent (3.5 to 5.5 A), undervoltage and over-temperature | Low | Detect a stall from I_ADC; IMODE = 20 kΩ to ground would also flag chopping on nFAULT |
 | 29 | With the power switch off, the battery and motor-supply dividers push about 20 µA each into the unpowered processor through its protection diodes | Low | Harmless in practice; out of specification on paper |
 | 30 | No ESD parts on the kill-switch, talk, buzzer and encoder plugs, whose wires run up the cane | Low | Fine for v0.1; TVS diodes on a later board |
+| 31 | A nearly flat pack under motor load. A 3S pack sags about 0.4 to 0.6 V at the 2.2 A limit, and the fuse and FETs take another 0.1 V, so a 9.0 V pack reaches about 8.3 V at the 5 V module, whose lowest input is 8 V. Below that the 5 V rail falls and the processor resets | Medium (firmware) | Firmware rule 2 in the README: stop driving the motor when VBAT_ADC reads under 9.3 V, and warn aloud before that. Estimates; measure the pack's sag on the bench |
+| 32 | Brush noise from the motor on a 20 cm lead. Rarely resets a processor with its own decoupling, but can upset the current, battery and motor-supply readings and Wi-Fi | Low | A 100 nF ceramic across the motor's terminals, at the motor, is now in the BOM's off-board list. Nothing to change on the board |
+| 33 | The board holds about 300 µF, which looks like a short for about 100 µs when the battery is plugged in. Small 3S packs sometimes latch off on this | Low | Unplug and plug in again. The cane as built had a converter and the IBT-2 on the same pack, with similar capacitance, and the pack coped |
 
 ## 4. First power-up checklist
 
@@ -92,5 +97,5 @@ Do these in order on one board before trusting the rest.
 Estimates, not measurements:
 
 - About 85–90% that the board is built exactly as designed.
-- About 75–80% that the first boards work with no hand fixes, now that items 1, 2, 6, 7 and 25 are fixed.
-- About 85% if item 8 is checked in JLCPCB's preview and item 10 is checked on the bench first. What is left is mostly things no screen check can catch: a part placed the wrong way and the processor resetting when the motor starts.
+- About 80% that the first boards work with no hand fixes, now that items 1, 2, 6, 7 and 25 are fixed and the watchdog and supply chain are modelled.
+- About 90% if item 8 is checked in JLCPCB's preview and the firmware keeps the five rules in the README. What is left is what no screen check can catch: a part placed the wrong way, a model that is wrong, and the real pack and motor. The remaining 10% is why there is a first power-up checklist, and why JP1 and R5 exist.
