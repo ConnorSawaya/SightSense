@@ -48,7 +48,7 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 | Pi motor controller (`pi/`) | Direct-wheel mode, command watchdog, setup tools and mock tests are present; verify motor direction and hardware behavior before use |
 | Whole-system checks | Use the synthetic phone, simulated walk and mock GPIO tests; do not claim a physical end-to-end result unless it has been observed |
 | Cane board ([`hardware/cane-board/`](hardware/cane-board/)) | Schematic for one board to replace the Pi, its converter and the IBT-2, drawn on October 13 after the event. The schematic passes KiCad's checks. Routed on October 14: 46 × 100 mm, 4 layers, black, ready-made 5 V module, XT30 motor socket; KiCad's design rules check reports 0 errors and 0 unconnected. Ordering files in `export/fab/`; nothing ordered. Not built; the cane as built still uses the Pi |
-| Cane board firmware | Not started. Arduino / PlatformIO (decided October 14); Bluetooth LE to the phone. The five rules it must keep are in the cane board's README |
+| Cane board firmware | Not started. Arduino / PlatformIO (decided October 14); Bluetooth LE to the phone. The rules it must keep are in the cane board's README |
 | Talk button's cloud AI | Not started. Provider not chosen |
 | Bill of materials ([`hardware/BOM.md`](hardware/BOM.md)) | Collected from the hardware pages on October 12; no prices or shop links |
 | 3D pictures and model page | README pictures in `docs/media/` and a GitHub Pages page (`gh-pages` branch) that shows the interactive model. Made on October 12, after the event; see `docs/DISCLOSURE.md` |
@@ -164,7 +164,7 @@ Build it first with three headings and a desired bearing of 0.
 
 See [`pi/README.md`](pi/README.md) and [`hardware/wiring.md`](hardware/wiring.md). Direct wheel mode: duty ≤ 25%, pulses ≤ 0.4 s with 50 ms rests, opposite directions for LEFT/RIGHT, all other commands off. Reverse only after a rest. Finite TTL required; silence or disconnection switches off. The earlier position-steering modes remain available separately. RPM is unmeasured without an encoder or counted-turn measurement.
 
-The cane board's firmware keeps the same command, TTL and silence rules, plus five rules of its own for its watchdog, battery and stall limits: see [`hardware/cane-board/README.md`](hardware/cane-board/README.md).
+The cane board's firmware keeps the same command, TTL and silence rules, plus rules of its own for its watchdog, battery and stall limits: see [`hardware/cane-board/README.md`](hardware/cane-board/README.md).
 
 ### Prompts for the AI
 

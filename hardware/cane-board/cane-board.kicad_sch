@@ -7832,7 +7832,7 @@
 		)
 		(uuid "ce435f57-c996-5337-bf33-feea6a8a2281")
 	)
-	(text "IO3, IO45, IO46 are boot-mode pins: left open.\nIO35 to IO37 are left open so a module with more memory also fits."
+	(text "IO3, IO45, IO46 are boot-mode pins: left open. IO35 to IO37 are left open so a module with more memory also fits.\nDividers 1M/100k: 2.2 V at the 24.4 V clamp, and only microamps into the processor when it is off."
 		(exclude_from_sim no)
 		(at 114.3 281.94 0)
 		(effects
@@ -7841,7 +7841,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e99276d0-84e4-5b6a-83a1-d195a05b811b")
+		(uuid "cf53e005-1e5b-5d76-abfe-14072fba6f0d")
 	)
 	(text "12 V to 5 V: ready-made module"
 		(exclude_from_sim no)
@@ -18807,7 +18807,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22k"
+		(property "Value" "100k"
 			(at 133.858 265.43 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18851,7 +18851,7 @@
 				)
 			)
 		)
-		(property "MPN" "0603WAF2202T5E"
+		(property "MPN" "0603WAF1003T5E"
 			(at 132.08 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -18862,7 +18862,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C31850"
+		(property "LCSC" "C25803"
 			(at 132.08 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -24666,7 +24666,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "1M"
 			(at 121.158 265.43 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24710,7 +24710,7 @@
 				)
 			)
 		)
-		(property "MPN" "0603WAF1003T5E"
+		(property "MPN" "0603WAF1004T5E"
 			(at 119.38 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -24721,7 +24721,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25803"
+		(property "LCSC" "C22935"
 			(at 119.38 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -25232,7 +25232,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "1M"
 			(at 166.878 265.43 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25276,7 +25276,7 @@
 				)
 			)
 		)
-		(property "MPN" "0603WAF1003T5E"
+		(property "MPN" "0603WAF1004T5E"
 			(at 165.1 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -25287,7 +25287,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25803"
+		(property "LCSC" "C22935"
 			(at 165.1 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -26217,7 +26217,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "22k"
+		(property "Value" "100k"
 			(at 179.578 265.43 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -26261,7 +26261,7 @@
 				)
 			)
 		)
-		(property "MPN" "0603WAF2202T5E"
+		(property "MPN" "0603WAF1003T5E"
 			(at 177.8 264.16 0)
 			(hide yes)
 			(show_name no)
@@ -26272,7 +26272,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C31850"
+		(property "LCSC" "C25803"
 			(at 177.8 264.16 0)
 			(hide yes)
 			(show_name no)

@@ -3,9 +3,10 @@ only while the processor keeps toggling HBEAT.
 
 The pump is HBEAT -> R10 220 -> C8 1 uF -> D4 BAT54S (one diode to ground, one on
 to HB_DC) -> C9 1 uF, loaded by R11 100k and the driver's own 100k pull-down.
-Prints the voltage nSLEEP settles at for each toggle rate, how long the driver
-takes to wake, and how long after the toggling stops it is asleep. Standard
-library only:
+Prints the voltage nSLEEP settles at for each heartbeat rate (a square wave of f
+full cycles a second, so 2f toggles), how long the driver takes to wake, and how
+long after the toggling stops it is asleep: with the pin left low, and with it
+left high, when C8 still feeds the load through the diode. Standard library only:
 
     python3 check_watchdog.py
 
@@ -25,14 +26,14 @@ def diode(v):
     return IS * (math.exp(min(v, 0.9) / (N * VT)) - 1)
 
 
-def run(f, t_run, t_after, dt=2e-7):
-    """Toggle at f Hz for t_run seconds, then hold the pin low for t_after."""
+def run(f, t_run, t_after, stop_high=False, dt=2e-7):
+    """A square wave of f Hz for t_run seconds, then the pin held low (or high) for t_after."""
     vac = vdc = q8 = 0.0
     period, t = 1 / f, 0.0
     lo = hi = wake = asleep = None
     while t < t_run + t_after:
         toggling = t < t_run
-        vin = VDD if toggling and (t % period) < period / 2 else 0.0
+        vin = (VDD if (t % period) < period / 2 else 0.0) if toggling else (VDD if stop_high else 0.0)
         v8 = q8 / C8
         r = R_PIN + R10
         for _ in range(30):  # the node between C8 and the diodes
@@ -59,7 +60,8 @@ def run(f, t_run, t_after, dt=2e-7):
 
 if __name__ == "__main__":
     for f in (20, 30, 50, 100, 200, 500, 1000, 5000):
-        lo, hi, wake, asleep = run(f, max(0.3, 40 / f), 0.2)
+        lo, hi, wake, asleep = run(f, max(0.3, 40 / f), 0.3)
+        asleep_high = run(f, max(0.3, 40 / f), 0.3, stop_high=True)[3]
         ok = "ok" if lo >= VIH else "TOO SLOW: driver sleeps"
-        print(f"{f:5d} Hz: nSLEEP {lo:.2f} to {hi:.2f} V, awake after {1e3 * wake:.1f} ms, "
-              f"asleep {1e3 * asleep:.0f} ms after the toggling stops  {ok}")
+        print(f"{f:5d} Hz: nSLEEP {lo:.2f} to {hi:.2f} V, awake after {1e3 * wake:.1f} ms, asleep "
+              f"{1e3 * asleep:.0f} ms after it stops low, {1e3 * asleep_high:.0f} ms after it stops high  {ok}")

@@ -102,6 +102,7 @@ BUY = {
     ("22k", "R_0603_1608Metric"): {"lcsc": "C31850", "mpn": "0603WAF2202T5E", "price": 0.0041, "jlc": "Basic"},
     ("47k", "R_0603_1608Metric"): {"lcsc": "C25819", "mpn": "0603WAF4702T5E", "price": 0.0021, "jlc": "Basic"},
     ("100k", "R_0603_1608Metric"): {"lcsc": "C25803", "mpn": "0603WAF1003T5E", "price": 0.0031, "jlc": "Basic"},
+    ("1M", "R_0603_1608Metric"): {"lcsc": "C22935", "mpn": "0603WAF1004T5E", "price": 0.0008, "jlc": "Basic"},  # LCSC price, October 14
     ("1.5k", "R_0603_1608Metric"): {"lcsc": "C22843", "mpn": "0603WAF1501T5E", "price": 0.002, "jlc": "Basic"},
 }
 
@@ -566,13 +567,14 @@ def draw():
     diode("LED3", "Device:LED", "Red", LED0603, (67, 20), "GND", "LED3_A", k_up=False)
     part("J8", "Connector_Generic:Conn_01x03", "Serial", "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
          (79, 20), {"1": "GND", "2": "UART_TX", "3": "UART_RX"}, mpn="PZ254V-11-03P")
-    two("R24", "R", "100k", (42, 29), "+BATT", "VBAT_ADC")
-    two("R25", "R", "22k", (47, 29), "VBAT_ADC", "GND")
+    two("R24", "R", "1M", (42, 29), "+BATT", "VBAT_ADC")
+    two("R25", "R", "100k", (47, 29), "VBAT_ADC", "GND")
     two("C22", "C", "100nF 50V", (53, 29), "VBAT_ADC", "GND")
-    two("R26", "R", "100k", (60, 29), "VM", "VM_ADC")
-    two("R27", "R", "22k", (65, 29), "VM_ADC", "GND")
+    two("R26", "R", "1M", (60, 29), "VM", "VM_ADC")
+    two("R27", "R", "100k", (65, 29), "VM_ADC", "GND")
     two("C23", "C", "100nF 50V", (71, 29), "VM_ADC", "GND")
-    note("IO3, IO45, IO46 are boot-mode pins: left open.\nIO35 to IO37 are left open so a module with more memory also fits.", 40, 36)
+    note("IO3, IO45, IO46 are boot-mode pins: left open. IO35 to IO37 are left open so a module with more memory also fits.\n"
+         "Dividers 1M/100k: 2.2 V at the 24.4 V clamp, and only microamps into the processor when it is off.", 40, 36)
 
     # Everything that leaves the board for the handle or the motor end.
     block("Talk button, encoder, I2C, handle buzzer", 90, 75, 70, 22)

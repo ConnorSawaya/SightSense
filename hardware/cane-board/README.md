@@ -53,7 +53,7 @@ In the pictures four parts are stand-ins of the same kind and size, because KiCa
 None of these depends on the firmware being right.
 
 1. **Kill switch.** A switch on connector J3 holds the motor supply on. Open the switch, unplug it or break a wire, and the motor supply is off, by my sums within about 2 ms. The processor cannot override it. The switch carries about 0.5 mA, so it can be small and its wires thin.
-2. **Watchdog.** The driver is awake only while the processor keeps toggling one pin. If the firmware hangs or the processor resets, the driver sleeps, by my sums in about 70 ms. Solder jumper JP1 bypasses this if it misbehaves.
+2. **Watchdog.** The driver is awake only while the processor keeps toggling one pin. If the firmware hangs or the processor resets, the driver sleeps: in about 60 ms if the pin stops low, about 125 ms if it stops high (`check_watchdog.py`). Solder jumper JP1 bypasses this if it misbehaves.
 3. **Current limit.** R5 sets the most current the motor can ever get: 3.3 V ÷ R5 ÷ 0.001. With 1.5 kΩ that is 2.2 A, set above the 1.0 to 1.7 A stall currents in seller tables so the motor pushes as hard as it did on the IBT-2. The IBT-2 has no such limit. Lower it once the stall current is measured.
 
 The firmware still has to keep the rules in `AGENTS.md`: off when a command's time-to-live runs out, off after 0.4 s of silence, and no motor power taken from the network.
@@ -62,15 +62,16 @@ The firmware still has to keep the rules in `AGENTS.md`: off when a command's ti
 
 The board's protection assumes these. Each comes from an item in [`POTENTIAL_PROBLEMS.md`](POTENTIAL_PROBLEMS.md).
 
-1. **Toggle HBEAT from the main control loop, at 200 Hz or more.** Never from a hardware timer or PWM, which keeps running when the program hangs. `check_watchdog.py` puts nSLEEP at 2.5 V at 200 Hz, 2.2 V at 100 Hz, and below the driver's 1.5 V threshold under about 40 Hz. The driver sleeps about 60 ms after the toggling stops (items 12 and 27).
+1. **Toggle HBEAT from the main control loop, as a 200 Hz square wave or faster** (400 toggles a second), and only when the loop has run all the way through. Never from a hardware timer or PWM, which keeps running when the program hangs. `check_watchdog.py` puts nSLEEP at 2.5 V at 200 Hz, 2.2 V at 100 Hz, and below the driver's 1.5 V threshold under about 40 Hz. The driver sleeps about 60 ms after the toggling stops with the pin low, and about 125 ms if it is left high, so the firmware's own stop leaves it low (items 12 and 27).
 2. **Stop driving the motor when VBAT_ADC reads under 9.3 V**, and say "battery low" before that. Below about 8 V at the jack the 5 V module drops out and the processor resets (item 31).
-3. **Back off on a stall.** When I_ADC stays near its top (about 2 A) for longer than a pulse, stop and wait. At the 2.2 A limit the driver makes about 3.4 W and its own over-temperature cut-out will stop it anyway (item 22).
+3. **Back off on a stall.** Read I_ADC with 12 dB attenuation: Espressif characterises that range to 2.9 V, about 1.93 A at 1.5 V per amp, so treat anything above it as high current. When it stays high for longer than a pulse, stop and wait. At the 2.2 A limit the driver makes about 3.4 W and its own over-temperature cut-out will stop it anyway (item 22).
 4. **Treat nFAULT low as "motor off until it clears".** It reports overcurrent, undervoltage and over-temperature, not the normal 2.2 A chopping (item 28).
-5. **Motor pins low at boot, and before sleep or reset.** The driver's inputs are pulled down and the pump is empty at power-up, so this is belt and braces.
+5. **Arm in order.** At boot set MOT_EN, HBEAT and the buzzer low before anything else. Start the heartbeat, then wait about 5 ms (the pump fills in under 1 ms, the driver wakes in 1 ms) before driving. The driver's inputs are pulled down and the pump is empty at power-up, so this is belt and braces.
+6. **Disarm at once.** On a stale command, a lost link or any fault: MOT_EN low straight away, heartbeat stopped low, and wait for a fresh command after re-arming.
 
 The kill switch does not protect against its two wires shorting together. That reads as "switch closed".
 
-**Brake or coast.** With PMODE on ground the driver runs in PH/EN mode. When the firmware turns the motor off, the driver brakes it (both low-side switches on); when the driver sleeps, through the watchdog or a hang, the motor coasts. The IBT-2 on the Pi coasted, because the Pi switched its enables off. The motor's worm gear holds the wheel either way, so the two differ only in the last few milliseconds of spin-down, and a brake ends each pulse sooner. Decided on October 14 to keep it. Firmware that wants a coast for `FREE` stops toggling the heartbeat, and the driver sleeps within about 70 ms.
+**Brake or coast.** With PMODE on ground the driver runs in PH/EN mode. When the firmware turns the motor off, the driver brakes it (both low-side switches on); when the driver sleeps, through the watchdog or a hang, the motor coasts. The IBT-2 on the Pi coasted, because the Pi switched its enables off. The motor's worm gear holds the wheel either way, so the two differ only in the last few milliseconds of spin-down, and a brake ends each pulse sooner. Decided on October 14 to keep it. Firmware that wants a coast for `FREE` stops toggling the heartbeat low, and the driver sleeps within about 60 ms.
 
 ## Will it run for three hours?
 
@@ -117,8 +118,8 @@ The pack is labelled 12 V 3 Ah, about 32 Wh. I counted 26 Wh as usable. Its capa
 | ESP32 pin | Net | Job |
 | --- | --- | --- |
 | IO1 | `I_ADC` | Motor current, 1.5 V per amp with R5 at 1.5 kΩ. Reads up to about 2 A |
-| IO2 | `VBAT_ADC` | Battery voltage ÷ 5.55 |
-| IO4 | `VM_ADC` | Motor supply ÷ 5.55. Tells the firmware whether the kill switch is closed |
+| IO2 | `VBAT_ADC` | Battery voltage ÷ 11 (1M and 100k): 1.15 V at a full pack |
+| IO4 | `VM_ADC` | Motor supply ÷ 11. Tells the firmware whether the kill switch is closed |
 | IO5 | `MOT_EN` | Motor power (PWM) |
 | IO6 | `MOT_PH` | Motor direction |
 | IO7 | `HBEAT` | Watchdog: must keep toggling |
@@ -170,7 +171,7 @@ What the board replaces is not priced in this repository. My guess for a Raspber
 | `cane-board.kicad_sym`, `sym-lib-table` | The DRV8876 symbol, which KiCad does not ship |
 | `make_pcb.py` | Places every part on the board from a table of positions, joins the pads to their nets, runs KiCad's design rules check and renders the 3D pictures. Run it with the Python inside KiCad |
 | `make_route.py` | Lays the hand-drawn power tracks, runs the Freerouting autorouter for the rest, widens what it can, pours and stitches ground, makes the board black and runs the design rules check. Needs Java and the Freerouting jar in `FREEROUTING_JAR` |
-| `make_fab.py` | Writes the ordering files in `export/fab/` |
+| `make_fab.py` | Writes the ordering files in `export/fab/`. The placement file has each part's body centre and JLCPCB's rotation, checked part by part. Run it with the Python inside KiCad |
 | `check_watchdog.py` | Simulates the watchdog pump: nSLEEP voltage against the heartbeat rate, and the time to sleep. Standard-library Python |
 | `cane-board.kicad_pcb` | The routed board |
 | `export/cane-board.pdf` | The schematic to read or print |
@@ -187,7 +188,7 @@ Schematic checks on the last run, October 14: 256 pins on 56 nets all on the net
 ## Not done
 
 - **The link.** Decided October 14: Bluetooth LE from the phone, so no Wi-Fi network or Tailscale is needed (an ESP32 cannot run Tailscale). The message format over it is not written; it belongs in `contracts/MESSAGES.md`, which needs Connor's say-so.
-- **Firmware.** Not started. Arduino / PlatformIO (decided October 14). It has to do what `pi/cane.py` and `pi/wheel_drive.py` do, with the same limits and tests run against fakes, plus the five rules above.
+- **Firmware.** Not started. Arduino / PlatformIO (decided October 14). It has to do what `pi/cane.py` and `pi/wheel_drive.py` do, with the same limits and tests run against fakes, plus the rules above.
 - **A new electronics mount** for the 46 × 100 mm board.
 - **Measurements this design leans on:** the motor's stall and running current, the battery's real capacity, the phone's draw, and the size and polarity of the pack's plug.
 - **Try it on bought boards first.** An ESP32-S3 dev board and a DRV8876 breakout would prove the firmware and the motor numbers before any board is ordered.

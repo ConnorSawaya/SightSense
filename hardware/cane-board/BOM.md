@@ -47,7 +47,7 @@ Nothing here has been ordered. Order codes, prices, stock and JLCPCB's class for
 | 2 | C15, C16 | Capacitor, 10uF 25V | 0805 | CL21A106KAYNNNE | C15850 | Basic | $0.069 | $0.14 |
 | 1 | C19 | Capacitor, 22uF 6.3V | 0603 | CL10A226MQ8NRNC | C59461 | Basic | $0.031 | $0.03 |
 | 9 | C26, C4, C5, C7, C11, C20, C22, C23, C24 | Capacitor, 100nF 50V | 0603 | CC0603KRX7R9BB104 | C14663 | Basic | $0.014 | $0.13 |
-| 6 | R1, R11, R12, R24, R26, R33 | Resistor, 1%, 100k | 0603 | 0603WAF1003T5E | C25803 | Basic | $0.003 | $0.02 |
+| 6 | R1, R11, R12, R25, R27, R33 | Resistor, 1%, 100k | 0603 | 0603WAF1003T5E | C25803 | Basic | $0.003 | $0.02 |
 | 8 | R2, R6, R7, R8, R9, R21, R22, R28 | Resistor, 1%, 10k | 0603 | 0603WAF1002T5E | C25804 | Basic | $0.005 | $0.04 |
 | 1 | R3 | Resistor, 1%, 13k | 0603 | 0603WAF1302T5E | C22797 | Basic | $0.003 | $0.003 |
 | 3 | R4, R30, R31 | Resistor, 1%, 4.7k | 0603 | 0603WAF4701T5E | C23162 | Basic | $0.003 | $0.008 |
@@ -55,7 +55,7 @@ Nothing here has been ordered. Order codes, prices, stock and JLCPCB's class for
 | 1 | R10 | Resistor, 1%, 220 | 0603 | 0603WAF2200T5E | C22962 | Basic | $0.004 | $0.004 |
 | 3 | R14, R23, R29 | Resistor, 1%, 1k | 0603 | 0603WAF1001T5E | C21190 | Basic | $0.002 | $0.006 |
 | 2 | R19, R20 | Resistor, 1%, 5.1k | 0603 | 0603WAF5101T5E | C23186 | Basic | $0.002 | $0.003 |
-| 2 | R25, R27 | Resistor, 1%, 22k | 0603 | 0603WAF2202T5E | C31850 | Basic | $0.004 | $0.008 |
+| 2 | R24, R26 | Resistor, 1%, 1M | 0603 | 0603WAF1004T5E | C22935 | Basic | $0.001 | $0.002 |
 | 1 | R32 | Resistor, 1%, 100 | 0603 | 0603WAF1000T5E | C22775 | Basic | $0.003 | $0.003 |
 | 1 | R34 | Resistor, 1%, 47k | 0603 | 0603WAF4702T5E | C25819 | Basic | $0.002 | $0.002 |
 | 1 | J1 | Connector: 12V battery | Through-hole | DC-005-5A-2.0 | C381116 | Extended | $0.262 | $0.26 |
