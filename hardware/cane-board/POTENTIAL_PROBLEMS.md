@@ -17,7 +17,7 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | Motor socket XT30UPB-F | KiCad's own AMASS footprint for this exact part | Match |
 | 3.3 V regulator AP2112K pins | Diodes datasheet | Match |
 | ESP32-S3-WROOM-1 pins, boot pins | Espressif datasheet | Match; IO0 pulled up, IO3, IO45, IO46 left open as required |
-| Protection FETs AO3401A: pins and gate limit | AOS datasheet rev. 3.1 | G 1, S 2, D 3 match; gate held to 4.0 V at a full battery and 7.8 V at the protection diode's clamp, under the ±12 V limit |
+| Protection FETs AO3401A: pins and gate limit | AOS datasheet rev. 3.1 | G 1, S 2, D 3 match; Q1 and Q4's gates held to 4.0 V at a full battery and 7.8 V at the protection diode's clamp; Q2's to 5.5 V and 10.6 V. All under the ±12 V limit |
 | Battery jack pins | XKB drawing for DC-005-5A-2.0 | Centre pin = pad 1, sleeve = 2, switch = 3; hole spacing within 0.1 mm of the footprint |
 | USB-C socket pads | KiCad footprint pad names | Match the symbol, shield included |
 | Polarised parts (diodes, LEDs, TVS, electrolytic) | KiCad convention: pad 1 is cathode or + on symbol and footprint | Consistent |
@@ -41,7 +41,7 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | 2 | ~~Converter layout is loose~~ | Fixed October 14 | The converter built from parts is replaced by a sealed ready-made module, so there is no switching layout left on the board |
 | 3 | Motor-driver capacitors are about 3.5 mm from their pins (VM, VCP, flying cap). TI wants them as close as possible. Moving them closer was tried on October 14: the driver's motor and supply pins then had no way out and the board could not be routed | Low | Left as is. The charge-pump caps carry tiny currents, and the 22 µF VM capacitors sit about 4 mm away |
 | 4 | No extra vias under the motor driver's thermal pad on the board (the footprint has 15) | Low | Fine for normal running; a stall heats the driver either way (item 22) |
-| 5 | Battery pack plug not measured: if centre-negative the board will not turn on (it is protected, not damaged); if its pin is 2.5 mm the jack is loose | High until measured | Measure; the same jack comes with a 2.5 mm pin (LCSC C381115) |
+| 5 | Battery pack plug not measured: if centre-negative the board will not turn on (it is protected, not damaged); if its pin is 2.5 mm the jack is loose | Low | Looked up October 14, not measured. The pack is the common blue 12 V 3000 mAh 3S1P pack; a listing for it gives 68 × 56 × 22 mm (ours measures 55.2 mm wide) and a 5.5 × 2.1 mm plug, which is what J1 takes. Polarity is not stated; packs of this kind are centre positive, and a reversed plug only leaves the board off. To be sure: a 2.0 mm drill bit should fit the plug's hole snugly (loose means 2.5 mm: the same jack comes with a 2.5 mm pin, LCSC C381115), and `../wiring.md` step 5 gives the polarity |
 | 6 | Motor stall current not measured. The limit is now 2.2 A (R5 = 1.5 kΩ), above the 1.0 to 1.7 A seller figures, so the motor should push at least as hard as on the IBT-2 | Low | Measure; R5 = 3.3 V ÷ (limit × 0.001) |
 | 7 | ~~Motor terminal holes too small~~ | Fixed October 14 | The screw terminal is replaced by an XT30 socket, so the motor wires are soldered to a plug, not to the board |
 
@@ -65,8 +65,8 @@ Severity: **High** means the board may not work or may be damaged; **Medium** me
 | 19 | The board does not fit the cane: the electronics mount is drawn for the Pi | Medium | Redesign the mount; test with a printed blank first |
 | 20 | Wheel encoder header supplies 3.3 V; many motor encoders need 5 V | Low | Check the encoder before buying |
 | 21 | Parts go out of stock or change before ordering | Low | Recheck stock on the day |
-| 24 | In PH/EN mode, EN low brakes the motor (both low-side switches on). There is no coast state short of putting the driver to sleep, so `FREE` and `STOP`/`CENTER` are the same in hardware | Low | Decide before the firmware: tie PMODE to +3V3 for PWM mode, where IN1 = IN2 = 0 coasts on the same two pins (PMODE is read once at power-up), or let `FREE` mean "stop the heartbeat" |
-| 25 | Q2, the kill-switch FET, has only −2.9 V on its gate from a 9 V pack, so up to 85 mΩ: 0.4 W at the 2.2 A limit, about a 50 °C rise in one SOT-23, more than the 35 °C the README counted | Medium | A second AO3401A in parallel, as Q1 and Q4 are; or accept, since 2.2 A is reached only at stall |
+| 24 | In PH/EN mode, EN low brakes the motor (both low-side switches on). There is no coast state short of putting the driver to sleep, so `FREE` and `STOP`/`CENTER` are the same in hardware | Decided October 14 | Kept as is. The worm gear holds the wheel whether the driver brakes or coasts, so they differ only in the last few milliseconds of spin-down. A dropped link still sleeps the driver, which coasts, as the IBT-2 did. Firmware that wants a coast for `FREE` stops the heartbeat. See "Brake or coast" in the README |
+| 25 | ~~Q2, the kill-switch FET, has only −2.9 V on its gate from a 9 V pack~~ | Fixed October 14 | R2 and R3 changed from 47k and 100k to 10k and 13k: the gate now gets 0.43 of the battery, 3.9 V from 9 V, so about 60 mΩ and 0.3 W at the 2.2 A limit. Values only; the routed board is unchanged. The kill switch now carries about 0.5 mA and opens the supply in about 2 ms |
 | 26 | The 3.3 V regulator drops about 1.35 V while feeding the processor (120 to 355 mA) and the 80 mA buzzer: 0.2 to 0.35 W in a SOT-23-5, a 30 to 90 °C rise depending on the copper under it | Medium | Feel it on the bench with Wi-Fi and the buzzer running; feed the buzzer from 5 V with a 5 V motor if it runs hot |
 | 27 | The watchdog pump's output falls with the toggle rate: below about 30 Hz nSLEEP drops under its 1.5 V logic high | Low (safety) | Firmware rule: toggle HBEAT at 200 Hz or more, from the main loop |
 | 28 | nFAULT does not report the 2.2 A chopping in this IMODE, only overcurrent (3.5 to 5.5 A), undervoltage and over-temperature | Low | Detect a stall from I_ADC; IMODE = 20 kΩ to ground would also flag chopping on nFAULT |
@@ -92,5 +92,5 @@ Do these in order on one board before trusting the rest.
 Estimates, not measurements:
 
 - About 85–90% that the board is built exactly as designed.
-- About 75–80% that the first boards work with no hand fixes, now that items 1, 2, 6 and 7 are fixed.
-- About 85% if item 8 is checked in JLCPCB's preview and items 5 and 10 are checked on the bench first. What is left is mostly things no screen check can catch: a part placed the wrong way, the real battery plug, and the processor resetting when the motor starts.
+- About 75–80% that the first boards work with no hand fixes, now that items 1, 2, 6, 7 and 25 are fixed.
+- About 85% if item 8 is checked in JLCPCB's preview and item 10 is checked on the bench first. What is left is mostly things no screen check can catch: a part placed the wrong way and the processor resetting when the motor starts.

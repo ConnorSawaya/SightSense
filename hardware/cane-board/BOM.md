@@ -22,7 +22,7 @@ Nothing here has been ordered. Order codes, prices, stock and JLCPCB's class for
 ## 1. On the board
 
 <!-- fitted: written by make_board.py -->
-82 parts on 39 lines. The 39 lines with a price come to $10.48 for one board at JLCPCB's price for one piece. 7 lines (9 parts) are through-hole and cost $3.07 of that. JLCPCB classes 22 lines as Basic and 3 as Preferred, which carry no fee; 7 surface-mount lines are Extended and carry its per-line fee.
+82 parts on 40 lines. The 40 lines with a price come to $10.48 for one board at JLCPCB's price for one piece. 7 lines (9 parts) are through-hole and cost $3.07 of that. JLCPCB classes 23 lines as Basic and 3 as Preferred, which carry no fee; 7 surface-mount lines are Extended and carry its per-line fee.
 
 | Qty | Ref | Part | Package | Maker's number | LCSC | JLCPCB class | Each | Line |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -46,16 +46,17 @@ Nothing here has been ordered. Order codes, prices, stock and JLCPCB's class for
 | 2 | C15, C16 | Capacitor, 10uF 25V | 0805 | CL21A106KAYNNNE | C15850 | Basic | $0.069 | $0.14 |
 | 1 | C19 | Capacitor, 22uF 6.3V | 0603 | CL10A226MQ8NRNC | C59461 | Basic | $0.031 | $0.03 |
 | 9 | C26, C4, C5, C7, C11, C20, C22, C23, C24 | Capacitor, 100nF 50V | 0603 | CC0603KRX7R9BB104 | C14663 | Basic | $0.014 | $0.13 |
-| 7 | R1, R3, R11, R12, R24, R26, R33 | Resistor, 1%, 100k | 0603 | 0603WAF1003T5E | C25803 | Basic | $0.003 | $0.02 |
+| 6 | R1, R11, R12, R24, R26, R33 | Resistor, 1%, 100k | 0603 | 0603WAF1003T5E | C25803 | Basic | $0.003 | $0.02 |
+| 8 | R2, R6, R7, R8, R9, R21, R22, R28 | Resistor, 1%, 10k | 0603 | 0603WAF1002T5E | C25804 | Basic | $0.005 | $0.04 |
+| 1 | R3 | Resistor, 1%, 13k | 0603 | 0603WAF1302T5E | C22797 | Basic | $0.003 | $0.003 |
 | 3 | R4, R30, R31 | Resistor, 1%, 4.7k | 0603 | 0603WAF4701T5E | C23162 | Basic | $0.003 | $0.008 |
 | 1 | R5 | Resistor, 1%, 1.5k | 0603 | 0603WAF1501T5E | C22843 | Basic | $0.002 | $0.002 |
-| 7 | R6, R7, R8, R9, R21, R22, R28 | Resistor, 1%, 10k | 0603 | 0603WAF1002T5E | C25804 | Basic | $0.005 | $0.04 |
 | 1 | R10 | Resistor, 1%, 220 | 0603 | 0603WAF2200T5E | C22962 | Basic | $0.004 | $0.004 |
 | 3 | R14, R23, R29 | Resistor, 1%, 1k | 0603 | 0603WAF1001T5E | C21190 | Basic | $0.002 | $0.006 |
 | 2 | R19, R20 | Resistor, 1%, 5.1k | 0603 | 0603WAF5101T5E | C23186 | Basic | $0.002 | $0.003 |
 | 2 | R25, R27 | Resistor, 1%, 22k | 0603 | 0603WAF2202T5E | C31850 | Basic | $0.004 | $0.008 |
 | 1 | R32 | Resistor, 1%, 100 | 0603 | 0603WAF1000T5E | C22775 | Basic | $0.003 | $0.003 |
-| 2 | R34, R2 | Resistor, 1%, 47k | 0603 | 0603WAF4702T5E | C25819 | Basic | $0.002 | $0.004 |
+| 1 | R34 | Resistor, 1%, 47k | 0603 | 0603WAF4702T5E | C25819 | Basic | $0.002 | $0.002 |
 | 1 | J1 | Connector: 12V battery | Through-hole | DC-005-5A-2.0 | C381116 | Extended | $0.262 | $0.26 |
 | 1 | J2 | Connector: Motor | Through-hole | XT30UPB-F30.G.Y | C108769 | Extended | $0.233 | $0.23 |
 | 3 | J3, J4, J7 | Connector: Kill switch / Talk button / Buzzer motor | Through-hole | B2B-XH-A | C158012 | Extended | $0.041 | $0.12 |
@@ -93,7 +94,7 @@ The first parts list, earlier on October 13, had 16 fee-carrying lines and cost 
 
 | Change | Saves, on five boards | What it costs in the design |
 | --- | --- | --- |
-| Three protection FETs are AO3401A (Basic) in place of two AO4407A, and their two zeners are gone | $6.14 in fees and $2.17 | They are smaller and run warmer. Two share the battery current. Their gates stand only 12 V, so resistors hold each gate at a third of the battery voltage; the two 12 V zeners are gone |
+| Three protection FETs are AO3401A (Basic) in place of two AO4407A, and their two zeners are gone | $6.14 in fees and $2.17 | They are smaller and run warmer. Two share the battery current. Their gates stand only 12 V, so resistors hold Q1 and Q4's gates at a third of the battery voltage and Q2's at 0.43 (10k and 13k since October 14, for a cooler kill switch); the two 12 V zeners are gone |
 | TVS and the watchdog's diode pair are the Preferred versions of the same parts | $6.14 in fees and $0.10 | Nothing: same parts, other makers |
 | One 220 µF can on the battery side in place of two cans; two 22 µF ceramics by the motor driver | $3.07 fee, less $0.98 | The motor supply now switches on and off in milliseconds, which also let the two slow-start capacitors go |
 | Two single protection diodes (Preferred) on the USB data lines in place of the USBLC6 array | $3.07 fee and $0.82 | The USB supply line is no longer clamped. Each data line carries 15 pF, which full-speed USB allows |
@@ -118,7 +119,7 @@ To buy. None of these was looked up, so no prices:
 
 | Qty | Item | What to look for |
 | --- | --- | --- |
-| 1 | Kill switch | One that stays where it is put, with two terminals. Closed means the motor can run. It carries under 0.1 mA, so any small switch rated for 12 V will do. Mount it within reach of the hand |
+| 1 | Kill switch | One that stays where it is put, with two terminals. Closed means the motor can run. It carries about 0.5 mA, so any small switch rated for 12 V will do. Mount it within reach of the hand |
 | 2 | JST XH 2-way plug with wire leads | One for the kill switch, one for the talk button |
 | 1 | JST XH 2-way plug with leads, and a 3 V coin buzzer motor | Only if the handle buzzer is wanted |
 | 1 | JST XH 4-way plug with leads, and an encoder for the motor | Only if wheel speed is to be measured |

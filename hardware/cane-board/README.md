@@ -52,13 +52,15 @@ In the pictures four parts are stand-ins of the same kind and size, because KiCa
 
 None of these depends on the firmware being right.
 
-1. **Kill switch.** A switch on connector J3 holds the motor supply on. Open the switch, unplug it or break a wire, and the motor supply is off, by my sums within about 6 ms. The processor cannot override it. The switch carries less than 0.1 mA, so it can be small and its wires thin.
+1. **Kill switch.** A switch on connector J3 holds the motor supply on. Open the switch, unplug it or break a wire, and the motor supply is off, by my sums within about 2 ms. The processor cannot override it. The switch carries about 0.5 mA, so it can be small and its wires thin.
 2. **Watchdog.** The driver is awake only while the processor keeps toggling one pin. If the firmware hangs or the processor resets, the driver sleeps, by my sums in about 70 ms. Solder jumper JP1 bypasses this if it misbehaves.
 3. **Current limit.** R5 sets the most current the motor can ever get: 3.3 V ÷ R5 ÷ 0.001. With 1.5 kΩ that is 2.2 A, set above the 1.0 to 1.7 A stall currents in seller tables so the motor pushes as hard as it did on the IBT-2. The IBT-2 has no such limit. Lower it once the stall current is measured.
 
 The firmware still has to keep the rules in `AGENTS.md`: off when a command's time-to-live runs out, off after 0.4 s of silence, and no motor power taken from the network.
 
 The kill switch does not protect against its two wires shorting together. That reads as "switch closed".
+
+**Brake or coast.** With PMODE on ground the driver runs in PH/EN mode. When the firmware turns the motor off, the driver brakes it (both low-side switches on); when the driver sleeps, through the watchdog or a hang, the motor coasts. The IBT-2 on the Pi coasted, because the Pi switched its enables off. The motor's worm gear holds the wheel either way, so the two differ only in the last few milliseconds of spin-down, and a brake ends each pulse sooner. Decided on October 14 to keep it. Firmware that wants a coast for `FREE` stops toggling the heartbeat, and the driver sleeps within about 70 ms.
 
 ## Will it run for three hours?
 
@@ -91,7 +93,7 @@ The pack is labelled 12 V 3 Ah, about 32 Wh. I counted 26 Wh as usable. Its capa
 | Path | Most it can carry by design | Part's rating |
 | --- | --- | --- |
 | Battery jack, fuse, reverse-plug FETs | About 2.5 A: motor at its 2.2 A limit and the processor's peaks, on a 9 V pack | Jack 5 A, fuse holds 4 A, two FETs of 4 A each side by side |
-| Kill-switch FET | 2.2 A, the motor's limit. About 0.3 to 0.4 W of heat then, an estimated 35 to 50 °C rise; worst from a 9 V pack, when its gate has only 2.9 V | 4 A |
+| Kill-switch FET | 2.2 A, the motor's limit. About 0.3 W of heat then, an estimated 35 °C rise. R2 and R3 hold its gate at 0.43 of the battery: 3.9 V from a flat 9 V pack, 10.6 V at the protection diode's clamp | 4 A |
 | Motor driver | 2.2 A, set by R5 | 3.5 A peak |
 | 5 V rail | About 0.5 A, the processor's peaks | 1 A |
 | 3.3 V rail | About 0.44 A: 355 mA Wi-Fi peak and an 80 mA buzzer | 0.6 A |

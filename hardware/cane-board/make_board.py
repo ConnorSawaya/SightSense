@@ -457,17 +457,17 @@ def draw():
     block("Motor supply and kill switch", 50, 8, 40, 33)
     part("Q2", "Transistor_FET:AO3401A", "AO3401A", SOT23, (8, 10), {"S": "+BATT", "D": "VM", "G": "KILL_G"},
          rot=180, texts=beside((8, 10), 180, dx=-2.5, just="right"))
-    two("R2", "R", "47k", (17, 10), "+BATT", "KILL_G")
+    two("R2", "R", "10k", (17, 10), "+BATT", "KILL_G")
     two("C26", "C", "100nF 50V", (24, 10), "+BATT", "KILL_G")
-    two("R3", "R", "100k", (33, 10), "KILL_G", "KILL_A")
+    two("R3", "R", "13k", (33, 10), "KILL_G", "KILL_A")
     part("J3", "Connector_Generic:Conn_01x02", "Kill switch", XH2, (36, 23), {"1": "KILL_A", "2": "GND"}, mpn="B2B-XH-A")
     two("C3", "C", "22uF 25V", (4, 24), "VM", "GND", fp=C1206)
     two("C27", "C", "22uF 25V", (10, 24), "VM", "GND", fp=C1206)
     two("R4", "R", "4.7k", (16, 24), "VM", "LED1_A")
     diode("LED1", "Device:LED", "Red", LED0603, (22, 24), "GND", "LED1_A", k_up=False)
     flag("VM", (27, 23))
-    note("Switch closed (or a jumper on J3): motor supply on. Open, unplugged or a\n"
-         "broken wire: off within about 6 ms. C26 keeps Q2 off while the battery is plugged in.", 1, 32)
+    note("Switch closed (or a jumper on J3): motor supply on, Q2's gate at 0.43 of the battery.\n"
+         "Open, unplugged or a broken wire: off within about 2 ms. C26 keeps Q2 off at plug-in.", 1, 32)
 
     # Motor driver with a current limit set by R5, and a watchdog on its sleep pin.
     block("Motor driver, current limit and watchdog", 91, 8, 69, 33)

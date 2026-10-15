@@ -7728,17 +7728,6 @@
 		)
 		(uuid "38251076-4505-50cd-b88c-43f64f23ebd8")
 	)
-	(text "Switch closed (or a jumper on J3): motor supply on. Open, unplugged or a\nbroken wire: off within about 6 ms. C26 keeps Q2 off while the battery is plugged in."
-		(exclude_from_sim no)
-		(at 129.54 101.6 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "49a870a5-0194-5879-8f92-e1cebac6b815")
-	)
 	(text "Battery in: fuse and reverse-plug protection"
 		(exclude_from_sim no)
 		(at 15.24 25.4 0)
@@ -7797,6 +7786,17 @@
 			(justify left bottom)
 		)
 		(uuid "904375b0-f122-5d10-b1d6-30c66e27c390")
+	)
+	(text "Switch closed (or a jumper on J3): motor supply on, Q2's gate at 0.43 of the battery.\nOpen, unplugged or a broken wire: off within about 2 ms. C26 keeps Q2 off at plug-in."
+		(exclude_from_sim no)
+		(at 129.54 101.6 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "92afef7f-566a-57c7-9757-14d8cb7276e2")
 	)
 	(text "Current limit = 3.3 V / R5 / 1000 uA/A: 1.5k gives 2.2 A. All resistors 1%."
 		(exclude_from_sim no)
@@ -19950,7 +19950,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "47k"
+		(property "Value" "10k"
 			(at 171.958 46.99 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19994,7 +19994,7 @@
 				)
 			)
 		)
-		(property "MPN" "0603WAF4702T5E"
+		(property "MPN" "0603WAF1002T5E"
 			(at 170.18 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -20005,7 +20005,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25819"
+		(property "LCSC" "C25804"
 			(at 170.18 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -27390,7 +27390,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "13k"
 			(at 212.598 46.99 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -27434,7 +27434,7 @@
 				)
 			)
 		)
-		(property "MPN" "0603WAF1003T5E"
+		(property "MPN" "0603WAF1302T5E"
 			(at 210.82 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -27445,7 +27445,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25803"
+		(property "LCSC" "C22797"
 			(at 210.82 45.72 0)
 			(hide yes)
 			(show_name no)
