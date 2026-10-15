@@ -8,7 +8,7 @@ A design, not a finished board. The schematic is drawn and checked, and the 46 Ã
 
 ![The schematic](previews/cane-board.png)
 
-The GX10 still does all the thinking. The board does the Pi's job: it holds the link to the GX10, turns `LEFT`, `CENTER`, `RIGHT`, `STOP` and `FREE` into motor power, reads the talk button and reports its health. The messages in [`../../contracts/MESSAGES.md`](../../contracts/MESSAGES.md) do not change.
+The thinking stays off the board. Since October 14 the plan is for the iPhone to run the obstacle check, with no GX10. The board does the Pi's job: it holds a Bluetooth LE link to the phone, turns `LEFT`, `CENTER`, `RIGHT`, `STOP` and `FREE` into motor power, sends the talk button's presses to the phone and reports its health. The commands are the same words as in [`../../contracts/MESSAGES.md`](../../contracts/MESSAGES.md); the Bluetooth format for them is not written yet. Nothing on the board changes for Bluetooth: the ESP32-S3 has it built in.
 
 ## What is on it
 
@@ -186,8 +186,8 @@ Schematic checks on the last run, October 14: 256 pins on 56 nets all on the net
 
 ## Not done
 
-- **The network.** A Raspberry Pi can run Tailscale. An ESP32 cannot. The board has to be on the same Wi-Fi network as the GX10, or its commands have to come another way, such as through the phone. Not decided.
-- **Firmware.** `pi/cane.py` and `pi/wheel_drive.py` have to be rewritten for the ESP32, with the same limits and the same tests.
+- **The link.** Decided October 14: Bluetooth LE from the phone, so no Wi-Fi network or Tailscale is needed (an ESP32 cannot run Tailscale). The message format over it is not written; it belongs in `contracts/MESSAGES.md`, which needs Connor's say-so.
+- **Firmware.** Not started. Arduino / PlatformIO (decided October 14). It has to do what `pi/cane.py` and `pi/wheel_drive.py` do, with the same limits and tests run against fakes, plus the five rules above.
 - **A new electronics mount** for the 46 Ã— 100 mm board.
 - **Measurements this design leans on:** the motor's stall and running current, the battery's real capacity, the phone's draw, and the size and polarity of the pack's plug.
 - **Try it on bought boards first.** An ESP32-S3 dev board and a DRV8876 breakout would prove the firmware and the motor numbers before any board is ordered.

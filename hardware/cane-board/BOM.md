@@ -15,8 +15,9 @@ Nothing here has been ordered. Order codes, prices, stock and JLCPCB's class for
 | Battery, 12 V 3 Ah | In use | Keep |
 | Gearmotor and omni wheel | In use | Keep. Solder the two motor wires to an XT30 plug; it plugs into the board |
 | Talk button and its two wires | In use | Keep. Needs a 2-way JST XH plug on the board end |
-| Kill switch | Not fitted | Buy: see section 4 |
-| iPhone 16 Pro, ASUS Ascent GX10 | In use | Keep. The phone runs on its own battery |
+| Kill switch | Not fitted | Buy: a switch for the handle (decided October 14). See section 4 |
+| iPhone 16 Pro | In use | Keep. It runs the obstacle check and talks to the board over Bluetooth LE. It runs on its own battery |
+| ASUS Ascent GX10 | Used at the hackathon, borrowed | Not needed: dropped from the plan on October 14 |
 | Electronics mount (printed) | Holds the Pi and battery | Has to be redrawn for the board |
 
 ## 1. On the board

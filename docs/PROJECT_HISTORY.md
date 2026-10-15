@@ -107,6 +107,15 @@ Design: the model finds the object, the LiDAR measures it, and ARKit's tracking 
 - 3D pictures were added to the README, and a GitHub Pages page that shows an interactive model with a guided tour. The model was built for a team member's portfolio from the assembly viewer here; it draws the bought parts from published sizes and shows three tubes and an 85 mm wheel. See [`DISCLOSURE.md`](DISCLOSURE.md).
 - The wheel's listing gives 85 mm across. The printable parts and the assembly model here were drawn for about 58 mm and have not been redrawn.
 
+## 14. A board of our own, and no GX10 (October 13–14)
+
+- One circuit board was designed to replace the Raspberry Pi, its 12 V to 5 V converter, the IBT-2 and the jumper wires: an ESP32-S3, a DRV8876 motor driver with a 2.2 A hardware limit, a kill-switch loop and a watchdog. It was drawn, routed, reviewed against the datasheets and checked against JLCPCB's limits; nothing has been ordered or built. See [`../hardware/cane-board/`](../hardware/cane-board/).
+- On October 14 Connor dropped the GX10 from the plan. It was borrowed for the event, and the obstacle check is plain maths on the LiDAR depth that the iPhone can run itself.
+- The phone will send the wheel commands to the board over Bluetooth LE. Wi-Fi was weighed: it needs a network that goes everywhere with the cane, while Bluetooth needs none, and the link only carries a few bytes many times a second. Photos never cross it; the camera is on the phone.
+- The talk button's questions (find, describe, read) will go from the phone to a cloud AI. Connor chose cloud only, over on-device vision. The wheel never waits on it, and depth still decides whether the way is clear.
+- The board's firmware will be written with Arduino / PlatformIO, and the handle gets a real kill switch.
+- AGENTS.md rules 3, 7 and 9 were rewritten for this: guidance runs on the cane, cloud AI is allowed for the talk button only, and the GX10 rule is retired.
+
 ## Ideas considered and dropped
 
 | Idea | Why it was dropped |
