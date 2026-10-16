@@ -407,6 +407,7 @@ def main():
     tries = int(os.environ.get("ROUTE_TRIES", "2"))
     if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
         sys.exit("DSN export failed")
+    dsn.write_text(dsn.read_text().replace(str(dsn), dsn.name, 1))  # KiCad writes the full path, with the user's name
     outer_only(dsn)  # battery, motor and converter tracks only on the outer layers
     ses.write_bytes(freeroute(jar, dsn, work, "all", tries).read_bytes())
     if not pcbnew.ImportSpecctraSES(board, str(ses)):

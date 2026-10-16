@@ -183,7 +183,7 @@ Free domestic shipping is published by OSH Park (USPS First Class, 1-5 business 
 
 ### Inferences
 - The two help-centre articles give different Bay Area Circuits pickup hours (9am-6pm and 9am-5pm); both were last updated about three years ago, so the hours should be confirmed by phone (510-933-9000).
-- Lake Oswego (OSH Park), Tualatin (PCB Unlimited) and Sunstone are all in Oregon, so ground shipping to Santa Clara should sit at the short end of the carriers' ranges, but no maker publishes a transit time to this ZIP.
+- Lake Oswego (OSH Park), Tualatin (PCB Unlimited) and Sunstone are all in Oregon, so ground shipping to the Bay Area should sit at the short end of the carriers' ranges, but no maker publishes a transit time to this ZIP.
 - AISLER's two notices disagree on wording but agree on the effect: a US order today goes by UPS, costs money, and carries a customs handling surcharge.
 
 ### Gaps
@@ -194,10 +194,10 @@ Free domestic shipping is published by OSH Park (USPS First Class, 1-5 business 
 ## 4. Any sales tax to California, minimum order charge, set-up or tooling fee?
 
 ### Takeaway
-The Santa Clara combined sales tax rate is 9.750%; Bay Area Circuits says it charges California tax by default and DigiKey says it collects by ship-to address, while the other US makers publish nothing and the European makers show 0% US tax but leave import duty to the buyer. None of the priced makers adds a tooling or set-up fee; the real constraints are minimum quantities (3, 4 or sets of 3) and area minimums.
+The local combined sales tax rate is 9.750%; Bay Area Circuits says it charges California tax by default and DigiKey says it collects by ship-to address, while the other US makers publish nothing and the European makers show 0% US tax but leave import duty to the buyer. None of the priced makers adds a tooling or set-up fee; the real constraints are minimum quantities (3, 4 or sets of 3) and area minimums.
 
 ### Cited Findings
-- Sales tax rate: City of Santa Clara, Santa Clara County, 9.750%, rate table effective October 1, 2026 — [CDTFA rates](https://www.cdtfa.ca.gov/taxes-and-fees/rates.aspx)
+- Sales tax rate: 9.750% for the delivery city, rate table effective October 1, 2026 — [CDTFA rates](https://www.cdtfa.ca.gov/taxes-and-fees/rates.aspx)
 - Bay Area Circuits: "By default, all orders shipping to California will have sales tax applied", refundable with a resale certificate — [BAC help: sales tax](https://bayareacircuits.zendesk.com/hc/en-us/articles/207330478-What-determines-whether-sales-tax-is-added-to-my-order)
 - DigiKey: it "meets the nexus requirements in most jurisdictions and is therefore required to collect tax unless a properly executed exemption certificate is provided"; tax follows the ship-to address (read from a search summary of the page, not the page itself) — [DigiKey sales tax help](https://www.digikey.com/en/help-support/payment-and-pricing/sales-tax-exemption-certificates)
 - OSH Park's docs do not mention sales tax — [OSH Park shipping](https://docs.oshpark.com/submitting-orders/shipping-information/)

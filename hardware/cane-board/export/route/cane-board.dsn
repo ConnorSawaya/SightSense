@@ -1,4 +1,4 @@
-(pcb "/Users/con/Documents/SightSense/hardware/cane-board/export/route/cane-board.dsn"
+(pcb "cane-board.dsn"
   (parser
     (string_quote ")
     (space_in_quoted_tokens on)
