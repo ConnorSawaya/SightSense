@@ -8,13 +8,12 @@ Gerbers and drill file (zipped for upload), the placement file in JLCPCB's colum
 names, and a copy of the bill of materials. Needs kicad-cli (KiCad 10).
 
 The placement file is not KiCad's own. KiCad gives each part's origin, which for
-the connectors and the 5 V module is pin 1, and its own rotation. JLCPCB wants the
-centre of the part's body, and measures rotation from its own library footprint,
+the connectors and the 5 V module is pin 1, and its own rotation. JLCPCB centres
+its footprints on their pads, and measures rotation from its own library footprint,
 which for some parts is KiCad's turned round. ROTATE below holds those turns.
 """
 
 import csv
-import math
 import os
 import shutil
 import subprocess
@@ -56,42 +55,25 @@ ROTATE = {
     "PinHeader_1x04_P2.54mm_Vertical": 270,
 }
 
-# Where the body's centre really is, in mm in the footprint's own frame, where its outline misleads (found by
-# an outside review, October 15). SW3: KiCad's outline includes the lever; the housing is centred on the two
-# locating holes, which is the footprint's origin. U3: the outline is RECOM's 11.6 x 8.5 mm module; the
-# YLPTEC K7805's drawing (page 3) gives 11.5 x 7.55 mm with the pins 2.00 mm from one face and 3.20 and 3.22 mm
-# from the ends, so its centre is 2.55 mm along from pin 1 and 1.775 mm into the body.
-CENTRE = {
-    "SW_SPDT_Shouhan_MSK12C02": (0.0, 0.0),
-    "Converter_DCDC_RECOM_R-78E-0.5_THT": (2.55, -1.775),
-}
-
-
 def run(*args):
     done = subprocess.run([CLI, *args], capture_output=True, text=True)
     if done.returncode:
         sys.exit(f"kicad-cli {' '.join(args)} failed:\n{done.stdout}{done.stderr}")
 
 
-def body_centre(fp):
-    """Centre of the part's outline on the fabrication layer, or of its pads if it has none."""
-    name = fp.GetFPIDAsString().split(":")[1]
-    if name in CENTRE:  # a point in the footprint's frame, turned and moved as the footprint is
-        dx, dy = CENTRE[name]
-        a = math.radians(fp.GetOrientationDegrees())
-        o = fp.GetPosition()
-        return pcbnew.VECTOR2I(o.x + pcbnew.FromMM(dx * math.cos(a) + dy * math.sin(a)),
-                               o.y + pcbnew.FromMM(-dx * math.sin(a) + dy * math.cos(a)))
-    shapes = [d for d in fp.GraphicalItems() if d.GetLayer() == pcbnew.F_Fab and d.Type() == pcbnew.PCB_SHAPE_T]
-    items = shapes or list(fp.Pads())
-    box = items[0].GetBoundingBox()
-    for item in items[1:]:
-        box.Merge(item.GetBoundingBox())
+def pad_centre(fp):
+    """Centre of the part's pads. JLCPCB's footprints are centred on their pads, not on the body: in its
+    placement viewer on October 15, body centres put U1 3.6 mm, J11 1.5 mm, J1 about 4 mm and U3 1.8 mm off
+    their pads, and pad centres are what line them up."""
+    pads = list(fp.Pads())
+    box = pads[0].GetBoundingBox()
+    for pad in pads[1:]:
+        box.Merge(pad.GetBoundingBox())
     return box.GetCenter()
 
 
 def placement(path):
-    """JLCPCB's placement file: every fitted part on the top, by body centre, with JLCPCB's rotation."""
+    """JLCPCB's placement file: every fitted part on the top, by pad centre, with JLCPCB's rotation."""
     board = pcbnew.LoadBoard(str(BOARD))
     rows = []
     for fp in board.GetFootprints():
@@ -99,7 +81,7 @@ def placement(path):
             continue
         name = fp.GetFPIDAsString().split(":")[1]
         turn = (fp.GetOrientationDegrees() + ROTATE.get(name, 0)) % 360
-        c = body_centre(fp)
+        c = pad_centre(fp)
         rows.append((fp.GetReference(), pcbnew.ToMM(c.x), -pcbnew.ToMM(c.y), turn))  # y up, as in the Gerbers
     rows.sort(key=lambda r: (r[0].rstrip("0123456789"), int(r[0][len(r[0].rstrip("0123456789")):] or 0)))
     with open(path, "w", newline="") as f:
@@ -107,6 +89,70 @@ def placement(path):
         out.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
         for ref, x, y, turn in rows:
             out.writerow([ref, f"{x:.4f}mm", f"{y:.4f}mm", "Top", f"{turn:.0f}"])
+    return len(rows)
+
+
+# For assemblers other than JLCPCB: who makes each part, by maker's number. Blank where not checked; the LCSC
+# number in the same row identifies the exact part.
+MAKER = {
+    "ESP32-S3-WROOM-1-N4": "Espressif", "DRV8876PWPR": "Texas Instruments", "K7805-1000R3": "YLPTEC",
+    "AP2112K-3.3TRG1": "Diodes Incorporated", "AO3401A": "Alpha & Omega Semiconductor",
+    "AO3400A": "Alpha & Omega Semiconductor", "H5VL10B": "R+O", "KT-0603R": "Hubei KENTO",
+    "EMK1EM221FB0D00R": "AISHI", "DC-005-5A-2.0": "XKB Connection", "XT30UPB-F30.G.Y": "Changzhou Amass",
+    "B2B-XH-A": "JST", "B4B-XH-A": "JST", "TYPE-C-31-M-12": "Korean Hroparts Elec",
+    "TS-1187A-B-A-B": "XKB Connection", "MSK12C02": "SHOU HAN",
+}
+THT = ("BarrelJack", "AMASS_XT30", "JST_XH", "PinHeader", "Converter_DCDC")
+
+
+def maker(mpn):
+    if mpn in MAKER:
+        return MAKER[mpn]
+    if mpn.startswith("0603WAF"):
+        return "UNI-ROYAL"
+    if mpn.startswith("CL"):
+        return "Samsung Electro-Mechanics"
+    if mpn.startswith("CC0603"):
+        return "YAGEO"
+    return ""
+
+
+def generic(out_dir):
+    """Files for an assembler that is not JLCPCB (PCBWay and the like): a BOM by maker's part number, a
+    placement file in KiCad's own rotations and pad centres (their engineers place by the drawing, not by
+    JLCPCB's library), and a top assembly drawing showing pin 1 and polarity."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with open(HERE / "export" / "parts.csv") as f:
+        lines = [r for r in csv.DictReader(f)]
+    with open(out_dir / "cane-board-bom.csv", "w", newline="") as f:
+        out = csv.writer(f)
+        out.writerow(["Item", "Designator", "Qty", "Manufacturer", "Manufacturer Part Number", "Description",
+                      "Package", "Type", "LCSC Part #", "Notes"])
+        n = 0
+        for r in lines:
+            if r["Fitted"] != "yes":  # the phone socket and its parts: pads only, nothing to buy or place
+                continue
+            n += 1
+            kind = "THT" if any(k in r["Footprint"] for k in THT) else "SMD"
+            out.writerow([n, ",".join(r["References"].split()), r["Qty"], maker(r["Part number"]), r["Part number"],
+                          r["Value"], r["Footprint"], kind, r["LCSC"], ""])
+    board = pcbnew.LoadBoard(str(BOARD))
+    rows = []
+    for fp in board.GetFootprints():
+        if fp.IsDNP() or fp.IsExcludedFromPosFiles() or fp.IsBoardOnly():
+            continue
+        c = pad_centre(fp)
+        rows.append((fp.GetReference(), fp.GetFPIDAsString().split(":")[1], pcbnew.ToMM(c.x), -pcbnew.ToMM(c.y),
+                     fp.GetOrientationDegrees() % 360, fp.GetValue()))
+    rows.sort(key=lambda r: (r[0].rstrip("0123456789"), int(r[0][len(r[0].rstrip("0123456789")):] or 0)))
+    with open(out_dir / "cane-board-cpl.csv", "w", newline="") as f:
+        out = csv.writer(f)
+        out.writerow(["Designator", "Footprint", "Mid X", "Mid Y", "Layer", "Rotation", "Comment"])
+        for ref, name, x, y, turn, value in rows:
+            out.writerow([ref, name, f"{x:.4f}mm", f"{y:.4f}mm", "T", f"{turn:.0f}", value])
+    run("pcb", "export", "pdf", "--layers", "F.Fab,F.SilkS,Edge.Cuts", "--mode-single", "--black-and-white",
+        "-o", str(out_dir / "cane-board-assembly-top.pdf"), str(BOARD))
+    shutil.copy(OUT / "cane-board-gerbers.zip", out_dir / "cane-board-gerbers.zip")
     return len(rows)
 
 
@@ -124,6 +170,9 @@ def main():
     shutil.copy(HERE / "export" / "bom-jlcpcb.csv", OUT / "cane-board-bom.csv")
     print("wrote", ", ".join(sorted(p.name for p in OUT.iterdir())))
     print("gerber files:", len(list(gerbers.iterdir())), "; parts placed:", parts)
+    other = HERE / "export" / "fab-other"
+    shutil.rmtree(other, ignore_errors=True)
+    print("for other assemblers, in export/fab-other/:", generic(other), "parts placed")
 
 
 if __name__ == "__main__":

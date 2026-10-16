@@ -46,7 +46,7 @@ In the pictures four parts are stand-ins of the same kind and size, because KiCa
 - Battery, motor and 5 V tracks run only on the outer layers.
 - Narrowest copper on each motor-current path, pad to pad, checked by script: battery jack to fuse 1.0 mm; fuse to the protection FETs 0.6 mm; FETs to the kill-switch FET 0.8 to 1.0 mm; kill-switch FET to the driver 0.6 to 1.0 mm, then 0.4 mm for the last 1.4 mm into the pin; driver to the XT30 1.0 mm, with 0.4 mm for about 1 mm at each pin. The driver's pins are 0.3 mm wide, so the copper can not be wider there.
 - By the IPC-2221 rule of thumb, a 0.4 mm outer track holding 2.2 A all the time would warm by about 35 °C; at the 0.4 to 0.6 A the motor usually takes, about 2 °C. These runs are short and next to large copper, so the real figure should be lower. Estimates, not measurements.
-- Ordering files: `export/fab/` holds the Gerbers and drill files zipped for upload, JLCPCB's placement file and the BOM. Made by `make_fab.py`.
+- Ordering files: `export/fab/` holds the Gerbers and drill files zipped for upload, JLCPCB's placement file and the BOM. `export/fab-other/` holds the same board for other assemblers (PCBWay and the like): a BOM by maker's part number, a placement file in KiCad's rotations, and a top assembly drawing. Made by `make_fab.py`.
 
 ## Three ways the motor is switched off
 
@@ -171,7 +171,7 @@ What the board replaces is not priced in this repository. My guess for a Raspber
 | `cane-board.kicad_sym`, `sym-lib-table` | The DRV8876 symbol, which KiCad does not ship |
 | `make_pcb.py` | Places every part on the board from a table of positions, joins the pads to their nets, runs KiCad's design rules check and renders the 3D pictures. Run it with the Python inside KiCad |
 | `make_route.py` | Lays the hand-drawn power tracks, runs the Freerouting autorouter for the rest, widens what it can, pours and stitches ground, makes the board black and runs the design rules check. Needs Java and the Freerouting jar in `FREEROUTING_JAR` |
-| `make_fab.py` | Writes the ordering files in `export/fab/`. The placement file has each part's body centre and JLCPCB's rotation, checked part by part. Run it with the Python inside KiCad |
+| `make_fab.py` | Writes the ordering files in `export/fab/` and `export/fab-other/`. JLCPCB's placement file has each part's pad centre and JLCPCB's rotation, checked part by part and in JLCPCB's placement viewer. Run it with the Python inside KiCad |
 | `check_watchdog.py` | Simulates the watchdog pump: nSLEEP voltage against the heartbeat rate, and the time to sleep. Standard-library Python |
 | `cane-board.kicad_pcb` | The routed board |
 | `export/cane-board.pdf` | The schematic to read or print |
