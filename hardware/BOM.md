@@ -29,7 +29,7 @@ No prices or shop links are listed: the team's orders are not recorded in this r
 | Qty | Item | Details | From |
 | --- | --- | --- | --- |
 | 2 | Carbon-fibre tube | 18 mm outside, 16 mm inside, 400 mm long. Two since v2 (November 15); v1 had three or four, which was too long | [`tube-joint/`](tube-joint/) |
-| 1 | Aluminium tube | 6061-T6, 5/8 in outside, 0.049 in wall, cut to 130 mm: the spigot inside the joint | [`tube-joint/`](tube-joint/) |
+| 1 | Carbon-fibre tube | 16 mm outside, 13 mm inside, cut to 130 mm: the spigot inside the joint. Sold 420 mm long, two to a pack | [`tube-joint/`](tube-joint/) |
 | 1 | Shock cord | 1/8 in (3.2 mm), through both tubes and the spigot, so the cane comes apart like a tent pole | [`tube-joint/`](tube-joint/) |
 
 ## Printed parts

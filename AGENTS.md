@@ -120,7 +120,7 @@ At the hackathon, device addresses depended on the local router or Tailscale net
 | Cane board firmware | Arduino / PlatformIO (October 14). |
 | Voice | Push-to-talk, on-device speech recognition on the iPhone. |
 | Places | Apple MapKit walking directions, looked up on the phone. |
-| Cane | Two 400 mm carbon-fibre tubes, 18 mm, joined by an aluminium spigot with printed key collars (v2, November 15). v1's printed coupler snapped, and three or four tubes were too long. |
+| Cane | Two 400 mm carbon-fibre tubes, 18 mm, joined by a 16 × 13 mm carbon tube inside the joint with printed key collars (v2, November 15). v1's printed coupler snapped, and three or four tubes were too long. |
 | Printing | PETG-CF for rigid parts, TPU for pads and the tyre. |
 
 ## The algorithms, with starting numbers

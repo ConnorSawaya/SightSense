@@ -2,7 +2,7 @@
 
 The old joint (SightSense hardware/cane-coupler v3/v4) put all the bending through a 10 x 8.5 mm printed
 tongue with a hole down it: about 2-4 N*m printed upright, against an estimated 8-12 N*m when the cane is
-lifted by the handle. Here an aluminium tube (a spigot, like a tent pole's ferrule) carries the bending: it is
+lifted by the handle. Here a smaller carbon tube (a spigot, like a tent pole's ferrule) carries the bending: it is
 glued deep into one carbon tube and slides deep into the next. The two printed collars only stop the sections
 twisting (an off-centre key, so it only goes together one way) and hoop the tube mouths so the carbon cannot
 split where the spigot bears on it.
@@ -28,8 +28,9 @@ _check.check = _cane_check
 
 # ------------------------------------------------------------------ numbers you might change
 TUBE_OD, TUBE_ID = 18.0, 16.0          # the carbon tubes now on the cane (hardware/BOM.md); measure yours
-SPIGOT_OD = 15.875                     # 5/8 in 6061-T6 aluminium tube...
-SPIGOT_WALL = 1.245                    # ...0.049 in wall: 0.06 mm a side in a 16.00 mm bore
+SPIGOT_BOUGHT = (16.0, 13.0)           # carbon tube 16 x 13 mm (bought 420 mm long, 2 per pack)
+SPIGOT_OD = 15.9                       # its sliding half sanded down to slide in a 16.0 mm bore
+SPIGOT_WALL = (SPIGOT_OD - SPIGOT_BOUGHT[1]) / 2
 GLUED, FREE = 65.0, 65.0               # spigot glued into A / sliding into B (both over 3.5 x the tube size)
 TUBE_LEN = 400.0                       # each of the two carbon tubes (the 400 mm tubes v1 used)
 COLLAR_LEN, COLLAR_OD = 14.0, 24.0     # printed collar over each tube end
@@ -41,7 +42,6 @@ CORD = 3.2                             # 1/8 in shock cord, through the spigot
 # ------------------------------------------------------------------ strength (estimates, not measurements)
 LOAD = (8.0, 12.0)                     # N*m at an upper joint, cane carried level: hardware/joint-sleeve/README.md
 OLD_TONGUE = (2.0, 4.0)                # N*m the old printed tongue takes, printed upright (same README)
-AL_YIELD = 240.0                       # MPa, 6061-T6 minimum
 CF_STRENGTH = 500.0                    # MPa, typical for roll-wrapped carbon tube in bending (assumed)
 
 R_BORE = TUBE_OD / 2 + GLUE_GAP
@@ -89,8 +89,8 @@ def build():
     carbon = "#2B2D31"
     tube_a = a.add(tube(TUBE_OD, TUBE_ID, 0, TUBE_LEN), "carbon tube A (upper)", kind="other", color=carbon)
     tube_b = a.add(tube(TUBE_OD, TUBE_ID, -TUBE_LEN, TUBE_LEN), "carbon tube B (lower)", kind="other", color=carbon)
-    spigot = a.add(tube(SPIGOT_OD, SPIGOT_ID, -FREE, GLUED + FREE), "spigot: 5/8 in x 0.049 in aluminium tube",
-                   kind="machined_aluminum")
+    spigot = a.add(tube(SPIGOT_OD, SPIGOT_ID, -FREE, GLUED + FREE), "spigot: carbon tube 16 x 13 mm",
+                   kind="other", color="#3A3D42")
     ca = a.add(collar_a(), "collar A (keyed)", kind="printed")
     cb = a.add(collar_b(), "collar B (notched)", kind="printed")
     a.add(Pos(0, 0, -TUBE_LEN) * Cylinder(CORD / 2, 2 * TUBE_LEN, align=(Align.CENTER, Align.CENTER, Align.MIN)),
@@ -106,19 +106,19 @@ def build():
 
     # strength: the spigot now carries the bending, not printed plastic
     z_sp = section_modulus(SPIGOT_OD, SPIGOT_ID)
-    m_sp = z_sp * AL_YIELD / 1000
+    m_sp = z_sp * CF_STRENGTH / 1000
     m_cf = section_modulus(TUBE_OD, TUBE_ID) * CF_STRENGTH / 1000
     a.require(m_sp >= 3 * LOAD[1],
-              f"spigot bends at about {m_sp:.0f} N*m (Z {z_sp:.0f} mm^3, 6061-T6): {m_sp / LOAD[1]:.1f}x the "
+              f"spigot bends at about {m_sp:.0f} N*m (Z {z_sp:.0f} mm^3, carbon, assumed {CF_STRENGTH:.0f} MPa): {m_sp / LOAD[1]:.1f}x the "
               f"{LOAD[1]:.0f} N*m load estimate; the old tongue took {OLD_TONGUE[0]:.0f}-{OLD_TONGUE[1]:.0f}")
-    a.require(m_cf >= m_sp, f"the carbon tube itself is stronger again: about {m_cf:.0f} N*m (assumed {CF_STRENGTH:.0f} MPa)")
+    a.require(m_cf >= 0.9 * m_sp, f"the outer carbon tube is about as strong: about {m_cf:.0f} N*m (assumed {CF_STRENGTH:.0f} MPa)")
     a.require(min(GLUED, FREE) >= 3.5 * TUBE_OD,
               f"spigot reaches {GLUED:.0f} mm into A and {FREE:.0f} mm into B (rule of thumb: 3.5 x {TUBE_OD:.0f} mm)")
     play = (TUBE_ID - SPIGOT_OD) / 2
     a.require(0 < play <= 0.15, f"spigot to tube clearance {play:.3f} mm a side (sliding, little wobble)")
     a.require(LUG_CLEAR >= 0.2, f"lugs have {LUG_CLEAR} mm clearance a side in their notches (prints go together)")
     a.require(SPIGOT_ID > CORD + 2, f"cord {CORD} mm runs through the spigot's {SPIGOT_ID:.1f} mm bore")
-    a.hardware("6061-T6 aluminium tube, 5/8 in OD x 0.049 in wall, cut to 130 mm (one per joint)", 1)
+    a.hardware("carbon tube 16 x 13 mm, cut to 130 mm, sliding half sanded to fit (one per joint; a 420 mm tube makes three)", 1)
     a.hardware("1/8 in shock cord, through both tubes", 1)
     a.hardware("2-part epoxy: spigot into tube A, collars onto their tubes", 1)
     return a

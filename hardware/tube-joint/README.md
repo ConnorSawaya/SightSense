@@ -1,6 +1,6 @@
 # Tube joint (v2)
 
-The joint between the cane's two carbon tubes, redone because the v1 joint snapped. An aluminium tube inside the joint, like a tent pole's, takes the bending; two small printed collars only stop the sections twisting and keep the tube mouths from splitting. The cane still comes apart into its two sections, held together by the shock cord.
+The joint between the cane's two carbon tubes, redone because the v1 joint snapped. A thinner carbon tube inside the joint, like a tent pole's, takes the bending; two small printed collars only stop the sections twisting and keep the tube mouths from splitting. The cane still comes apart into its two sections, held together by the shock cord.
 
 Experimental prototype. Nothing here has been printed, fitted or load tested. The strength figures are estimates from the model and from typical material values, not measurements.
 
@@ -21,23 +21,23 @@ In [`../cane-coupler/`](../cane-coupler/) the tubes only butt end to end, and th
 
 | Part | What it does |
 | --- | --- |
-| Aluminium spigot | A 130 mm length of 5/8 in × 0.049 in 6061-T6 tube. Glued 65 mm into the upper tube; the other 65 mm slides into the lower tube. It carries all the bending across the joint |
+| Carbon spigot | A 130 mm length of 16 × 13 mm carbon tube. Glued 65 mm into the upper tube; the other 65 mm slides into the lower tube. It carries all the bending across the joint |
 | Collar A | Printed ring glued over the upper tube's end. Two lugs, one wide and one narrow, stick down past the joint |
 | Collar B | Printed ring glued over the lower tube's end, with the two matching notches. The lugs stop the sections twisting, and only fit one way, so the wheel always ends up facing forward |
 | Shock cord | 1/8 in, through both tubes and the spigot, pulls the sections together |
 
 | | Estimate |
 | --- | --- |
-| Spigot, bending before it yields | about 47 N·m (section modulus 194 mm³, 240 MPa): about 4 times the 12 N·m load estimate, and about 12 times what the v1 tongue took |
-| The carbon tube itself | about 108 N·m (assuming 500 MPa) |
-| Spigot to tube clearance | 0.06 mm a side, in a 16.00 mm bore |
+| Spigot, bending before it breaks | about 109 N·m (section modulus 218 mm³, assuming 500 MPa): about 9 times the 12 N·m load estimate, and about 27 times what the v1 tongue took |
+| The outer carbon tube | about the same, 108 N·m (same assumption) |
+| Spigot to tube clearance | 0.05 mm a side, after sanding its sliding half to 15.9 mm, in a 16.0 mm bore |
 
 ## Dimensions
 
 | Feature | Value |
 | --- | --- |
 | Tubes | Two, 18 mm outside, 16 mm inside, 400 mm long: 800 mm of tube, half of v1's four |
-| Spigot | 15.875 mm outside (5/8 in), 1.245 mm wall (0.049 in), 130 mm long |
+| Spigot | Carbon tube 16 mm outside, 13 mm inside (1.5 mm wall), 130 mm long; the sliding half sanded to about 15.9 mm |
 | Collars | 24 mm outside, 18.3 mm bore (0.15 mm a side for epoxy), 14 mm long |
 | Key | Lugs 3 mm tall, 40° and 24° wide; notches 0.25 mm wider a side and 3.3 mm deep |
 
@@ -53,17 +53,18 @@ In [`../cane-coupler/`](../cane-coupler/) the tubes only butt end to end, and th
 
 | Qty | Item |
 | --- | --- |
-| 1 | 6061-T6 aluminium tube, 5/8 in outside, 0.049 in wall, cut to 130 mm |
+| 1 | Carbon tube, 16 mm outside, 13 mm inside, cut to 130 mm. Sold in 420 mm lengths, two to a pack, so one pack makes six |
 | 1 | 1/8 in shock cord, as long as both tubes |
 | — | Two-part epoxy |
 
 ## Building it
 
-1. **Measure the carbon tubes' bore** before buying the spigot. It must be 16.0 mm or a hair more. If the spigot is tight, sand its free half lightly; if it rattles, a turn of thin tape on the free half takes up the play.
-2. File a small chamfer round both ends of the spigot so it slides in without catching.
-3. Sand the inside of the upper tube's end and the outside of the spigot's glued half, then glue the spigot 65 mm into the upper tube.
-4. Glue collar A over the upper tube's end and collar B over the lower tube's end, flush with the tube ends. Push the two together while the glue sets, so the lugs line up with the notches; keep glue off the spigot's free half.
-5. Thread the shock cord through both tubes and tie it off at each end.
+1. **Measure the 18 mm tubes' bore** with calipers. It should be 16.0 mm or a hair more; a 16 mm spigot then fits with no gap, so it will be tight.
+2. Cut 130 mm off the 16 × 13 mm tube with a fine saw, wrapping the cut line in tape so the fibres do not splinter.
+3. **Sand the sliding half** (65 mm from one end) with wet 400 grit until it slides into the 18 mm tube without forcing and without wobble. Sand wet and wear a mask: carbon dust is bad to breathe. Round both ends slightly so it slides in without catching.
+4. Roughen the inside of the upper tube's end and the outside of the spigot's other half, then glue the spigot 65 mm into the upper tube.
+5. Glue collar A over the upper tube's end and collar B over the lower tube's end, flush with the tube ends. Push the two together while the glue sets, so the lugs line up with the notches; keep glue off the spigot's free half.
+6. Thread the shock cord through both tubes and tie it off at each end.
 
 ## Printing
 
@@ -74,6 +75,6 @@ These are suggestions, not tested settings.
 
 ## Still to check
 
-1. The carbon tubes' real bore, against the spigot.
-2. That the joint does not wobble with the spigot's 0.06 mm clearance, once the cord pulls it closed.
+1. The 18 mm tubes' real bore, against the 16 mm spigot.
+2. That the joint does not wobble once the sliding half is sanded and the cord pulls it closed.
 3. How it holds up when the cane is lifted, leaned on and knocked: a load test, with the result written here.

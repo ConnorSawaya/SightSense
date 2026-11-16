@@ -4,7 +4,7 @@ Printable parts, wiring and build notes for the cane.
 
 | Folder / file | Contents | Status |
 | --- | --- | --- |
-| [`tube-joint/`](tube-joint/) | v2 joint between the cane's two tubes: an aluminium spigot inside carries the bending, two printed collars key it | Design in (November 15), not printed or tested; strength figures are estimates |
+| [`tube-joint/`](tube-joint/) | v2 joint between the cane's two tubes: a thinner carbon tube inside carries the bending, two printed collars key it | Design in (November 15), not printed or tested; strength figures are estimates |
 | [`cane-coupler/`](cane-coupler/) | v1: keyed two-piece insert that joined the tube sections. v4 adds an M3 cross bolt and a receiver that holds the gearmotor at the tip | v1 joint snapped; replaced by [`tube-joint/`](tube-joint/) in v2. The v4 insert is still used at the motor end until that is redone |
 | [`BOM.md`](BOM.md) | Bill of materials: electronics, tubes, printed parts, screws and nuts, with the page each line comes from | No prices or shop links |
 | [`wiring.md`](wiring.md) | Raspberry Pi, IBT-2 motor driver, motor, switches and power, with a check list and first tests | Six Pi-to-driver wires fitted; switches, fuse and kill switch not fitted; not tested under power |
