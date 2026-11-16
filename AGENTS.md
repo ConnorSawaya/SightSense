@@ -29,7 +29,7 @@ None of this is built yet. The cane as it stands is the hackathon build below.
 
 - **v1:** the hackathon build (git tag `v1-hackathon`).
 - **Cane board:** the circuit board drawn October 13-17 to replace the Pi (tag `cane-board`). Saved for later on November 15; not ordered.
-- **v2:** the cane redesigned from November 15: two 400 mm tubes instead of three or four, and a new joint that does not snap ([`hardware/tube-joint/`](hardware/tube-joint/)). In progress; the parts' CAD is built in the ftc-cad CAD workspace (project `sightsense-v2`) and copied here.
+- **v2:** the cane redesigned from November 15: two 400 mm tubes instead of three or four, a new joint that does not snap ([`hardware/tube-joint/`](hardware/tube-joint/)), and a smaller tip: a VEX 2 in omni wheel on a Pololu micro gearmotor run from 5 V ([`hardware/tip/`](hardware/tip/)). In progress; the parts' CAD is built in the ftc-cad CAD workspace (project `sightsense-v2`) and copied here.
 
 ### At the hackathon
 
@@ -48,7 +48,7 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 | Area | State |
 | --- | --- |
 | Repo layout, message formats, wiring plan | Documented in this repository |
-| Cane parts (`hardware/`) | CAD designs and assembly notes are included; verify fit and strength on the actual build. v2 (November 15): two 400 mm tubes and a new joint in `hardware/tube-joint/`, not printed or tested; the motor end, handle and mounts are still the v1 parts |
+| Cane parts (`hardware/`) | CAD designs and assembly notes are included; verify fit and strength on the actual build. v2 (November 15): two 400 mm tubes, a new joint (`hardware/tube-joint/`) and a smaller tip with a 2 in wheel and a micro gearmotor (`hardware/tip/`), not printed or tested; the handle and mounts are still the v1 parts |
 | iPhone app (`ios-app/`) | Camera, LiDAR, frame transport, guidance, speech and location code are present; verify the current build on a supported iPhone. Moving the obstacle check onto the phone and the Bluetooth link to the cane board: not started |
 | GX10 software (`gx10/`) | Hackathon code: ingest, planner, dashboard, model, navigation and detection. Not part of the plan since October 14; the planner's obstacle check is the one to move to the phone |
 | Pi motor controller (`pi/`) | Direct-wheel mode, command watchdog, setup tools and mock tests are present; verify motor direction and hardware behavior before use |
