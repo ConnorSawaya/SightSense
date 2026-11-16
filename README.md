@@ -77,6 +77,8 @@ The full list, down to the screws, is in [`hardware/BOM.md`](hardware/BOM.md).
 
 ## Status
 
+**Since the hackathon (October 14):** the GX10 was borrowed for the event and is no longer part of the plan. The iPhone will run the obstacle check itself, a new circuit board on the cane ([`hardware/cane-board/`](hardware/cane-board/)) replaces the Raspberry Pi and takes commands from the phone over Bluetooth, and the talk button's questions will go to a cloud AI. None of that is built yet; the rest of this page describes the cane as it was at the event.
+
 The iPhone and GX10 application code is in. The Pi has direct wheel mode and a one-time SD installer. Software tests use synthetic phone frames, real local WebSockets and mock GPIO. Actual wheel direction, RPM and updated Pi boot remain physical checks; see [`pi/README.md`](pi/README.md).
 
 ## Team

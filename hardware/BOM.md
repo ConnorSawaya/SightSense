@@ -9,7 +9,7 @@ No prices or shop links are listed: the team's orders are not recorded in this r
 | Qty | Item | Details | State | From |
 | --- | --- | --- | --- | --- |
 | 1 | iPhone 16 Pro | Camera, LiDAR and position. Strapped into the phone cradle | In use | [`../README.md`](../README.md) |
-| 1 | ASUS Ascent GX10 | Runs the AI models and the obstacle check. Stays off the cane. Borrowed from ASUS for the event | In use | [`../README.md`](../README.md) |
+| 1 | ASUS Ascent GX10 | Ran the AI models and the obstacle check at the hackathon. Stayed off the cane. Borrowed from ASUS for the event; dropped from the plan on October 14, when the phone took over the obstacle check | Not used since the event | [`../README.md`](../README.md) |
 | 1 | Raspberry Pi 5 | Motor controller. `wiring.md` lists it in a case with the active cooler; the printed mount takes the bare board on standoffs | In use | [`wiring.md`](wiring.md) |
 | 1 | microSD card | For the Pi | In use | [`../pi/`](../pi/) |
 | 1 | Battery, 12 V 3 Ah | Li-ion pack, three cells in a row (3S1P), on a barrel plug lead. 55.2 mm wide, measured; about 70 × 19.5 mm, not measured | Not checked under load | [`wiring.md`](wiring.md) |

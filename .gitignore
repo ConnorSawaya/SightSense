@@ -32,6 +32,13 @@ xcuserdata/
 *.gcode
 *.3mf.bak
 
+# KiCad's own working files
+*.kicad_prl
+*-backups/
+fp-info-cache
+*.lck
+_autosave-*
+
 # OS and editors
 .DS_Store
 Thumbs.db
@@ -41,3 +48,7 @@ Thumbs.db
 # Devpost submission drafts: kept on the laptop, never in the repository
 devpost/
 DEVPOST.md
+
+# Autorouter attempts and logs (make_route.py keeps the best run as cane-board.ses)
+hardware/cane-board/export/route/*try*.ses
+hardware/cane-board/export/route/run.log

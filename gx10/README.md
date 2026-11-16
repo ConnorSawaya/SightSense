@@ -1,6 +1,8 @@
 # GX10
 
-Everything that runs on the ASUS Ascent GX10. All AI and all guidance decisions happen here.
+Everything that ran on the ASUS Ascent GX10 at the hackathon, where all AI and all guidance decisions happened.
+
+> Not part of the plan since October 14. The GX10 was borrowed for the event; the obstacle check moves to the iPhone and the talk button's questions go to a cloud AI. See `../AGENTS.md`. The planner here is the reference for the phone's obstacle check.
 
 ## Planned pieces
 
