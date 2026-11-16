@@ -23,7 +23,7 @@ Pololu 150:1 Micro Metal Gearmotor HP 6V (the same size and shaft as an N20), ru
 | No-load speed | about 210 rpm at 6 V (about 175 rpm at 5 V, estimate) |
 | Stall torque | 2.4 kg·cm at 6 V; Pololu advises staying under about 2 kg·cm in bursts |
 | Stall current | 1.6 A at 6 V |
-| Size | 12 × 10 mm, 25.6 mm long; 3 mm D-shaft, 10 mm long |
+| Size | 12 × 10 mm, 25.8 mm long; 3 mm D-shaft, 10 mm long (Pololu's CAD) |
 
 On the 2 in wheel at 5 V that is about 0.45 m/s and up to about 8 N of push (estimates). v1's motor on its 85 mm wheel managed about 0.53 m/s and about 6 N running, at ten times the weight and 12 V.
 
@@ -31,7 +31,7 @@ On the 2 in wheel at 5 V that is about 0.45 m/s and up to about 8 N of push (est
 
 | File | What it is |
 | --- | --- |
-| `model.py` | The source, in build123d. It runs in the ftc-cad CAD workspace (project `sightsense-v2-tip`), which checks it and exports the files below; it needs VEX's CAD for the wheel there, which is not copied here |
+| `model.py` | The source, in build123d. It runs in the ftc-cad CAD workspace (project `sightsense-v2-tip`), which checks it and exports the files below. The wheel and the motor in it are the makers' own CAD: VEX's STEP for the 276-9044 wheel and Pololu's STEP for the micro metal gearmotor (`mmgm-pm.step`, from Pololu's "3D models of Micro Metal Gearmotors"). Those files stay in the CAD workspace; download them from VEX and Pololu to run the model elsewhere |
 | `export/tip_motor_housing_sleeve_arm_tube_plug.stl` | The main printed part: motor housing, sleeve, arm and the plug that goes into the tube |
 | `export/wheel_adapter_hex_to_3_mm_d.stl` | The adapter between the wheel and the motor |
 | `export/rear_cap.stl` | Closes the back of the motor's tunnel; the motor's wires pass through it |

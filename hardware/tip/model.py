@@ -12,8 +12,8 @@ motor (12 x 10 mm, 15.6 mm corner to corner).
 
 Frame: ground at z = 0, +Y is the walking direction, X is sideways. The cane leans back LEAN_DEG from upright
 and its axis passes through the wheel's contact point. Run: .venv/bin/python projects/sightsense-v2-tip/model.py
-Sources: wheel from VEX's own CAD (276-9044, parts/vex-276-9044/raw); motor sizes read from Pololu's
-dimension drawing "micro-metal-gearmotors-dimensions.pdf" (no-encoder version, gear ratios below 1000:1).
+Sources: the wheel is VEX's own CAD (276-9044, parts/vex-276-9044/raw) and the motor Pololu's own CAD
+(mmgm-pm.step from their micro metal gearmotor STEP models, parts/pololu-997/raw).
 """
 import math
 import pathlib
@@ -48,11 +48,13 @@ ARM_GAP = 3.5                   # arm to the wheel's rollers
 
 # ------------------------------------------------------------------ parts' sizes (from vendor CAD / drawing)
 GB = (12.0, 10.0, 9.0)          # Pololu gearbox: width (X), height (Z), length
-MOTOR_LEN, OVERALL = 15.4, 25.6 # motor can length; gearbox + motor + end cap
+OVERALL = 25.8                  # gearbox face to the motor's back end (Pololu's CAD)
 SHAFT_D, SHAFT_LEN = 3.0, 10.0  # from the gearbox face
-BUSH_D, BUSH_H = 4.0, 0.7
+BUSH_D, BUSH_H = 4.0, 0.72
 
 STEP = pathlib.Path(__file__).resolve().parents[2] / "parts/vex-276-9044/raw/vex-2in-omni-276-9044.step"
+MOTOR_STEP = pathlib.Path(__file__).resolve().parents[2] / "parts/pololu-997/raw/mmgm-pm.step"   # Pololu's own CAD
+MOTOR_FACE_Z = 9.0             # in Pololu's file: the gearbox face; the shaft runs up +Z, its flat faces +Y
 _w = import_step(str(STEP))
 R_WHEEL = _w.bounding_box().size.Y / 2          # 25.27: roller tips
 HALF_W = _w.bounding_box().size.X / 2           # 7.94: the wheel's half width
@@ -123,12 +125,10 @@ def adapter():
 
 
 def motor():
-    gb = Pos(0, Y_GB_FACE - GB[2] / 2, ZC) * Box(GB[0], GB[2], GB[1])
-    can = Pos(0, Y_GB_FACE - GB[2] - (OVERALL - GB[2]) / 2, ZC) * Box(GB[0], OVERALL - GB[2], GB[1])
-    shaft = cyl_y(SHAFT_D / 2, Y_GB_FACE, Y_GB_FACE + SHAFT_LEN)
-    shaft -= Pos(0, Y_GB_FACE + SHAFT_LEN / 2 + 0.5, ZC + 1.0 + 2) * Box(10, SHAFT_LEN, 4)   # D flat
-    bush = cyl_y(BUSH_D / 2, Y_GB_FACE, Y_GB_FACE + BUSH_H)
-    return gb + can + shaft + bush
+    """Pololu's STEP model of the micro metal gearmotor (precious-metal brushes, no encoder, ratios below
+    1000:1), turned so its shaft points at the wheel (+Y) and its flat faces up under the set screw."""
+    m = import_step(str(MOTOR_STEP))
+    return Pos(0, Y_GB_FACE, ZC) * Rot(0, 180, 0) * Rot(-90, 0, 0) * Pos(0, 0, -MOTOR_FACE_Z) * m
 
 
 def tip():
@@ -176,7 +176,7 @@ def build():
     a = Assembly("sightsense-v2-tip")
     w = a.add(wheel(), "VEX 2 in omni wheel (276-9044)", kind="wheel")
     ad = a.add(adapter(), "wheel adapter (hex to 3 mm D)", kind="printed")
-    m = a.add(motor(), "Pololu 150:1 HP 6V micro metal gearmotor", kind="motor")
+    m = a.add(motor(), "Pololu 150:1 HP 6V micro metal gearmotor (Pololu CAD)", kind="motor")
     t = a.add(tip(), "tip: motor housing, sleeve, arm, tube plug", kind="printed",
               print_rot=Rot(0, 90, 0))
     cap = a.add(rear_cap(), "rear cap", kind="printed")
