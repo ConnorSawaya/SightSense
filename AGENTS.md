@@ -25,6 +25,12 @@ iPhone: LiDAR + obstacle check ──LEFT/CENTER/RIGHT/STOP (Bluetooth LE)──
 
 None of this is built yet. The cane as it stands is the hackathon build below.
 
+### Versions
+
+- **v1:** the hackathon build (git tag `v1-hackathon`).
+- **Cane board:** the circuit board drawn October 13-17 to replace the Pi (tag `cane-board`). Saved for later on November 15; not ordered.
+- **v2:** the cane redesigned from November 15: two 400 mm tubes instead of three or four, and a new joint that does not snap ([`hardware/tube-joint/`](hardware/tube-joint/)). In progress; the parts' CAD is built in the ftc-cad CAD workspace (project `sightsense-v2`) and copied here.
+
 ### At the hackathon
 
 - An **iPhone 16 Pro** on the cane captured the camera picture, LiDAR depth and position.
@@ -42,7 +48,7 @@ iPhone ──frame (JPEG + depth + pose + GPS)──► GX10 ──LEFT/CENTER/R
 | Area | State |
 | --- | --- |
 | Repo layout, message formats, wiring plan | Documented in this repository |
-| Cane parts (`hardware/`) | CAD designs and assembly notes are included; verify fit and strength on the actual build |
+| Cane parts (`hardware/`) | CAD designs and assembly notes are included; verify fit and strength on the actual build. v2 (November 15): two 400 mm tubes and a new joint in `hardware/tube-joint/`, not printed or tested; the motor end, handle and mounts are still the v1 parts |
 | iPhone app (`ios-app/`) | Camera, LiDAR, frame transport, guidance, speech and location code are present; verify the current build on a supported iPhone. Moving the obstacle check onto the phone and the Bluetooth link to the cane board: not started |
 | GX10 software (`gx10/`) | Hackathon code: ingest, planner, dashboard, model, navigation and detection. Not part of the plan since October 14; the planner's obstacle check is the one to move to the phone |
 | Pi motor controller (`pi/`) | Direct-wheel mode, command watchdog, setup tools and mock tests are present; verify motor direction and hardware behavior before use |
@@ -114,7 +120,7 @@ At the hackathon, device addresses depended on the local router or Tailscale net
 | Cane board firmware | Arduino / PlatformIO (October 14). |
 | Voice | Push-to-talk, on-device speech recognition on the iPhone. |
 | Places | Apple MapKit walking directions, looked up on the phone. |
-| Cane | 18 mm carbon-fibre tube sections joined by the printed keyed coupler. |
+| Cane | Two 400 mm carbon-fibre tubes, 18 mm, joined by an aluminium spigot with printed key collars (v2, November 15). v1's printed coupler snapped, and three or four tubes were too long. |
 | Printing | PETG-CF for rigid parts, TPU for pads and the tyre. |
 
 ## The algorithms, with starting numbers

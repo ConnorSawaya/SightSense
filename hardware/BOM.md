@@ -28,8 +28,9 @@ No prices or shop links are listed: the team's orders are not recorded in this r
 
 | Qty | Item | Details | From |
 | --- | --- | --- | --- |
-| 4 | Carbon-fibre tube | 18 mm outside, 16 mm inside, 400 mm long | [`assembly/`](assembly/) |
-| 1 | Shock cord | 1/8 in (3.2 mm), through the couplers so the cane folds like a tent pole | [`cane-coupler/`](cane-coupler/) |
+| 2 | Carbon-fibre tube | 18 mm outside, 16 mm inside, 400 mm long. Two since v2 (November 15); v1 had three or four, which was too long | [`tube-joint/`](tube-joint/) |
+| 1 | Aluminium tube | 6061-T6, 5/8 in outside, 0.049 in wall, cut to 130 mm: the spigot inside the joint | [`tube-joint/`](tube-joint/) |
+| 1 | Shock cord | 1/8 in (3.2 mm), through both tubes and the spigot, so the cane comes apart like a tent pole | [`tube-joint/`](tube-joint/) |
 
 ## Printed parts
 
@@ -41,28 +42,27 @@ Rigid parts in PETG-CF. None has been printed and fitted in its current version.
 | 1 | Handle plug, glued in the tube | [`handle-phone-mount/`](handle-phone-mount/) |
 | 1 | Camera collar | [`handle-phone-mount/`](handle-phone-mount/) |
 | 1 | Phone cradle | [`handle-phone-mount/`](handle-phone-mount/) |
-| 3 | Coupler main insert v3 | [`cane-coupler/`](cane-coupler/) |
-| 3 | Coupler receiver v3 | [`cane-coupler/`](cane-coupler/) |
-| 1 | Main insert v4 | [`cane-coupler/`](cane-coupler/) |
-| 3 | Joint sleeve, one per joint | [`joint-sleeve/`](joint-sleeve/) |
+| 1 | Tube joint collar A (keyed) | [`tube-joint/`](tube-joint/) |
+| 1 | Tube joint collar B (notched) | [`tube-joint/`](tube-joint/) |
+| 1 | Main insert v4, at the motor end (still the v1 design; to be redone) | [`cane-coupler/`](cane-coupler/) |
 | 1 | Motor mount 2 | [`motor-mount-2/`](motor-mount-2/) |
 | 1 | Wheel adapter | [`wheel-adapter/`](wheel-adapter/) |
 | 1 | Wheel cap | [`wheel-adapter/`](wheel-adapter/) |
 | 1 | Electronics mount, Raspberry Pi half | [`electronics-mount/`](electronics-mount/) |
 | 1 | Electronics mount, battery half | [`electronics-mount/`](electronics-mount/) |
 
-19 pieces in all.
+12 pieces in all. The v1 coupler inserts and joint sleeves are no longer needed.
 
 ## Screws and nuts
 
 | Qty | Item | Where |
 | --- | --- | --- |
-| 18 | M3 × 20 socket-head screw | Handle and phone mount 4, electronics mount 4, joint sleeves 9, motor mount cross bolt 1 |
+| 9 | M3 × 20 socket-head screw | Handle and phone mount 4, electronics mount 4, motor mount cross bolt 1 |
 | 1 | M3 × 10 socket-head screw | Wheel adapter's clamp on the shaft. It must be 10 mm |
 | 1 | M3 socket-head screw, length to suit the wheel | Holds the wheel on. 15 mm of it is inside the adapter |
 | 2 | M3 × 12 to 16 screw | Motor mount's front wall into the gearbox |
 | 1 | M3 × 6 to 8 screw | Tube lock in the handle socket. It cuts its own thread |
-| 20 | M3 nut | One for each M3 × 20, the M3 × 10 and the wheel screw |
+| 11 | M3 nut | One for each M3 × 20, the M3 × 10 and the wheel screw |
 | 4 | M2.5 × 12 screw | Raspberry Pi to its standoffs |
 | 4 | M2.5 nut | Inside the Pi half's plate |
 
@@ -70,7 +70,7 @@ Rigid parts in PETG-CF. None has been printed and fitted in its current version.
 
 | Item | Where |
 | --- | --- |
-| Epoxy | Coupler inserts and the handle plug into the tubes |
+| Epoxy | The joint's spigot and collars, the motor-end insert and the handle plug into the tubes |
 | Hook-and-loop cinch strap, 20 mm wide, about 250 mm | Holds the phone in the cradle |
 | Foam tape and hook-and-loop | Battery to its plate |
 | Tape | A turn or two round the tube under each clamp, for grip |
